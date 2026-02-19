@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><<ENTITY_NAME>> — Local File FY <<FISCAL_YEAR>></title>
+<!-- BRAND_CSS_INJECT -->
+<style>
+  /* --- Template-specific styles --- */
+
+  /* --- Page container (document-like) --- */
+  .page {
+    max-width: 720px;
+    margin: 32px auto;
+    padding: 48px 56px;
+    background: var(--sn-surface);
+    border: 1px solid var(--sn-border);
+    border-radius: var(--sn-radius);
+  }
+
+  /* --- Document typography --- */
+  .doc-title {
+    font-family: var(--sn-font-serif);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--sn-text);
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .doc-subtitle {
+    font-family: var(--sn-font-serif);
+    font-size: 14px;
+    color: var(--sn-text-muted);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .doc-meta {
+    font-size: 12px;
+    color: var(--sn-text-dim);
+    text-align: center;
+    margin-bottom: 36px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--sn-border);
+  }
+
+  .doc-section-title {
+    font-family: var(--sn-font-serif);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--sn-text);
+    margin-bottom: 12px;
+  }
+
+  .doc-body {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--sn-text);
+    margin-bottom: 32px;
+  }
+
+  /* --- Report table --- */
+  .doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 8px;
+    margin-bottom: 32px;
+  }
+
+  .doc-table caption {
+    text-align: left;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--sn-text-muted);
+    margin-bottom: 8px;
+  }
+
+  .doc-table thead th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sn-text-muted);
+    border-bottom: 2px solid var(--sn-border);
+  }
+
+  .doc-table thead th:nth-child(2) {
+    text-align: right;
+  }
+
+  .doc-table tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--sn-border);
+    color: var(--sn-text);
+  }
+
+  .doc-table tbody td:nth-child(2) {
+    text-align: right;
+    font-family: var(--sn-font-mono);
+    font-size: 12px;
+  }
+
+  .doc-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* --- Annotation layer (hidden by default) --- */
+  .annotated-section {
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .annotation {
+    display: none;
+    margin-bottom: 12px;
+  }
+
+  .annotation-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+  }
+
+  .annotation-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .annotation-label {
+    font-weight: 600;
+  }
+
+  .annotation-impact {
+    color: var(--sn-text-dim);
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  .annotation-source {
+    font-family: var(--sn-font-mono);
+    font-size: 10px;
+    color: var(--sn-text-dim);
+    margin-top: 2px;
+  }
+
+  /* --- X-ray mode ON --- */
+  body.xray .annotation {
+    display: block;
+  }
+
+  body.xray .annotated-section {
+    padding-left: 14px;
+    border-left: 3px solid var(--sn-border);
+    border-radius: 0;
+  }
+
+  body.xray .annotated-section[data-layer="1"] { border-left-color: var(--sn-layer1); }
+  body.xray .annotated-section[data-layer="2"] { border-left-color: var(--sn-layer2); }
+  body.xray .annotated-section[data-layer="3"] { border-left-color: var(--sn-layer3); }
+  body.xray .annotated-section[data-layer="4"] { border-left-color: var(--sn-layer4); }
+
+  body.xray .annotated-section[data-layer="1"] .annotation-bar { background: rgba(59, 130, 246, 0.08); }
+  body.xray .annotated-section[data-layer="2"] .annotation-bar { background: rgba(168, 85, 247, 0.08); }
+  body.xray .annotated-section[data-layer="3"] .annotation-bar { background: rgba(245, 158, 11, 0.08); }
+  body.xray .annotated-section[data-layer="4"] .annotation-bar { background: rgba(34, 197, 94, 0.08); }
+
+  /* --- Legend (always reserves space, content fades in on xray) --- */
+  .legend {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--sn-surface-hover);
+    border: 1px solid var(--sn-border);
+    border-radius: var(--sn-radius);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+  }
+
+  body.xray .legend {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .legend-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--sn-text-dim);
+    margin-bottom: 10px;
+  }
+
+  .legend-items {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--sn-text-muted);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* --- Category dividers --- */
+  .doc-category {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--sn-text-dim);
+    margin: 36px 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--sn-border);
+  }
+  .doc-category:first-child { margin-top: 0; }
+
+  /* --- Pending section placeholder --- */
+  .doc-body-pending {
+    font-size: 13px;
+    font-style: italic;
+    color: var(--sn-text-dim);
+    margin-bottom: 32px;
+  }
+
+  /* --- Transaction annotation --- */
+  .tx-annotation {
+    display: none;
+  }
+
+  body.xray .tx-annotation {
+    display: block;
+  }
+
+  /* --- Section notes (visible in X-ray mode) --- */
+  .annotation-note {
+    display: none;
+    font-size: 10px;
+    color: var(--sn-primary);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  body.xray .annotation-note {
+    display: block;
+  }
+</style>
+</head>
+<body data-theme="dark" data-entity-id="<<ENTITY_ID>>">
+
+<!-- Sticky top bar with navigation -->
+<div class="top-bar">
+  <div class="top-bar-nav">
+    <span style="font-size:12px;color:var(--sn-text-dim)">Overview</span>
+    <span class="nav-sep">›</span>
+    <span style="font-size:12px;color:var(--sn-text-dim)">Editor</span>
+    <span class="nav-sep">›</span>
+    <span style="font-size:12px;font-weight:600;color:var(--sn-text)">Report view</span>
+    <span class="nav-sep">›</span>
+    <span style="font-size:12px;color:var(--sn-text-dim)">Final PDF</span>
+  </div>
+  <div class="top-bar-actions">
+    <span style="font-size:11px;color:var(--sn-text-dim);margin-right:4px">Ask in the chat to switch views</span>
+    <button class="btn btn-ghost" id="xray-btn" onclick="toggleXray()">X-ray: sources</button>
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark mode">☀</button>
+  </div>
+</div>
+
+<!-- Document page -->
+<div class="page">
+
+  <!-- Title block -->
+  <div class="doc-title">Local File</div>
+  <div class="doc-subtitle">Transfer Pricing Documentation</div>
+  <div class="doc-meta"><<ENTITY_NAME>> · Fiscal Year <<FISCAL_YEAR>></div>
+
+  <!-- Legend (visible only in X-ray mode) -->
+  <div class="legend">
+    <div class="legend-title">Content Sources</div>
+    <div class="legend-items">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--sn-layer1)"></span> Universal (Supernomial)</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--sn-layer2)"></span> Firm Library</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--sn-layer3)"></span> Group-wide</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--sn-layer4)"></span> Entity-specific</div>
+      <div class="legend-item"><span class="legend-dot" style="background:linear-gradient(135deg,var(--sn-layer2),var(--sn-layer4));border:1px solid var(--sn-border)"></span> Composite (multiple layers)</div>
+    </div>
+  </div>
+
+  <<REPORT_SECTIONS>>
+
+  <!-- Footer -->
+  <div class="doc-footer">
+    <span>Confidential — Prepared using Supernomial Cowork</span>
+    <span>Page 1</span>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+function toggleTheme() {
+  var body = document.body;
+  var btn = document.getElementById('theme-btn');
+  var current = body.getAttribute('data-theme') || 'dark';
+  var next = current === 'dark' ? 'light' : 'dark';
+  body.setAttribute('data-theme', next);
+  btn.textContent = next === 'dark' ? '\u2600' : '\u263E';
+}
+
+function toggleXray() {
+  var body = document.body;
+  var btn = document.getElementById('xray-btn');
+  body.classList.toggle('xray');
+  if (body.classList.contains('xray')) {
+    btn.classList.add('active');
+    btn.textContent = 'X-ray: ON';
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = 'X-ray: sources';
+  }
+}
+
+// Navigation between views is handled by asking Claude in the chat.
+// Cowork renders each file in an isolated panel, so browser navigation is not supported.
+</script>
+
+</body>
+</html>

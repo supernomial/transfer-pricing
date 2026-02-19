@@ -1,0 +1,345 @@
+{
+  "schema_version": "0.3.0",
+  "group": {
+    "id": "acme-group",
+    "name": "Acme Group",
+    "currency": "USD",
+    "parent_entity": "acme-us",
+    "fiscal_year_end": "December 31",
+    "notes": [
+      "New engagement — first year with this client (previously serviced by EY)",
+      "Group CFO prefers conservative language and expects all numbers reconciled to statutory accounts"
+    ]
+  },
+  "entities": [
+    {
+      "id": "acme-nl",
+      "name": "Acme Netherlands B.V.",
+      "jurisdiction": "Netherlands",
+      "notes": [
+        "Entity restructured in 2022: previously held inventory, now commissionnaire arrangement"
+      ]
+    },
+    {
+      "id": "acme-ie",
+      "name": "Acme Manufacturing Ltd.",
+      "jurisdiction": "Ireland"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx-001",
+      "name": "Purchase of finished goods",
+      "transaction_type": "tangible-goods",
+      "tp_method": "tnmm",
+      "from_entity": "acme-ie",
+      "from_entity_profile": "full-fledged-manufacturer",
+      "to_entity": "acme-nl",
+      "to_entity_profile": "limited-risk-distributor",
+      "tested_party": "acme-nl",
+      "amount": 12400000,
+      "currency": "EUR",
+      "benchmark": "benchmark-a",
+      "indicator_value": 0.08,
+      "base_unit_amount": 10000000,
+      "contractual_terms": {
+        "responsibilities": "IE: Manufacturing, delivery, warranty support; NL: Inventory management, marketing, sales",
+        "rights_obligations": "IE: Payment receipt, product conformity; NL: Title on delivery, inventory risk, credit risk",
+        "terms": "DAP delivery; Net 60 payment; Annual volume commitment"
+      },
+      "characteristics": {
+        "physical_attributes": "Consumer electronics; industrial-grade components",
+        "quality": "ISO 9001 certified; rigorous testing protocols",
+        "volume": "High volume; annual commitment",
+        "reliability": "Established supply relationship; consistent delivery"
+      },
+      "economic_circumstances": {
+        "market_forces": "Mature Western European market; strong sustainability regulation",
+        "competitiveness": "High competition from EU manufacturers; price-sensitive buyers",
+        "product_business_cycle": "Growth phase; increasing demand for energy efficiency solutions",
+        "macroeconomic_trends": "Favorable EU green investment policies; stable EUR environment"
+      },
+      "far_variations": "Not applicable.",
+      "transaction_materiality": "Medium Risk",
+      "tp_method_robustness": "Medium Risk",
+      "benchmark_quality": "Low Risk",
+      "data_accuracy_reliability": "Low Risk",
+      "otp_implementation_complexity": "Medium Risk",
+      "notes": [
+        "Amount based on management accounts (March 2024), pending statutory audit",
+        "Prior year was EUR 11.2M — increase driven by Q3 product line launch"
+      ]
+    },
+    {
+      "id": "tx-002",
+      "name": "Management fee",
+      "transaction_type": "services",
+      "tp_method": "tnmm",
+      "from_entity": "acme-ie",
+      "from_entity_profile": "full-fledged-manufacturer",
+      "to_entity": "acme-nl",
+      "to_entity_profile": "limited-risk-distributor",
+      "tested_party": "acme-nl",
+      "amount": 350000,
+      "currency": "EUR",
+      "benchmark": "benchmark-a",
+      "indicator_value": 0.055,
+      "base_unit_amount": 100000,
+      "contractual_terms": {
+        "responsibilities": "IE: Strategic management, group coordination; NL: Local operations, compliance reporting",
+        "rights_obligations": "IE: Service delivery per SLA; NL: Timely payment, access to personnel",
+        "terms": "Annual fee; Net 30 payment; Renewed annually"
+      },
+      "characteristics": {
+        "physical_attributes": "N/A — management services",
+        "quality": "SLA-governed; quarterly performance review",
+        "volume": "Fixed annual fee; not volume-dependent",
+        "reliability": "Ongoing; renewed annually"
+      },
+      "economic_circumstances": {
+        "market_forces": "Internal group service; not market-driven",
+        "competitiveness": "No external competition — captive service",
+        "product_business_cycle": "Stable; ongoing operational support",
+        "macroeconomic_trends": "Neutral — cost allocation unaffected by macro conditions"
+      },
+      "far_variations": "Not applicable.",
+      "transaction_materiality": "Low Risk",
+      "tp_method_robustness": "Low Risk",
+      "benchmark_quality": "Low Risk",
+      "data_accuracy_reliability": "Low Risk",
+      "otp_implementation_complexity": "Medium Risk",
+      "notes": [
+        "Fee set at 2% of revenue, consistent with FY2023"
+      ]
+    },
+    {
+      "id": "tx-003",
+      "name": "Royalty payment",
+      "transaction_type": "intangibles",
+      "tp_method": "cup",
+      "from_entity": "acme-nl",
+      "from_entity_profile": "limited-risk-distributor",
+      "to_entity": "acme-ie",
+      "to_entity_profile": "ip-owner",
+      "tested_party": "acme-nl",
+      "amount": 780000,
+      "currency": "EUR",
+      "benchmark": "benchmark-b",
+      "indicator_value": 0.04,
+      "base_unit_amount": 1000000,
+      "contractual_terms": {
+        "responsibilities": "NL: Trademark usage in EU marketing; IE: Brand maintenance, IP registration",
+        "rights_obligations": "NL: Royalty payment per agreement; IE: Grant of non-exclusive license",
+        "terms": "4% of net sales; Quarterly payment; 5-year term with auto-renewal"
+      },
+      "characteristics": {
+        "form_of_transfer": "Licensing",
+        "type_of_intangible": "Trademark and trade name",
+        "legal_protection": "Registered in EU (EUIPO)",
+        "anticipated_benefits": "Brand recognition; premium pricing in EU market"
+      },
+      "economic_circumstances": {
+        "market_forces": "EU consumer electronics market; brand recognition important",
+        "competitiveness": "Competitive IP licensing landscape; comparable royalty rates available",
+        "product_business_cycle": "Mature product lines; stable demand",
+        "macroeconomic_trends": "Stable EUR; no significant IP valuation shifts in period"
+      },
+      "far_variations": "Not applicable.",
+      "transaction_materiality": "Medium Risk",
+      "tp_method_robustness": "High Risk",
+      "benchmark_quality": "Low Risk",
+      "data_accuracy_reliability": "Low Risk",
+      "otp_implementation_complexity": "Medium Risk"
+    },
+    {
+      "id": "tx-004",
+      "name": "Intercompany loan",
+      "transaction_type": "loan-arrangement",
+      "tp_method": "cup",
+      "from_entity": "acme-ie",
+      "from_entity_profile": "lender",
+      "to_entity": "acme-nl",
+      "to_entity_profile": "borrower",
+      "tested_party": "acme-nl",
+      "amount": 5000000,
+      "currency": "EUR",
+      "benchmark": "benchmark-c",
+      "indicator_value": 0.035,
+      "base_unit_amount": 5000000,
+      "contractual_terms": {
+        "type_of_funding": "Term loan",
+        "effective_date": "2024-01-15",
+        "principal_amount": 5000000,
+        "currency": "EUR",
+        "maturity": "2027-01-15",
+        "purpose": "Working capital",
+        "ranking": "Senior",
+        "security": "Unsecured",
+        "interest_type": "Fixed",
+        "rate_spread": "3.50%",
+        "base_rate": "n.a.",
+        "interest_frequency": "Quarterly",
+        "options": "Borrower prepayment right after year 1",
+        "guarantees": "n.a.",
+        "conversion": "Non-convertible",
+        "covenants": "Standard group financial covenants",
+        "fees": "0.25% arrangement fee"
+      },
+      "economic_circumstances": {
+        "currency_differences": "EUR-denominated; no cross-currency risk",
+        "regulatory_context": "Dutch thin-cap rules; EU Anti-Tax Avoidance Directive",
+        "time_of_transaction": "January 2024; ECB base rate 4.50%",
+        "macroeconomic_trends": "Rising interest rate environment; ECB tightening cycle"
+      },
+      "far_variations": "Not applicable.",
+      "transaction_materiality": "High Risk",
+      "tp_method_robustness": "High Risk",
+      "benchmark_quality": "Medium Risk",
+      "data_accuracy_reliability": "Low Risk",
+      "otp_implementation_complexity": "Low Risk",
+      "notes": [
+        "Replaces prior year revolving facility — converted to term loan in Jan 2024",
+        "Interest rate benchmarked against ECB refinancing rate + credit spread"
+      ]
+    }
+  ],
+  "fx_rates": [
+    {
+      "source_currency": "USD",
+      "target_currency": "EUR",
+      "rate": 0.92,
+      "fiscal_year": "2024"
+    }
+  ],
+  "benchmarks": [
+    {
+      "id": "benchmark-a",
+      "name": "EU Distributors TNMM",
+      "transactions": ["tx-001", "tx-002"],
+      "method": "tnmm",
+      "indicator_type": "markup",
+      "indicator_specifics": "NCPM",
+      "range_minimum": 0.02,
+      "range_lower_quartile": 0.05,
+      "range_median": 0.08,
+      "range_upper_quartile": 0.12,
+      "range_maximum": 0.18,
+      "num_comparables": 14,
+      "tables": [
+        {
+          "id": "allocation",
+          "label": "Allocation",
+          "columns": ["Total", "Segmented", "Base", "Profit", "PLI", "PLI Result"],
+          "rows": {
+            "tx-001": [15000000, 12400000, 10000000, 800000, "NCPM", 0.08],
+            "tx-002": [500000, 350000, 100000, 5500, "NCPM", 0.055]
+          }
+        },
+        {
+          "id": "search_strategy",
+          "label": "Search Strategy",
+          "columns": ["Database", "Region", "Industry", "Status", "Independence"],
+          "rows": {
+            "tx-001": ["Orbis", "Europe", "4651, 4652, 4669", "Active", "A+, A, A-"],
+            "tx-002": ["Orbis", "Europe", "4651, 4652, 4669", "Active", "A+, A, A-"]
+          }
+        },
+        {
+          "id": "search_results",
+          "label": "Search Results",
+          "columns": ["Potential Comparables", "Quant. Elimination", "Qual. Elimination", "Selected", "Details"],
+          "rows": {
+            "tx-001": [220, 100, 100, 14, "See appendices"],
+            "tx-002": [220, 100, 100, 14, "See appendices"]
+          }
+        },
+        {
+          "id": "adjustments",
+          "label": "Comparability Adjustments",
+          "columns": ["Adjustments", "Tested Party", "Minimum", "Lower Q", "Median", "Upper Q", "Maximum"],
+          "rows": {
+            "tx-001": ["Accounting, Capital", 0.08, 0.01, 0.03, 0.05, 0.09, 0.15],
+            "tx-002": ["Accounting, Capital", 0.055, 0.01, 0.03, 0.05, 0.09, 0.15]
+          }
+        }
+      ],
+      "notes": [
+        "Based on Bureau van Dijk search, European limited-risk distributors in consumer electronics"
+      ]
+    },
+    {
+      "id": "benchmark-b",
+      "name": "IP Royalties CUP",
+      "transactions": ["tx-003"],
+      "method": "cup",
+      "indicator_type": "price",
+      "indicator_specifics": "royalty rate",
+      "currency": "EUR",
+      "range_minimum": 0.02,
+      "range_lower_quartile": 0.03,
+      "range_median": 0.04,
+      "range_upper_quartile": 0.06,
+      "range_maximum": 0.08,
+      "num_comparables": 8,
+      "tables": [
+        {
+          "id": "comparable_agreements",
+          "label": "Comparable License Agreements",
+          "columns": ["Agreement", "Licensor Industry", "Licensee Region", "Royalty Rate", "License Type"],
+          "rows": {
+            "tx-003": ["See detailed table below — 8 agreements identified from RoyaltyStat database"]
+          }
+        },
+        {
+          "id": "adjustments",
+          "label": "Comparability Adjustments",
+          "columns": ["Adjustment Type", "Basis", "Impact"],
+          "rows": {
+            "tx-003": ["No adjustments applied", "Comparable agreements sufficiently similar", "N/A"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "benchmark-c",
+      "name": "Intercompany Loan Interest Rate",
+      "transactions": ["tx-004"],
+      "method": "cup",
+      "indicator_type": "price",
+      "indicator_specifics": "interest rate",
+      "currency": "EUR",
+      "range_minimum": 0.025,
+      "range_lower_quartile": 0.030,
+      "range_median": 0.035,
+      "range_upper_quartile": 0.045,
+      "range_maximum": 0.055,
+      "num_comparables": 6,
+      "tables": [
+        {
+          "id": "comparable_loans",
+          "label": "Comparable Loan Agreements",
+          "columns": ["Source", "Borrower Rating", "Tenor", "Currency", "Rate", "Type"],
+          "rows": {
+            "tx-004": ["See detailed table — 6 comparable loans from Bloomberg/LoanConnector"]
+          }
+        }
+      ],
+      "notes": [
+        "CUP analysis based on external loan data; credit rating estimated at BB+ equivalent"
+      ]
+    }
+  ],
+  "local_files": [
+    {
+      "id": "lf-acme-nl-2024",
+      "entity": "acme-nl",
+      "fiscal_year": "2024",
+      "status": "draft",
+      "covered_transactions": ["tx-001", "tx-002", "tx-003"],
+      "notes": [
+        "First year — no rollforward available",
+        "tx-004 (loan) involves acme-nl but is not covered — immaterial and covered in acme-ie local file"
+      ]
+    }
+  ]
+}

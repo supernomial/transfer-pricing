@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "supernomial-cowork": {
+      "url": "https://cowork.supernomial.co/api/mcp",
+      "description": "Supernomial Cowork — command discovery, skill catalog, content API",
+      "headers": {
+        "x-api-key": "${SUPERNOMIAL_API_KEY}"
+      }
+    }
+  }
+}

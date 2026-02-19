@@ -1,0 +1,271 @@
+/* ==========================================================================
+   Supernomial Design System — Plugin Brand Tokens
+   ==========================================================================
+   Single source of truth for all HTML previews rendered in Cowork.
+   Derived from Supernomial SaaS (globals.css + tailwind.config.ts).
+
+   The assembly script injects this file into each HTML template via the
+   <<BRAND_CSS>> placeholder. Templates reference these variables for all
+   colors, typography, spacing, and component styles.
+
+   To update the brand: edit ONLY this file. All previews follow.
+   ========================================================================== */
+
+/* --- Graphik font (base64-injected by assembly script) --- */
+<<FONT_FACES>>
+
+/* --- Dark theme (default — matches Cowork) --- */
+:root, [data-theme="dark"] {
+  /* Core palette */
+  --sn-bg:             #020612;
+  --sn-surface:        #0c1528;
+  --sn-surface-hover:  #1e293b;
+  --sn-border:         #1e293b;
+  --sn-border-accent:  rgba(10, 106, 252, 0.3);
+  --sn-border-focus:   #0a6afc;
+
+  /* Text */
+  --sn-text:           #fafafa;
+  --sn-text-muted:     #7d7d7d;
+  --sn-text-dim:       #4a5568;
+
+  /* Brand */
+  --sn-primary:        #0a6afc;
+  --sn-primary-hover:  #0858d1;
+  --sn-primary-dim:    rgba(10, 106, 252, 0.12);
+
+  /* Status */
+  --sn-success:        #22c55e;
+  --sn-success-dim:    rgba(34, 197, 94, 0.12);
+  --sn-warning:        #f59e0b;
+  --sn-warning-dim:    rgba(245, 158, 11, 0.12);
+  --sn-destructive:    #ef4444;
+  --sn-destructive-dim: rgba(239, 68, 68, 0.10);
+
+  /* X-ray layer colors */
+  --sn-layer1:         #3b82f6;   /* Universal (Supernomial) */
+  --sn-layer2:         #a855f7;   /* Firm Library */
+  --sn-layer3:         #f59e0b;   /* Group-wide */
+  --sn-layer4:         #22c55e;   /* Entity-specific */
+
+  /* Typography */
+  --sn-font:           'Graphik', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --sn-font-mono:      'SF Mono', 'Fira Code', 'Fira Mono', Menlo, monospace;
+  --sn-font-serif:     Georgia, 'Times New Roman', serif;
+
+  /* Spacing */
+  --sn-radius:         8px;
+  --sn-radius-sm:      4px;
+  --sn-radius-lg:      12px;
+
+  /* Derived: top-bar background (semi-transparent for blur) */
+  --sn-topbar-bg:      rgba(2, 6, 18, 0.92);
+}
+
+/* --- Light theme --- */
+[data-theme="light"] {
+  --sn-bg:             #fafbfd;
+  --sn-surface:        #ffffff;
+  --sn-surface-hover:  #f1f5f9;
+  --sn-border:         #e2e8f0;
+  --sn-border-accent:  rgba(10, 106, 252, 0.2);
+  --sn-border-focus:   #0a6afc;
+
+  --sn-text:           #0f172a;
+  --sn-text-muted:     #64748b;
+  --sn-text-dim:       #94a3b8;
+
+  --sn-primary:        #0a6afc;
+  --sn-primary-hover:  #0858d1;
+  --sn-primary-dim:    rgba(10, 106, 252, 0.08);
+
+  --sn-success:        #16a34a;
+  --sn-success-dim:    rgba(22, 163, 74, 0.10);
+  --sn-warning:        #d97706;
+  --sn-warning-dim:    rgba(217, 119, 6, 0.10);
+  --sn-destructive:    #dc2626;
+  --sn-destructive-dim: rgba(220, 38, 38, 0.08);
+
+  --sn-layer1:         #2563eb;
+  --sn-layer2:         #9333ea;
+  --sn-layer3:         #d97706;
+  --sn-layer4:         #16a34a;
+
+  --sn-topbar-bg:      rgba(250, 251, 253, 0.92);
+}
+
+/* ==========================================================================
+   Shared reset + base
+   ========================================================================== */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--sn-font);
+  background: var(--sn-bg);
+  color: var(--sn-text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   Shared components — top bar
+   ========================================================================== */
+
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 24px;
+  background: var(--sn-topbar-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--sn-border);
+}
+
+.top-bar-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-sep {
+  color: var(--sn-border);
+  font-size: 11px;
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   Shared components — buttons
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-family: var(--sn-font);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--sn-primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--sn-primary-hover);
+}
+
+.btn-success {
+  background: var(--sn-success);
+  color: #fff;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--sn-text-muted);
+  border: 1px solid var(--sn-border);
+}
+
+.btn-ghost:hover {
+  color: var(--sn-text);
+  border-color: var(--sn-text-dim);
+}
+
+.btn-ghost.active {
+  background: var(--sn-primary-dim);
+  color: var(--sn-primary);
+  border-color: var(--sn-primary);
+}
+
+/* --- Theme toggle --- */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  color: var(--sn-text-dim);
+  border: 1px solid var(--sn-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  color: var(--sn-text);
+  border-color: var(--sn-text-dim);
+}
+
+/* ==========================================================================
+   Shared components — badges
+   ========================================================================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 100px;
+  letter-spacing: 0.01em;
+}
+
+.badge-accent {
+  background: var(--sn-primary-dim);
+  color: var(--sn-primary);
+  border: 1px solid rgba(10, 106, 252, 0.2);
+}
+
+.badge-success {
+  background: var(--sn-success-dim);
+  color: var(--sn-success);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.badge-warning {
+  background: var(--sn-warning-dim);
+  color: var(--sn-warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* ==========================================================================
+   Shared components — footer
+   ========================================================================== */
+
+.footer, .doc-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sn-border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--sn-text-dim);
+}
+
+/* ==========================================================================
+   Shared — theme toggle JavaScript (injected by script)
+   ========================================================================== */
+/* The toggleTheme() function is added to each template's <script> block.
+   It toggles data-theme="dark" ↔ data-theme="light" on <body> and
+   updates the button icon (☀ ↔ ☾). */
