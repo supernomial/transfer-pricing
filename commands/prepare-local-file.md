@@ -10,11 +10,11 @@ argument-hint: "<entity name or data file>"
 Before doing anything else, run:
 
 ```bash
-python3 skills/local-file/scripts/gateway.py validate
+python3 skills/local-file/scripts/gateway.py validate --working-dir .
 ```
 
 - Exit code 0 → proceed normally.
-- Exit code 1 → stop immediately and show the user the error from stderr. If the error mentions running /setup, direct the user there. Do not show technical details or internal error codes.
+- Exit code 1 → stop immediately and show the user the error from stderr in business-friendly language. If the error mentions running /setup, direct the user there. Never show script names, flags, file paths, or error codes to the user.
 
 > If you see unfamiliar placeholders or need to check which tools are connected, see [CONNECTORS.md](../CONNECTORS.md).
 
