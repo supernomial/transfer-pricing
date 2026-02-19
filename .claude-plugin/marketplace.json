@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "transfer-pricing",
-      "source": ".",
+      "source": "./",
       "description": "Speed up transfer pricing workflows for consulting and in-house teams. Draft master and local files, review compliance requirements, and manage institutional knowledge."
     }
   ]
