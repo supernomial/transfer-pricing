@@ -14,7 +14,7 @@ python3 skills/local-file/scripts/gateway.py validate
 ```
 
 - Exit code 0 → proceed normally.
-- Exit code 1 → stop immediately and show the user the error printed to stderr. Do not proceed with any other steps.
+- Exit code 1 → stop immediately and show the user the error from stderr. If the error mentions running /setup, direct the user there. Do not show technical details or internal error codes.
 
 > If you see unfamiliar placeholders or need to check which tools are connected, see [CONNECTORS.md](../CONNECTORS.md).
 

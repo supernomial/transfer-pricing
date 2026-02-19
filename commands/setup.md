@@ -55,4 +55,4 @@ python3 skills/local-file/scripts/gateway.py validate
 ```
 
 - **Exit code 0**: Tell the user: "You're all set! Run `/prepare-local-file` to get started."
-- **Exit code 1**: Tell the user: "That key didn't work. Please check your key at [cowork.supernomial.co/settings](https://cowork.supernomial.co/settings) and try again."
+- **Exit code 1**: Show the error message from stderr to the user. Do not add technical details — the message is already user-friendly.

@@ -141,10 +141,8 @@ def validate(working_dir=None):
     api_key = get_api_key(working_dir)
     if not api_key:
         print(
-            "No Supernomial API key found.\n"
-            "Save your key to .supernomial/config.json in your working folder:\n"
-            '  { "api_key": "sk_..." }\n'
-            "Or set the SUPERNOMIAL_API_KEY environment variable.\n"
+            "No Supernomial subscription found.\n"
+            "Run /setup with your API key to get started.\n"
             "Get your key at cowork.supernomial.co/settings.",
             file=sys.stderr,
         )
@@ -161,14 +159,17 @@ def validate(working_dir=None):
     except urllib.error.HTTPError as e:
         if e.code == 401:
             print(
-                "Your Supernomial API key is invalid or your subscription is inactive.\n"
-                "Visit cowork.supernomial.co to check your account.",
+                "Your subscription key isn't valid or has expired.\n"
+                "Check your account at cowork.supernomial.co/settings.",
                 file=sys.stderr,
             )
+            return False
         else:
-            print(f"Validation error {e.code}: {e.reason}", file=sys.stderr)
+            print("Offline mode — subscription will be verified when online features are used.", file=sys.stderr)
+            return True
     except urllib.error.URLError as e:
-        print(f"Could not reach cowork.supernomial.co: {e.reason}", file=sys.stderr)
+        print("Offline mode — subscription will be verified when online features are used.", file=sys.stderr)
+        return True
 
     return False
 
