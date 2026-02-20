@@ -67,7 +67,7 @@ Listen for institutional knowledge in every user message. When the user shares s
 
 **Classification tree:**
 ```
-User says something → Is it personal (about THEM, not work)?
+User says something → Is it about the user's OWN preferences, style, or personal situation?
   ├─ YES → .supernomial/me.json (working_style, communication, life, context)
   └─ NO → Is it a factual detail about a SPECIFIC record in data.json (e.g., a transaction amount caveat, an entity-specific flag)?
       ├─ YES → data.json notes array on that object
