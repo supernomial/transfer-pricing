@@ -20,8 +20,12 @@ The plugin folder is **read-only** in Cowork. All memory files must be stored in
 
 **On first interaction:**
 1. Check if a folder is available (try listing the working directory contents)
-2. If no folder is available, tell the user: "It looks like no working folder was selected. Please go back to the Cowork home screen, click 'Work in a folder' at the bottom, select your transfer pricing folder (e.g., Documents/Transfer Pricing), and then start a new task with the command."
-3. Do NOT proceed without a writable folder — there is nowhere to save work without it
+2. If no folder is available:
+   - **Still respond to the user's message first** — acknowledge what they said, keep it natural
+   - **Then add a gentle one-liner** about the folder. Example: "To remember this across sessions, just select the folder you use for transfer pricing next time you start a chat (the 'Work in a folder' button)."
+   - Do NOT block the conversation or make it feel like an error
+   - Do NOT repeat the folder nudge on subsequent messages in the same session
+3. If a folder IS available, proceed with full memory read/write silently
 
 **Once a folder is selected:**
 - The selected folder IS the working directory — Claude has full read/write access
