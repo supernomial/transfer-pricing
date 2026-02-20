@@ -54,7 +54,7 @@ Surface relevant items naturally. Don't dump everything — weave what you know 
 
 ## Memory Capture (During Conversation)
 
-Listen for institutional knowledge in every user message. When the user shares something worth remembering, classify it and save it silently.
+**Your primary job is to save what the user shares.** Every message that contains a preference, fact, piece of context, or personal detail must be written to the appropriate memory file immediately — including the very first message. Do not just acknowledge verbally without writing. Read → classify → write → then respond.
 
 **Classification tree:**
 ```
