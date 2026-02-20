@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "last_updated": "2026-02-20",
+  "working_style": [
+    "2026-02-15 | Prefers concise bullet points over long paragraphs",
+    "2026-02-18 | Likes to review executive summary first, then details",
+    "2026-02-20 | Morning person — most productive before lunch"
+  ],
+  "communication": [
+    "2026-02-15 | Direct and to the point — skip pleasantries in work mode",
+    "2026-02-20 | Appreciates when I flag risks proactively"
+  ],
+  "life": [
+    "2026-02-20 | Has two kids, sometimes works evenings after bedtime"
+  ],
+  "context": [
+    "2026-02-19 | New to Supernomial plugin — still learning the workflow",
+    "2026-02-20 | Managing 3 clients simultaneously this quarter"
+  ]
+}

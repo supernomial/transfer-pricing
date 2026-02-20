@@ -95,7 +95,15 @@ Check the working directory for existing groups:
 
 #### 2d. Scan what exists in the working directory
 
-Look in the working directory for this group and report findings:
+**First, load memory files** (if they exist) to personalize the session and skip redundant questions:
+
+- **Personal preferences** (`.supernomial/me.json`): Read this file in the working directory root. Adapt tone, approach, and defaults based on the user's personal preferences (e.g., preferred TP method terminology, communication style, default currency).
+- **Group/client memory** (`[Group]/Records/memory.json`): Surface relevant client context — audit status, upcoming deadlines, key contacts, domain knowledge, prior decisions. Use this to enrich the welcome: "Welcome back — I remember [relevant context from memory]."
+- **Firm conventions** (`_library/memory.json`): Apply firm-wide conventions — naming standards, preferred methods, house style notes, recurring instructions.
+
+Use memory to **skip questions already answered** in prior sessions. For example, if memory records "OECD 2022 guidelines" as the applicable framework, do not ask which version. If memory notes the partner's preferences, apply them without re-asking.
+
+**Then scan the working directory** for this group and report findings:
 - **Records** (`Records/data.json`): How many entities, how many transactions, what data is available
 - **Notes on objects**: If `data.json` has `notes` arrays on group, entities, or transactions, surface them: "I see some notes from last time — [summary of relevant notes]"
 - **Session log** (`Records/session-log.json`): If it exists, read the most recent entry and use it to:
@@ -379,7 +387,7 @@ After the script completes, **present the output file to the user** — do NOT r
 
 ### Step 6: Deliver, Save Session, and Next Steps
 
-**6a. Save session log:**
+**6a. Save session log and consolidate memory:**
 
 Before presenting next steps, append a session entry to `[Group Name]/Records/session-log.json`. If the file doesn't exist, create it as an array with one entry. If it exists, append to the array.
 
@@ -395,6 +403,15 @@ Before presenting next steps, append a session entry to `[Group Name]/Records/se
 ```
 
 Keep entries concise — this is a professional engagement log, not a conversation transcript. If no decisions were made or nothing is pending, use empty arrays.
+
+**Then consolidate memory files.** After writing the session log, review and clean up each memory file that was read or updated during the session:
+- Merge duplicate entries (same fact captured in different words)
+- Remove outdated deadlines (more than 3 months past)
+- Cap each category at roughly 15 entries — keep the most relevant, drop the least useful
+- Remove lifecycle entries older than 30 days unless marked as permanent
+- Write the cleaned memory back to the same file
+
+**Continuous logging:** Do NOT wait until the end of the session to update the session log. Throughout the conversation, append to the session log after any data change, file generation, or important decision. Users close chats randomly — if the session ends unexpectedly, the log should still reflect what happened up to that point.
 
 **6b. Present to user:**
 
@@ -467,3 +484,4 @@ The editor has a **"Send updates"** button. When the user clicks it, only the **
 - **Notes are additive** — update or add notes during a session, but never delete them without the user's explicit request
 - **Session log is append-only** — never modify past entries, only add new ones
 - **Notes travel with data** — if records are shared or copied to another system, context follows automatically
+- **Memory files persist across sessions** — personal, group, and firm context is automatically captured and used for continuity

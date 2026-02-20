@@ -35,6 +35,21 @@ Accept the local file in any of these formats:
 
 If no file is provided, prompt the user to supply one.
 
+### Step 1b: Load Context
+
+Before beginning the review, silently load available context:
+
+**Memory:**
+1. Read `.supernomial/me.json` if it exists — adapt tone and detail level to the user's preferences
+2. If the entity's group folder is known, read `[Group]/Records/memory.json` — use client context (audit status, deadlines, preferences) to inform the review focus
+3. Read `_library/memory.json` if it exists — apply firm methodology and conventions to the review criteria
+
+**Style guide:**
+4. Read `skills/local-file/references/style-guide.md` — apply conversation tone (Part 1)
+5. Check `_library/style-guide.md` — if found, use for report writing style (overrides Part 2)
+
+Use memory to skip questions in Step 2 that are already known (e.g., if memory has the entity and fiscal year, don't re-ask).
+
 ### Step 2: Gather Context
 
 Ask the user for context before beginning the review:

@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "last_updated": "2026-02-20",
+  "style": [
+    "2026-02-15 | Formal tone — no contractions in deliverables",
+    "2026-02-18 | Section headers in title case, not sentence case",
+    "2026-02-20 | Amounts always in thousands with one decimal"
+  ],
+  "methodology": [
+    "2026-02-15 | Default to TNMM unless CUP clearly available",
+    "2026-02-18 | Always include five comparability factors in method justification",
+    "2026-02-20 | Use interquartile range, not full range"
+  ],
+  "conventions": [
+    "2026-02-15 | Entity names in full on first use, abbreviated after",
+    "2026-02-18 | Fiscal year as FY2024, not FY24 or 2024"
+  ],
+  "workflows": [
+    "2026-02-20 | Start every local file from prior year rollforward when available"
+  ]
+}

@@ -26,4 +26,11 @@ View and list generated transfer pricing local files and documentation from the 
 
 ## Workflow
 
+### Step 1b: Load Context
+
+Before presenting data, silently load available memory:
+1. Read `.supernomial/me.json` if it exists — adapt presentation to user preferences
+2. If a group is identified, read `[Group]/Records/memory.json` — enrich data view with client context
+3. Read `_library/memory.json` if it exists — apply firm conventions
+
 (To be implemented)
