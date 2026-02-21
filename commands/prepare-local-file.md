@@ -10,7 +10,7 @@ argument-hint: "<entity name or data file>"
 Before doing anything else, run:
 
 ```bash
-python3 skills/local-file/scripts/gateway.py validate --working-dir .
+python3 auth/gateway.py validate --working-dir .
 ```
 
 - Exit code 0 → proceed normally.

@@ -16,22 +16,16 @@ Speed up transfer pricing workflows for consulting and in-house teams. Draft mas
    ```
    https://raw.githubusercontent.com/supernomial/transfer-pricing/main/.claude-plugin/marketplace.json
    ```
-3. Save your API key from [cowork.supernomial.co/settings](https://cowork.supernomial.co/settings) to your working folder:
-   ```
-   your-folder/.supernomial/config.json
-   ```
-   ```json
-   { "api_key": "sk_..." }
-   ```
+3. Select your working folder, then run `/setup` with your API key from [cowork.supernomial.co/settings](https://cowork.supernomial.co/settings)
 
 ## Commands
 
 | Command | Description |
 |---|---|
+| `/setup` | Connect your Supernomial API key |
 | `/prepare-local-file` | Full workflow: intake → data → blueprint → HTML previews → PDF |
 | `/review-local-file` | Review an existing local file against OECD guidelines |
-| `/view-data` | Explore structured entity and transaction records |
-| `/view-file` | Browse generated deliverables |
+| `/remember` | Save a preference or piece of context that persists across sessions |
 
 ## License
 

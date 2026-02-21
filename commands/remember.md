@@ -10,7 +10,7 @@ argument-hint: "<what to remember>"
 Before doing anything else, run:
 
 ```bash
-python3 skills/local-file/scripts/gateway.py validate
+python3 auth/gateway.py validate
 ```
 
 - Exit code 0 → proceed normally.
