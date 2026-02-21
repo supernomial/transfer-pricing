@@ -15,28 +15,29 @@ If the user asks for an example, demo, or says something like "show me how it wo
 
 1. **Skip validation** — no API key needed for examples
 2. **Skip intake** — use the built-in sample data directly
-3. **Generate a blueprint** from sample data:
+3. **Resolve the output folder.** Use the user's selected working folder. Create an `_examples/` subfolder inside it for output. Example: if the working folder is `/Users/jane/Transfer Pricing/`, output goes to `/Users/jane/Transfer Pricing/_examples/`. Only fall back to `/tmp/` if absolutely no working folder is available.
+4. **Generate a blueprint** from sample data:
 
 ```bash
 python3 skills/local-file/scripts/generate_blueprint.py \
   --example \
-  --output "[working-folder-or-tmp]/example-blueprint.json"
+  --output "[selected-folder]/_examples/example-blueprint.json"
 ```
 
 This picks a representative entity (Solara Distribution S.A.S., France) with 3 transactions covering tangible goods, services, and intangibles.
 
-4. **Generate all 4 views** using the sample data and generated blueprint. Run each in sequence:
+5. **Generate all 4 views** using the sample data and generated blueprint. Run each in sequence, always outputting to the working folder so Cowork can render them in the side panel:
 
 **Overview (Dashboard):**
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
   --data "data/examples/sample-group.json" \
-  --blueprint "[path-to-example-blueprint]" \
+  --blueprint "[selected-folder]/_examples/example-blueprint.json" \
   --references "skills/local-file/references/" \
-  --library "[working-folder]/_library/" \
+  --library "[selected-folder]/_library/" \
   --template "skills/local-file/assets/section_dashboard.html" \
   --brand "assets/brand.css" \
-  --output "[working-folder-or-tmp]/" \
+  --output "[selected-folder]/_examples/" \
   --format html
 ```
 
@@ -44,12 +45,12 @@ python3 skills/local-file/scripts/assemble_local_file.py \
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
   --data "data/examples/sample-group.json" \
-  --blueprint "[path-to-example-blueprint]" \
+  --blueprint "[selected-folder]/_examples/example-blueprint.json" \
   --references "skills/local-file/references/" \
-  --library "[working-folder]/_library/" \
+  --library "[selected-folder]/_library/" \
   --template "skills/local-file/assets/intake_preview.html" \
   --brand "assets/brand.css" \
-  --output "[working-folder-or-tmp]/" \
+  --output "[selected-folder]/_examples/" \
   --format html
 ```
 
@@ -57,12 +58,12 @@ python3 skills/local-file/scripts/assemble_local_file.py \
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
   --data "data/examples/sample-group.json" \
-  --blueprint "[path-to-example-blueprint]" \
+  --blueprint "[selected-folder]/_examples/example-blueprint.json" \
   --references "skills/local-file/references/" \
-  --library "[working-folder]/_library/" \
+  --library "[selected-folder]/_library/" \
   --template "skills/local-file/assets/report_view.html" \
   --brand "assets/brand.css" \
-  --output "[working-folder-or-tmp]/" \
+  --output "[selected-folder]/_examples/" \
   --format report
 ```
 
@@ -70,24 +71,24 @@ python3 skills/local-file/scripts/assemble_local_file.py \
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
   --data "data/examples/sample-group.json" \
-  --blueprint "[path-to-example-blueprint]" \
+  --blueprint "[selected-folder]/_examples/example-blueprint.json" \
   --references "skills/local-file/references/" \
-  --library "[working-folder]/_library/" \
+  --library "[selected-folder]/_library/" \
   --template "skills/local-file/assets/local_file.tex" \
-  --output "[working-folder-or-tmp]/" \
+  --output "[selected-folder]/_examples/" \
   --format pdf
 ```
 
-5. **Present each view** to the user with a brief explanation in business language:
+6. **Present each view** to the user with a brief explanation in business language. Present each file individually so it renders in the Cowork side panel — do NOT bundle them into a single message with markdown links:
 
    - **Overview**: "Here's the section dashboard — it shows all the sections that make up a local file, organized by category. Each section has a status badge showing whether it's complete, pending, or auto-generated from your data."
    - **Editor**: "This is the editor view — where you'd work on each section. You can see entity details, transaction data, and content sections organized by category."
    - **Report view**: "This is the report view — a document-style preview. Toggle X-ray mode to see where each piece of content comes from (universal standards, your firm library, group-level content, or entity-specific text)."
    - **PDF**: "And here's the final PDF — this is what you'd submit to tax authorities. Table of contents, proper formatting, all sections in OECD-compliant order."
 
-6. **Wrap up** with: "That's the full pipeline. When you're ready to prepare a real local file, just say /prep-local-file with your entity name and we'll get started."
+7. **Wrap up** with: "That's the full pipeline. When you're ready to prepare a real local file, just say /prep-local-file with your entity name and we'll get started."
 
-**Important:** In example mode, if no working folder is selected, use `/tmp/` as output. Never tell the user about file paths — just present the generated files.
+**Important:** Always output to the user's selected working folder (`[selected-folder]/_examples/`) so files render in the Cowork side panel. Never output to `/tmp/` — Cowork cannot display files outside the working folder. Never tell the user about file paths — just present the generated files.
 
 ---
 
