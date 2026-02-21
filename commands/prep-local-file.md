@@ -3,7 +3,93 @@ description: Prepare a complete OECD-compliant transfer pricing local file — f
 argument-hint: "<entity name or data file>"
 ---
 
-# /prepare-local-file -- Prepare Transfer Pricing Local File
+# /prep-local-file -- Prepare Transfer Pricing Local File
+
+## Example Mode
+
+If the user asks for an example, demo, or says something like "show me how it works" or "give me an example", skip the full workflow and run the example pipeline instead.
+
+**Trigger phrases:** "example", "demo", "show me", "try it out", "sample", "test run"
+
+**Example mode workflow:**
+
+1. **Skip validation** — no API key needed for examples
+2. **Skip intake** — use the built-in sample data directly
+3. **Generate a blueprint** from sample data:
+
+```bash
+python3 skills/local-file/scripts/generate_blueprint.py \
+  --example \
+  --output "[working-folder-or-tmp]/example-blueprint.json"
+```
+
+This picks a representative entity (Solara Distribution S.A.S., France) with 3 transactions covering tangible goods, services, and intangibles.
+
+4. **Generate all 4 views** using the sample data and generated blueprint. Run each in sequence:
+
+**Overview (Dashboard):**
+```bash
+python3 skills/local-file/scripts/assemble_local_file.py \
+  --data "data/examples/sample-group.json" \
+  --blueprint "[path-to-example-blueprint]" \
+  --references "skills/local-file/references/" \
+  --library "[working-folder]/_library/" \
+  --template "skills/local-file/assets/section_dashboard.html" \
+  --brand "assets/brand.css" \
+  --output "[working-folder-or-tmp]/" \
+  --format html
+```
+
+**Editor:**
+```bash
+python3 skills/local-file/scripts/assemble_local_file.py \
+  --data "data/examples/sample-group.json" \
+  --blueprint "[path-to-example-blueprint]" \
+  --references "skills/local-file/references/" \
+  --library "[working-folder]/_library/" \
+  --template "skills/local-file/assets/intake_preview.html" \
+  --brand "assets/brand.css" \
+  --output "[working-folder-or-tmp]/" \
+  --format html
+```
+
+**Report View (X-ray):**
+```bash
+python3 skills/local-file/scripts/assemble_local_file.py \
+  --data "data/examples/sample-group.json" \
+  --blueprint "[path-to-example-blueprint]" \
+  --references "skills/local-file/references/" \
+  --library "[working-folder]/_library/" \
+  --template "skills/local-file/assets/report_view.html" \
+  --brand "assets/brand.css" \
+  --output "[working-folder-or-tmp]/" \
+  --format report
+```
+
+**Final PDF:**
+```bash
+python3 skills/local-file/scripts/assemble_local_file.py \
+  --data "data/examples/sample-group.json" \
+  --blueprint "[path-to-example-blueprint]" \
+  --references "skills/local-file/references/" \
+  --library "[working-folder]/_library/" \
+  --template "skills/local-file/assets/local_file.tex" \
+  --output "[working-folder-or-tmp]/" \
+  --format pdf
+```
+
+5. **Present each view** to the user with a brief explanation in business language:
+
+   - **Overview**: "Here's the section dashboard — it shows all the sections that make up a local file, organized by category. Each section has a status badge showing whether it's complete, pending, or auto-generated from your data."
+   - **Editor**: "This is the editor view — where you'd work on each section. You can see entity details, transaction data, and content sections organized by category."
+   - **Report view**: "This is the report view — a document-style preview. Toggle X-ray mode to see where each piece of content comes from (universal standards, your firm library, group-level content, or entity-specific text)."
+   - **PDF**: "And here's the final PDF — this is what you'd submit to tax authorities. Table of contents, proper formatting, all sections in OECD-compliant order."
+
+6. **Wrap up** with: "That's the full pipeline. When you're ready to prepare a real local file, just say /prep-local-file with your entity name and we'll get started."
+
+**Important:** In example mode, if no working folder is selected, use `/tmp/` as output. Never tell the user about file paths — just present the generated files.
+
+---
 
 ## Step 0: Validate subscription
 
@@ -25,7 +111,7 @@ Prepare a complete transfer pricing local file for a specific entity. This comma
 ## Invocation
 
 ```
-/prepare-local-file <entity name or data file>
+/prep-local-file <entity name or data file>
 ```
 
 ## Modes
@@ -53,7 +139,7 @@ Not applicable - this command operates in a single mode.
 Check that the user has a folder selected. Try listing the contents of the working directory.
 
 - **Folder available**: Proceed. The selected folder is the working directory — all client data, records, and deliverables go here.
-- **No folder available**: Stop and tell the user: "It looks like no working folder was selected. Please go back to the Cowork home screen, click **'Work in a folder'** at the bottom of the input box, select your transfer pricing folder (e.g., Documents/Transfer Pricing), and then start a new task with /prepare-local-file."
+- **No folder available**: Stop and tell the user: "It looks like no working folder was selected. Please go back to the Cowork home screen, click **'Work in a folder'** at the bottom of the input box, select your transfer pricing folder (e.g., Documents/Transfer Pricing), and then start a new task with /prep-local-file."
 
 **Important:** The folder must be selected on the Cowork home screen BEFORE starting a task. Once a command is running, the folder picker is no longer accessible. Do NOT proceed without a writable folder. Do NOT write anything to the plugin folder — it is read-only.
 
@@ -394,7 +480,7 @@ Before presenting next steps, append a session entry to `[Group Name]/Records/se
 ```json
 {
   "date": "[today's date, ISO format]",
-  "command": "prepare-local-file",
+  "command": "prep-local-file",
   "entity": "[entity-id]",
   "summary": "[1-2 sentence overview of what was accomplished]",
   "decisions": ["[key decision 1]", "[key decision 2]"],

@@ -194,7 +194,7 @@ Check that the user has a folder selected. If not, ask them to select one before
 
 ### Step 2: Intake
 
-Before doing any work, gather context like an associate receiving instructions. The detailed intake flow is defined in `commands/prepare-local-file.md` (Step 2). In summary:
+Before doing any work, gather context like an associate receiving instructions. The detailed intake flow is defined in `commands/prep-local-file.md` (Step 2). In summary:
 1. Parse what the user already provided (entity, year, uploaded files, text)
 2. Identify group, year, entity — only ask for what's missing
 3. Scan the client folder for existing records, prior year deliverables, source documents
@@ -210,7 +210,7 @@ Create or update `data.json` in the client's `Records/` folder with structured d
 
 **Capture notes:** When the user shares context, reasoning, or flags pending items during data entry, save them as `notes` arrays on the relevant objects. Notes persist across sessions — they're both AI memory and professional documentation.
 
-**Functional profiles:** For each transaction, collect the entity's functional profile content (4 blocks: Overview, Functions, Assets, Risks). Read the relevant reference checklist from `references/functional-profiles/[slug].md` and present all sub-topics as bullet points in one prompt. Draft paragraphs proactively and ask the user to review — don't ask for each sub-topic individually. Store content in `_library/functional-profiles/` (firm-reusable), `@group/functional-profiles/` (group-specific), or as plain text in the blueprint (entity-specific). See `commands/prepare-local-file.md` Step 3b for the full approach.
+**Functional profiles:** For each transaction, collect the entity's functional profile content (4 blocks: Overview, Functions, Assets, Risks). Read the relevant reference checklist from `references/functional-profiles/[slug].md` and present all sub-topics as bullet points in one prompt. Draft paragraphs proactively and ask the user to review — don't ask for each sub-topic individually. Store content in `_library/functional-profiles/` (firm-reusable), `@group/functional-profiles/` (group-specific), or as plain text in the blueprint (entity-specific). See `commands/prep-local-file.md` Step 3b for the full approach.
 
 **File location:** `[selected-folder]/[Group Name]/Records/data.json`
 
@@ -313,7 +313,7 @@ The Overview dashboard is the starting point. Users see all sections at a glance
 
 ## Interactive Editor (Edit data)
 
-The editor (`--format html`) has **editable fields**. Users can edit section text and transaction data directly in the Cowork side panel, then click **"Send updates"** to copy only the **changed fields** to their clipboard. If they paste it in the chat, it includes a `_summary` array with human-readable change descriptions and only the modified data. Parse it and update accordingly. See `commands/prepare-local-file.md` for the full handling flow.
+The editor (`--format html`) has **editable fields**. Users can edit section text and transaction data directly in the Cowork side panel, then click **"Send updates"** to copy only the **changed fields** to their clipboard. If they paste it in the chat, it includes a `_summary` array with human-readable change descriptions and only the modified data. Parse it and update accordingly. See `commands/prep-local-file.md` for the full handling flow.
 
 The pasted data always has `"_source": "preview_edit"` — use this to detect edits vs. regular messages.
 

@@ -1,7 +1,7 @@
 [
   {
     "date": "2024-03-15",
-    "command": "prepare-local-file",
+    "command": "prep-local-file",
     "entity": "acme-nl",
     "summary": "Initial setup for FY2024 local file. Uploaded prior year file and financial statements. Selected TNMM for goods purchases based on limited-risk distributor profile.",
     "decisions": [

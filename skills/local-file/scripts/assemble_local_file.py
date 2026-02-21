@@ -388,6 +388,612 @@ def slugify(text):
 
 
 # ---------------------------------------------------------------------------
+# LaTeX report body builder
+# ---------------------------------------------------------------------------
+
+def render_generic_table_latex(table_obj, transactions):
+    """Render a benchmark table object as a LaTeX tabularx table.
+
+    Each table_obj has:
+        columns: list of header strings
+        rows: dict keyed by transaction ID, values are arrays
+        label: optional table label
+    """
+    columns = table_obj.get('columns', [])
+    rows = table_obj.get('rows', {})
+    label = table_obj.get('label', '')
+
+    if not columns or not rows:
+        return ''
+
+    ncols = len(columns)
+    col_spec = 'l' + 'X' * (ncols - 1) if ncols > 1 else 'X'
+    parts = []
+    parts.append(f'\\begin{{tabularx}}{{\\textwidth}}{{{col_spec}}}')
+    parts.append('\\toprule')
+    header = ' & '.join(escape_latex(c) for c in columns) + ' \\\\'
+    parts.append(header)
+    parts.append('\\midrule')
+
+    for tx_id, row_values in rows.items():
+        cells = []
+        for val in row_values:
+            if isinstance(val, (int, float)):
+                cells.append(format_amount(val) if isinstance(val, int) and val > 999 else str(val))
+            else:
+                cells.append(escape_latex(str(val)))
+        parts.append(' & '.join(cells) + ' \\\\')
+
+    parts.append('\\bottomrule')
+    parts.append('\\end{tabularx}')
+
+    return '\n'.join(parts)
+
+
+def build_auto_table_latex(key, data, entity_id, transactions, blueprint):
+    """Generate LaTeX table content for auto-type sections.
+
+    Returns a LaTeX string for the specified auto section key.
+    """
+
+    # --- Preamble: transactions overview ---
+    if key == 'preamble_transactions_overview':
+        covered_ids = []
+        for lf in data.get('local_files', []):
+            if lf.get('entity') == entity_id:
+                covered_ids = lf.get('covered_transactions', [])
+                break
+        covered_txs = [tx for tx in data.get('transactions', []) if tx['id'] in covered_ids]
+        if not covered_txs:
+            covered_txs = transactions
+
+        parts = []
+        parts.append('\\begin{tabularx}{\\textwidth}{XllXr}')
+        parts.append('\\toprule')
+        parts.append('Description & From & To & Currency & Amount \\\\')
+        parts.append('\\midrule')
+        for tx in covered_txs:
+            desc = escape_latex(tx.get('name', ''))
+            from_name = tx.get('from_entity', '')
+            to_name = tx.get('to_entity', '')
+            for e in data.get('entities', []):
+                if e['id'] == tx.get('from_entity'):
+                    from_name = e.get('name', from_name)
+                if e['id'] == tx.get('to_entity'):
+                    to_name = e.get('name', to_name)
+            currency = escape_latex(tx.get('currency', ''))
+            amount = format_amount(tx.get('amount', 0))
+            parts.append(f'{desc} & {escape_latex(from_name)} & {escape_latex(to_name)} & {currency} & {amount} \\\\')
+        parts.append('\\bottomrule')
+        parts.append('\\end{tabularx}')
+        return '\n'.join(parts)
+
+    # --- Transaction-level auto tables ---
+    tx_match = re.match(r'^tx_(\d+)_(.+)$', key)
+    if tx_match:
+        tx_num = tx_match.group(1)
+        sub_key = tx_match.group(2)
+        tx_id_hyphen = f'tx-{tx_num}'
+        tx = None
+        for t in data.get('transactions', []):
+            if t['id'] == tx_id_hyphen:
+                tx = t
+                break
+        if not tx:
+            return f'% Transaction {tx_id_hyphen} not found'
+
+        tx_type = tx.get('transaction_type', '')
+        is_financial = tx_type in FINANCIAL_TYPES
+
+        if sub_key == 'contractual_terms':
+            ct = tx.get('contractual_terms', {})
+            if not ct:
+                return ''
+            if is_financial:
+                # Transposed table: each row is a property, columns are the terms
+                term_keys = list(ct.keys())
+                parts = []
+                ncols = len(term_keys)
+                col_spec = 'X' * ncols if ncols > 0 else 'X'
+                parts.append(f'\\begin{{tabularx}}{{\\textwidth}}{{{col_spec}}}')
+                parts.append('\\toprule')
+                parts.append(' & '.join(escape_latex(k.replace('_', ' ').title()) for k in term_keys) + ' \\\\')
+                parts.append('\\midrule')
+                parts.append(' & '.join(escape_latex(str(ct[k])) for k in term_keys) + ' \\\\')
+                parts.append('\\bottomrule')
+                parts.append('\\end{tabularx}')
+                return '\n'.join(parts)
+            else:
+                # Standard table: key-value rows
+                parts = []
+                parts.append('\\begin{tabularx}{\\textwidth}{lX}')
+                parts.append('\\toprule')
+                parts.append('Term & Detail \\\\')
+                parts.append('\\midrule')
+                for k, v in ct.items():
+                    parts.append(f'{escape_latex(k.replace("_", " ").title())} & {escape_latex(str(v))} \\\\')
+                parts.append('\\bottomrule')
+                parts.append('\\end{tabularx}')
+                return '\n'.join(parts)
+
+        if sub_key == 'characteristics':
+            if is_financial:
+                return ''
+            chars = tx.get('characteristics', {})
+            if not chars:
+                return ''
+            parts = []
+            parts.append('\\begin{tabularx}{\\textwidth}{lX}')
+            parts.append('\\toprule')
+            parts.append('Characteristic & Description \\\\')
+            parts.append('\\midrule')
+            for k, v in chars.items():
+                parts.append(f'{escape_latex(k.replace("_", " ").title())} & {escape_latex(str(v))} \\\\')
+            parts.append('\\bottomrule')
+            parts.append('\\end{tabularx}')
+            return '\n'.join(parts)
+
+        if sub_key == 'economic_circumstances':
+            ec = tx.get('economic_circumstances', {})
+            if not ec:
+                return ''
+            parts = []
+            parts.append('\\begin{tabularx}{\\textwidth}{lX}')
+            parts.append('\\toprule')
+            parts.append('Factor & Analysis \\\\')
+            parts.append('\\midrule')
+            for k, v in ec.items():
+                parts.append(f'{escape_latex(k.replace("_", " ").title())} & {escape_latex(str(v))} \\\\')
+            parts.append('\\bottomrule')
+            parts.append('\\end{tabularx}')
+            return '\n'.join(parts)
+
+    # --- Benchmark auto tables ---
+    bm_match = re.match(r'^bm_(.+?)_(allocation|search_strategy|search_results|adjustments)$', key)
+    if bm_match:
+        bm_slug = bm_match.group(1)
+        table_id = bm_match.group(2)
+        bm_id_hyphen = bm_slug.replace('_', '-')
+        bm = None
+        for b in data.get('benchmarks', []):
+            if b['id'] == bm_id_hyphen:
+                bm = b
+                break
+        if not bm:
+            return f'% Benchmark {bm_id_hyphen} not found'
+        for table_obj in bm.get('tables', []):
+            if table_obj.get('id') == table_id:
+                return render_generic_table_latex(table_obj, transactions)
+        return f'% Table {table_id} not found in benchmark {bm_id_hyphen}'
+
+    # --- Transactions not covered ---
+    if key == 'transactions_not_covered':
+        covered_ids = set()
+        for lf in data.get('local_files', []):
+            if lf.get('entity') == entity_id:
+                covered_ids = set(lf.get('covered_transactions', []))
+                break
+        if not covered_ids:
+            covered_ids = {tx['id'] for tx in transactions}
+
+        all_entity_txs = get_entity_transactions(data, entity_id)
+        not_covered = [tx for tx in all_entity_txs if tx['id'] not in covered_ids]
+
+        if not not_covered:
+            return 'No additional intercompany transactions were identified for the tested entity that are not covered in this documentation.'
+
+        parts = []
+        parts.append('\\begin{tabularx}{\\textwidth}{Xllr}')
+        parts.append('\\toprule')
+        parts.append('Transaction & Counterparty & Type & Amount \\\\')
+        parts.append('\\midrule')
+        for tx in not_covered:
+            name = escape_latex(tx.get('name', ''))
+            cp_id = tx.get('to_entity') if tx.get('from_entity') == entity_id else tx.get('from_entity')
+            cp_name = cp_id
+            for e in data.get('entities', []):
+                if e['id'] == cp_id:
+                    cp_name = e.get('name', cp_id)
+                    break
+            tx_type = humanize_transaction_type(tx.get('transaction_type', ''))
+            amount = format_amount(tx.get('amount', 0))
+            parts.append(f'{name} & {escape_latex(cp_name)} & {escape_latex(tx_type)} & {amount} \\\\')
+        parts.append('\\bottomrule')
+        parts.append('\\end{tabularx}')
+        return '\n'.join(parts)
+
+    return f'% Unknown auto section: {key}'
+
+
+def is_auto_section(key):
+    """Check if a section key refers to an auto-generated table section."""
+    if key == 'preamble_transactions_overview':
+        return True
+    if key == 'transactions_not_covered':
+        return True
+    tx_match = re.match(r'^tx_\d+_(contractual_terms|characteristics|economic_circumstances)$', key)
+    if tx_match:
+        return True
+    bm_match = re.match(r'^bm_.+_(allocation|search_strategy|search_results|adjustments)$', key)
+    if bm_match:
+        return True
+    return False
+
+
+def build_report_body_latex(blueprint, resolved_sections, data, entity, transactions):
+    """Build the complete LaTeX report body from blueprint sections.
+
+    Organizes sections into the PDF chapter structure:
+    1. Executive Summary (preamble sections)
+    2. Business Description
+    3. Industry Analysis
+    4. Economic Analysis (functional profiles, controlled transactions, benchmarks)
+    5. Closing
+    """
+    entity_id = entity.get('id', '')
+    entity_name = entity.get('name', '')
+    fiscal_year = blueprint.get('fiscal_year', entity.get('fiscal_year', ''))
+
+    # Collect all section keys from the blueprint
+    all_keys = list(blueprint.get('sections', {}).keys())
+
+    # Also include auto keys that aren't in blueprint sections
+    auto_keys_to_add = ['preamble_transactions_overview', 'transactions_not_covered']
+    for tx in transactions:
+        tx_key = tx['id'].replace('-', '_')
+        tx_type = tx.get('transaction_type', '')
+        is_financial = tx_type in FINANCIAL_TYPES
+        auto_keys_to_add.append(f'{tx_key}_contractual_terms')
+        if not is_financial:
+            auto_keys_to_add.append(f'{tx_key}_characteristics')
+        auto_keys_to_add.append(f'{tx_key}_economic_circumstances')
+    for bm in data.get('benchmarks', []):
+        bm_key = bm['id'].replace('-', '_')
+        # Only include benchmarks used by covered transactions
+        bm_tx_ids = set(bm.get('transactions', []))
+        covered_tx_ids = {tx['id'] for tx in transactions}
+        if bm_tx_ids & covered_tx_ids:
+            for table_id in ['allocation', 'search_strategy', 'search_results', 'adjustments']:
+                auto_keys_to_add.append(f'bm_{bm_key}_{table_id}')
+
+    # Merge auto keys into the full key set (for categorization)
+    full_keys = list(all_keys)
+    for k in auto_keys_to_add:
+        if k not in full_keys:
+            full_keys.append(k)
+
+    # Categorize all keys
+    categorized = OrderedDict()
+    for key in full_keys:
+        cat_id, cat_label = categorize_section(key)
+        if cat_id not in categorized:
+            categorized[cat_id] = []
+        categorized[cat_id].append(key)
+
+    parts = []
+
+    def render_section_content(key):
+        """Render a single section's content as LaTeX."""
+        if is_auto_section(key):
+            return build_auto_table_latex(key, data, entity_id, transactions, blueprint)
+        text = resolved_sections.get(key, '')
+        if is_section_complete(text):
+            return escape_latex(text)
+        return escape_latex(f'[{humanize_section_key(key)} -- pending]')
+
+    # --- 1. Executive Summary ---
+    parts.append('\\section{Executive Summary}')
+    preamble_keys = categorized.get('preamble', [])
+    business_keys_for_preamble = categorized.get('business', [])
+
+    # Preamble content sections
+    for key in preamble_keys:
+        label = humanize_section_key(key)
+        parts.append(f'\\subsection{{{escape_latex(label)}}}')
+        parts.append(render_section_content(key))
+        parts.append('')
+
+    # --- 2. Business Description ---
+    parts.append('\\section{Business Description}')
+    for key in business_keys_for_preamble:
+        label = humanize_section_key(key)
+        parts.append(f'\\subsection{{{escape_latex(label)}}}')
+        parts.append(render_section_content(key))
+        parts.append('')
+
+    # --- 3. Industry Analysis ---
+    industry_keys = categorized.get('industry', [])
+    if industry_keys:
+        parts.append('\\section{Industry Analysis}')
+        for key in industry_keys:
+            label = humanize_section_key(key)
+            parts.append(f'\\subsection{{{escape_latex(label)}}}')
+            parts.append(render_section_content(key))
+            parts.append('')
+
+    # --- 4. Economic Analysis ---
+    parts.append('\\section{Economic Analysis}')
+
+    # 4a. Functional Analysis
+    fp_keys = categorized.get('functional', [])
+    if fp_keys:
+        parts.append('\\subsection{Functional Analysis}')
+        # Group by profile slug
+        profiles = OrderedDict()
+        for key in fp_keys:
+            # fp_{slug}_{block} — extract slug
+            match = re.match(r'^fp_(.+?)_(overview|functions|assets|risks)$', key)
+            if match:
+                slug = match.group(1)
+                if slug not in profiles:
+                    profiles[slug] = []
+                profiles[slug].append(key)
+            else:
+                profiles.setdefault('_other', []).append(key)
+
+        for slug, keys in profiles.items():
+            profile_name = slug.replace('_', ' ').title()
+            parts.append(f'\\subsubsection{{{escape_latex(profile_name)}}}')
+            for key in keys:
+                block_label = humanize_section_key(key)
+                parts.append(f'\\paragraph{{{escape_latex(block_label)}}}')
+                parts.append(render_section_content(key))
+                parts.append('')
+
+    # 4b. Controlled Transactions
+    tx_keys = categorized.get('transactions', [])
+    if tx_keys:
+        parts.append('\\subsection{Controlled Transactions}')
+
+        # Group transactions by transaction_type
+        tx_by_type = OrderedDict()
+        for key in tx_keys:
+            tx_match = re.match(r'^tx_(\d+)_', key)
+            if tx_match:
+                tx_num = tx_match.group(1)
+                tx_id_hyphen = f'tx-{tx_num}'
+                tx_type = ''
+                for tx in data.get('transactions', []):
+                    if tx['id'] == tx_id_hyphen:
+                        tx_type = tx.get('transaction_type', '')
+                        break
+                type_label = humanize_transaction_type(tx_type)
+                if type_label not in tx_by_type:
+                    tx_by_type[type_label] = []
+                tx_by_type[type_label].append(key)
+
+        for type_label, keys in tx_by_type.items():
+            parts.append(f'\\subsubsection{{{escape_latex(type_label)}}}')
+            for key in keys:
+                section_label = humanize_section_key(key)
+                parts.append(f'\\paragraph{{{escape_latex(section_label)}}}')
+                parts.append(render_section_content(key))
+                parts.append('')
+
+    # 4c. Benchmark Application
+    bm_keys = categorized.get('benchmark', [])
+    if bm_keys:
+        parts.append('\\subsection{Benchmark Application}')
+
+        # Build list of known benchmark slugs from data
+        known_bm_slugs = [bm['id'].replace('-', '_') for bm in data.get('benchmarks', [])]
+
+        # Group by benchmark slug
+        benchmarks = OrderedDict()
+        for key in bm_keys:
+            # Strip 'bm_' prefix and match against known benchmark slugs
+            rest = key[3:]  # Remove 'bm_'
+            matched_slug = None
+            for slug in known_bm_slugs:
+                if rest.startswith(slug + '_') or rest == slug:
+                    matched_slug = slug
+                    break
+            if not matched_slug:
+                # Fallback: take everything up to last known suffix
+                matched_slug = rest.rsplit('_', 1)[0] if '_' in rest else rest
+            if matched_slug not in benchmarks:
+                benchmarks[matched_slug] = []
+            benchmarks[matched_slug].append(key)
+
+        for slug, keys in benchmarks.items():
+            # Look up benchmark name
+            bm_id_hyphen = slug.replace('_', '-')
+            bm_name = slug.replace('_', ' ').title()
+            for bm in data.get('benchmarks', []):
+                if bm['id'] == bm_id_hyphen:
+                    bm_name = bm.get('name', bm_name)
+                    break
+            parts.append(f'\\subsubsection{{{escape_latex(bm_name)}}}')
+            for key in keys:
+                section_label = humanize_section_key(key)
+                parts.append(f'\\paragraph{{{escape_latex(section_label)}}}')
+                parts.append(render_section_content(key))
+                parts.append('')
+
+    # --- 5. Closing ---
+    closing_keys = categorized.get('closing', [])
+    if closing_keys:
+        parts.append('\\section{Closing}')
+        for key in closing_keys:
+            label = humanize_section_key(key)
+            parts.append(f'\\subsection{{{escape_latex(label)}}}')
+            parts.append(render_section_content(key))
+            parts.append('')
+
+    return '\n'.join(parts)
+
+
+# ---------------------------------------------------------------------------
+# HTML auto-table builder
+# ---------------------------------------------------------------------------
+
+def build_auto_table_html(key, data, entity_id, transactions, blueprint):
+    """Generate HTML tables for auto-type sections.
+
+    Mirrors build_auto_table_latex but produces HTML output for
+    the report view and editor.
+    """
+
+    # --- Preamble: transactions overview ---
+    if key == 'preamble_transactions_overview':
+        covered_ids = []
+        for lf in data.get('local_files', []):
+            if lf.get('entity') == entity_id:
+                covered_ids = lf.get('covered_transactions', [])
+                break
+        covered_txs = [tx for tx in data.get('transactions', []) if tx['id'] in covered_ids]
+        if not covered_txs:
+            covered_txs = transactions
+
+        rows_html = []
+        for tx in covered_txs:
+            desc = escape_html(tx.get('name', ''))
+            from_name = tx.get('from_entity', '')
+            to_name = tx.get('to_entity', '')
+            for e in data.get('entities', []):
+                if e['id'] == tx.get('from_entity'):
+                    from_name = e.get('name', from_name)
+                if e['id'] == tx.get('to_entity'):
+                    to_name = e.get('name', to_name)
+            currency = escape_html(tx.get('currency', ''))
+            amount = format_amount(tx.get('amount', 0))
+            rows_html.append(
+                f'<tr><td>{desc}</td><td>{escape_html(from_name)}</td>'
+                f'<td>{escape_html(to_name)}</td><td>{currency}</td>'
+                f'<td style="text-align:right">{amount}</td></tr>'
+            )
+
+        return (
+            '<table class="doc-table"><thead><tr>'
+            '<th>Description</th><th>From</th><th>To</th><th>Currency</th><th>Amount</th>'
+            '</tr></thead><tbody>'
+            + '\n'.join(rows_html)
+            + '</tbody></table>'
+        )
+
+    # --- Transaction-level auto tables ---
+    tx_match = re.match(r'^tx_(\d+)_(.+)$', key)
+    if tx_match:
+        tx_num = tx_match.group(1)
+        sub_key = tx_match.group(2)
+        tx_id_hyphen = f'tx-{tx_num}'
+        tx = None
+        for t in data.get('transactions', []):
+            if t['id'] == tx_id_hyphen:
+                tx = t
+                break
+        if not tx:
+            return ''
+
+        tx_type = tx.get('transaction_type', '')
+        is_financial = tx_type in FINANCIAL_TYPES
+
+        if sub_key == 'contractual_terms':
+            ct = tx.get('contractual_terms', {})
+            if not ct:
+                return ''
+            if is_financial:
+                header = ''.join(f'<th>{escape_html(k.replace("_", " ").title())}</th>' for k in ct)
+                row = ''.join(f'<td>{escape_html(str(v))}</td>' for v in ct.values())
+                return f'<table class="doc-table"><thead><tr>{header}</tr></thead><tbody><tr>{row}</tr></tbody></table>'
+            else:
+                rows = ''.join(
+                    f'<tr><td><strong>{escape_html(k.replace("_", " ").title())}</strong></td>'
+                    f'<td>{escape_html(str(v))}</td></tr>'
+                    for k, v in ct.items()
+                )
+                return f'<table class="doc-table"><thead><tr><th>Term</th><th>Detail</th></tr></thead><tbody>{rows}</tbody></table>'
+
+        if sub_key == 'characteristics':
+            if is_financial:
+                return ''
+            chars = tx.get('characteristics', {})
+            if not chars:
+                return ''
+            rows = ''.join(
+                f'<tr><td><strong>{escape_html(k.replace("_", " ").title())}</strong></td>'
+                f'<td>{escape_html(str(v))}</td></tr>'
+                for k, v in chars.items()
+            )
+            return f'<table class="doc-table"><thead><tr><th>Characteristic</th><th>Description</th></tr></thead><tbody>{rows}</tbody></table>'
+
+        if sub_key == 'economic_circumstances':
+            ec = tx.get('economic_circumstances', {})
+            if not ec:
+                return ''
+            rows = ''.join(
+                f'<tr><td><strong>{escape_html(k.replace("_", " ").title())}</strong></td>'
+                f'<td>{escape_html(str(v))}</td></tr>'
+                for k, v in ec.items()
+            )
+            return f'<table class="doc-table"><thead><tr><th>Factor</th><th>Analysis</th></tr></thead><tbody>{rows}</tbody></table>'
+
+    # --- Benchmark auto tables ---
+    bm_match = re.match(r'^bm_(.+?)_(allocation|search_strategy|search_results|adjustments)$', key)
+    if bm_match:
+        bm_slug = bm_match.group(1)
+        table_id = bm_match.group(2)
+        bm_id_hyphen = bm_slug.replace('_', '-')
+        bm = None
+        for b in data.get('benchmarks', []):
+            if b['id'] == bm_id_hyphen:
+                bm = b
+                break
+        if not bm:
+            return ''
+        for table_obj in bm.get('tables', []):
+            if table_obj.get('id') == table_id:
+                columns = table_obj.get('columns', [])
+                rows = table_obj.get('rows', {})
+                header = ''.join(f'<th>{escape_html(c)}</th>' for c in columns)
+                body = ''
+                for tx_id, vals in rows.items():
+                    cells = ''.join(f'<td>{escape_html(str(v))}</td>' for v in vals)
+                    body += f'<tr>{cells}</tr>'
+                return f'<table class="doc-table"><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table>'
+        return ''
+
+    # --- Transactions not covered ---
+    if key == 'transactions_not_covered':
+        covered_ids = set()
+        for lf in data.get('local_files', []):
+            if lf.get('entity') == entity_id:
+                covered_ids = set(lf.get('covered_transactions', []))
+                break
+        if not covered_ids:
+            covered_ids = {tx['id'] for tx in transactions}
+
+        all_entity_txs = get_entity_transactions(data, entity_id)
+        not_covered = [tx for tx in all_entity_txs if tx['id'] not in covered_ids]
+
+        if not not_covered:
+            return '<p>No additional intercompany transactions were identified for the tested entity that are not covered in this documentation.</p>'
+
+        rows = ''
+        for tx in not_covered:
+            name = escape_html(tx.get('name', ''))
+            cp_id = tx.get('to_entity') if tx.get('from_entity') == entity_id else tx.get('from_entity')
+            cp_name = cp_id
+            for e in data.get('entities', []):
+                if e['id'] == cp_id:
+                    cp_name = e.get('name', cp_id)
+                    break
+            tx_type = humanize_transaction_type(tx.get('transaction_type', ''))
+            amount = format_amount(tx.get('amount', 0))
+            rows += f'<tr><td>{name}</td><td>{escape_html(cp_name)}</td><td>{escape_html(tx_type)}</td><td style="text-align:right">{amount}</td></tr>'
+
+        return (
+            '<table class="doc-table"><thead><tr>'
+            '<th>Transaction</th><th>Counterparty</th><th>Type</th><th>Amount</th>'
+            '</tr></thead><tbody>'
+            + rows
+            + '</tbody></table>'
+        )
+
+    return ''
+
+
+# ---------------------------------------------------------------------------
 # Markdown helpers
 # ---------------------------------------------------------------------------
 
@@ -609,10 +1215,12 @@ def get_section_text(content):
     return ''
 
 
-def build_editor_content_sections(resolved_sections, section_meta, blueprint):
+def build_editor_content_sections(resolved_sections, section_meta, blueprint,
+                                   data=None, entity_id=None, transactions=None):
     """Build dynamic HTML blocks for all blueprint content sections, organized by category.
 
     Each section gets an editable textarea with a layer dot and status badge.
+    Auto sections get read-only table rendering instead of textareas.
     Returns HTML string to replace <<CONTENT_SECTIONS>>.
     """
     section_notes = blueprint.get('section_notes', {})
@@ -658,16 +1266,31 @@ def build_editor_content_sections(resolved_sections, section_meta, blueprint):
                     f'</span>'
                 )
 
-            # Section content
-            display_text = escape_html(text) if complete else ''
-            placeholder = f'Write or ask Claude to draft: {label}'
-
             # Note line
             note_html = ''
             if note:
                 note_html = (
                     f'<div style="font-size:11px;color:var(--sn-primary);font-style:italic;'
                     f'margin-top:6px">{escape_html(note)}</div>'
+                )
+
+            # Auto sections: render as read-only table
+            if is_auto_section(key) and data is not None and entity_id and transactions is not None:
+                auto_html = build_auto_table_html(key, data, entity_id, transactions, blueprint)
+                badge = '<span class="badge badge-auto">Auto</span>' if auto_html else badge
+                content_block = (
+                    f'    <div class="auto-table-container">{auto_html}</div>\n'
+                    if auto_html else
+                    f'    <div style="padding:12px;color:var(--sn-text-dim);font-style:italic">No data available</div>\n'
+                )
+            else:
+                # Content section: editable textarea
+                display_text = escape_html(text) if complete else ''
+                placeholder = f'Write or ask Claude to draft: {label}'
+                content_block = (
+                    f'    <textarea class="edit-area" id="{escape_html(key)}" '
+                    f'data-label="{escape_html(label)}" '
+                    f'placeholder="{escape_html(placeholder)}">{display_text}</textarea>\n'
                 )
 
             parts.append(
@@ -677,9 +1300,7 @@ def build_editor_content_sections(resolved_sections, section_meta, blueprint):
                 f'    <div style="display:flex;align-items:center;gap:10px">{layer_html}{badge}</div>\n'
                 f'  </div>\n'
                 f'  <div class="section-content">\n'
-                f'    <textarea class="edit-area" id="{escape_html(key)}" '
-                f'data-label="{escape_html(label)}" '
-                f'placeholder="{escape_html(placeholder)}">{display_text}</textarea>\n'
+                f'{content_block}'
                 f'{note_html}'
                 f'  </div>\n'
                 f'</div>'
@@ -730,7 +1351,8 @@ def populate_html_template(template_content, data, blueprint, entity, transactio
     # Dynamic content sections by category
     if section_meta is None:
         section_meta = {}
-    content_html = build_editor_content_sections(resolved_sections, section_meta, blueprint)
+    content_html = build_editor_content_sections(resolved_sections, section_meta, blueprint,
+                                                    data=data, entity_id=entity_id, transactions=transactions)
     result = result.replace('<<CONTENT_SECTIONS>>', content_html)
 
     # Transactions badge + editable rows
@@ -925,7 +1547,10 @@ def populate_report_template(template_content, data, blueprint, entity, transact
 
             annotation = build_xray_annotation_html(meta, note)
 
-            if is_section_complete(text):
+            if is_auto_section(key):
+                auto_html = build_auto_table_html(key, data, entity_id, transactions, blueprint)
+                body_html = f'<div class="doc-body">{auto_html}</div>' if auto_html else '<div class="doc-body-pending">[Auto — no data]</div>'
+            elif is_section_complete(text):
                 body_html = f'<div class="doc-body">{escape_html(text)}</div>'
             else:
                 body_html = '<div class="doc-body-pending">[Pending]</div>'
@@ -975,6 +1600,36 @@ def populate_report_template(template_content, data, blueprint, entity, transact
 # ---------------------------------------------------------------------------
 
 BUSINESS_KEYS = {'executive_summary', 'group_overview', 'entity_introduction'}
+
+# Financial transaction types — different rendering (transposed contractual terms, no characteristics)
+FINANCIAL_TYPES = {
+    'loan-arrangement', 'cash-pooling', 'financial-guarantees',
+    'factoring', 'hybrid-instruments', 'asset-management',
+    'captive-insurance', 'cost-contribution-arrangement',
+}
+
+
+def humanize_transaction_type(tx_type):
+    """Convert a transaction type slug to a human-readable label.
+
+    'tangible-goods' -> 'Transfer of Tangible Goods'
+    'loan-arrangement' -> 'Loan Arrangements'
+    """
+    type_map = {
+        'tangible-goods': 'Transfer of Tangible Goods',
+        'services': 'Provision of Services',
+        'intangibles': 'Licensing of Intangibles',
+        'sale-of-intangibles': 'Sale of Intangibles',
+        'loan-arrangement': 'Loan Arrangements',
+        'cash-pooling': 'Cash Pooling',
+        'financial-guarantees': 'Financial Guarantees',
+        'factoring': 'Receivables Factoring',
+        'hybrid-instruments': 'Hybrid Instruments',
+        'captive-insurance': 'Captive Insurance',
+        'cost-contribution-arrangement': 'Cost Contribution Arrangements',
+        'asset-management': 'Asset Management',
+    }
+    return type_map.get(tx_type, tx_type.replace('-', ' ').title())
 
 
 def categorize_section(key):
@@ -1247,7 +1902,11 @@ def validate_inputs(data, blueprint, entity):
 # ---------------------------------------------------------------------------
 
 def populate_latex_template(template_content, data, blueprint, entity, transactions, resolved_sections):
-    """Replace all placeholders in the LaTeX template with actual values."""
+    """Replace all placeholders in the LaTeX template with actual values.
+
+    Uses build_report_body_latex() to generate the full <<REPORT_BODY>> content
+    dynamically from blueprint sections and auto-generated tables.
+    """
     result = template_content
 
     # Entity fields
@@ -1257,24 +1916,9 @@ def populate_latex_template(template_content, data, blueprint, entity, transacti
     fiscal_year = blueprint.get('fiscal_year', entity.get('fiscal_year', 'N/A'))
     result = result.replace('<<FISCAL_YEAR>>', str(fiscal_year))
 
-    # Currency (use first transaction's currency, default EUR)
-    currency = 'EUR'
-    if transactions:
-        currency = transactions[0].get('currency', 'EUR')
-    result = result.replace('<<CURRENCY>>', currency)
-
-    # Blueprint sections (already resolved)
-    result = result.replace(
-        '<<GROUP_OVERVIEW>>',
-        escape_latex(resolved_sections.get('group_overview', '[No group overview provided]'))
-    )
-    result = result.replace(
-        '<<ENTITY_INTRODUCTION>>',
-        escape_latex(resolved_sections.get('entity_introduction', '[No entity introduction provided]'))
-    )
-
-    # Transaction table rows (already escaped inside build_transaction_rows)
-    result = result.replace('<<TRANSACTION_ROWS>>', build_transaction_rows(transactions))
+    # Build the full report body
+    report_body = build_report_body_latex(blueprint, resolved_sections, data, entity, transactions)
+    result = result.replace('<<REPORT_BODY>>', report_body)
 
     return result
 
@@ -1284,18 +1928,23 @@ def populate_latex_template(template_content, data, blueprint, entity, transacti
 # ---------------------------------------------------------------------------
 
 def compile_pdf(tex_path, output_dir):
-    """Compile a .tex file to PDF using pdflatex."""
+    """Compile a .tex file to PDF using pdflatex.
+
+    Runs pdflatex twice to ensure the table of contents and cross-references
+    are fully resolved.
+    """
     try:
-        subprocess.run(
-            ['pdflatex', '-interaction=nonstopmode', '-output-directory', output_dir, tex_path],
-            check=True,
-            capture_output=True,
-            text=True
-        )
+        for pass_num in range(1, 3):
+            print(f"  pdflatex pass {pass_num}/2...")
+            result = subprocess.run(
+                ['pdflatex', '-interaction=nonstopmode', '-output-directory', output_dir, tex_path],
+                capture_output=True
+            )
+            if result.returncode != 0:
+                log_text = result.stdout.decode('utf-8', errors='replace')
+                print(f"Error compiling PDF. LaTeX log:\n{log_text}", file=sys.stderr)
+                sys.exit(1)
         print("PDF compiled successfully")
-    except subprocess.CalledProcessError as e:
-        print(f"Error compiling PDF. LaTeX log:\n{e.stdout}", file=sys.stderr)
-        sys.exit(1)
     except FileNotFoundError:
         print("Error: pdflatex not found on PATH.", file=sys.stderr)
         print("  If on macOS: brew install --cask basictex && eval \"$(/usr/libexec/path_helper)\"", file=sys.stderr)
@@ -1474,7 +2123,7 @@ def main():
         compile_pdf(tex_path, args.output)
 
         # Clean up LaTeX auxiliary files
-        for ext in ['*.aux', '*.log', '*.out']:
+        for ext in ['*.aux', '*.log', '*.out', '*.toc']:
             for aux_file in glob.glob(os.path.join(args.output, ext)):
                 try:
                     os.remove(aux_file)

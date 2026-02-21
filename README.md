@@ -23,7 +23,7 @@ Speed up transfer pricing workflows for consulting and in-house teams. Draft mas
 | Command | Description |
 |---|---|
 | `/setup` | Connect your Supernomial API key |
-| `/prepare-local-file` | Full workflow: intake → data → blueprint → HTML previews → PDF |
+| `/prep-local-file` | Full workflow: intake → data → blueprint → HTML previews → PDF |
 | `/review-local-file` | Review an existing local file against OECD guidelines |
 | `/remember` | Save a preference or piece of context that persists across sessions |
 

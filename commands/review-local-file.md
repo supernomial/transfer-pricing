@@ -141,6 +141,6 @@ Provide a structured output:
 ## Notes
 
 - This command is for **review only** — it does not add data to your records
-- Use `/prepare-local-file` when you want to build documentation from your records
+- Use `/prep-local-file` when you want to build documentation from your records
 - Reviews can be saved as reference materials in your firm library
 - All analysis should be reviewed by qualified transfer pricing professionals before being relied upon

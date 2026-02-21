@@ -58,5 +58,5 @@ python3 auth/gateway.py validate --working-dir .
 
 (The `--working-dir .` flag tells the script where to find the saved key. Never mention this flag to the user.)
 
-- **Exit code 0**: Tell the user: "You're all set! Run `/prepare-local-file` to get started."
+- **Exit code 0**: Tell the user: "You're all set! Run `/prep-local-file` to get started."
 - **Exit code 1**: Show the error message from stderr to the user. Do not add technical details — the message is already user-friendly.
