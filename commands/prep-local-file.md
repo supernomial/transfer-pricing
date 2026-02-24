@@ -26,45 +26,20 @@ python3 skills/local-file/scripts/generate_blueprint.py \
 
 This picks a representative entity (Solara Distribution S.A.S., France) with 3 transactions covering tangible goods, services, and intangibles.
 
-5. **Generate all 4 views** using the sample data and generated blueprint. Run each in sequence, always outputting to the working folder so Cowork can render them in the side panel:
+4. **Generate Expert Mode and PDF** using the sample data and generated blueprint. Run each in sequence, always outputting to the working folder so Cowork can render them in the side panel:
 
-**Overview (Dashboard):**
+**Expert Mode:**
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
   --data "data/examples/sample-group.json" \
   --blueprint "[selected-folder]/_examples/example-blueprint.json" \
   --references "skills/local-file/references/" \
   --library "[selected-folder]/_library/" \
-  --template "skills/local-file/assets/section_dashboard.html" \
+  --template "skills/local-file/assets/combined_view.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/_examples/" \
-  --format html
-```
-
-**Editor:**
-```bash
-python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "data/examples/sample-group.json" \
-  --blueprint "[selected-folder]/_examples/example-blueprint.json" \
-  --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --template "skills/local-file/assets/intake_preview.html" \
-  --brand "assets/brand.css" \
-  --output "[selected-folder]/_examples/" \
-  --format html
-```
-
-**Report View (X-ray):**
-```bash
-python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "data/examples/sample-group.json" \
-  --blueprint "[selected-folder]/_examples/example-blueprint.json" \
-  --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --template "skills/local-file/assets/report_view.html" \
-  --brand "assets/brand.css" \
-  --output "[selected-folder]/_examples/" \
-  --format report
+  --format combined \
+  --blueprints-dir "[selected-folder]/_examples/"
 ```
 
 **Final PDF:**
@@ -81,9 +56,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
 
 6. **Present each view** to the user with a brief explanation in business language. Present each file individually so it renders in the Cowork side panel — do NOT bundle them into a single message with markdown links:
 
-   - **Overview**: "Here's the section dashboard — it shows all the sections that make up a local file, organized by category. Each section has a status badge showing whether it's complete, pending, or auto-generated from your data."
-   - **Editor**: "This is the editor view — where you'd work on each section. You can see entity details, transaction data, and content sections organized by category."
-   - **Report view**: "This is the report view — a document-style preview. Toggle X-ray mode to see where each piece of content comes from (universal standards, your firm library, group-level content, or entity-specific text)."
+   - **Expert Mode**: "This is Expert Mode — your all-in-one workspace for the local file. You can see the section dashboard, edit content directly, review notes and comments, and toggle X-ray mode to see where each piece of content comes from. Click Save to send your changes back to the chat."
    - **PDF**: "And here's the final PDF — this is what you'd submit to tax authorities. Table of contents, proper formatting, all sections in OECD-compliant order."
 
 7. **Wrap up** with: "That's the full pipeline. When you're ready to prepare a real local file, just say /prep-local-file with your entity name and we'll get started."
@@ -247,24 +220,22 @@ This means:
 
 **Why:** Humans think about documents top-to-bottom. If the final report starts with the group overview and ends with the transactions table, the conversation should flow in the same order. This keeps the user oriented — they always know where they are in the process relative to the final output.
 
-### Four Views — One Pipeline
+### Views — One Pipeline
 
-The user moves through four connected views during preparation. Each serves a distinct purpose, and navigation between them should feel seamless:
+The user works primarily in Expert Mode during preparation, with PDF as the final deliverable:
 
 | View | Format flag | Purpose | When to generate |
 |---|---|---|---|
-| **Overview** | `--format html` (dashboard template) | Section dashboard — shows all sections with status badges | Start of Steps 3–4, after each data update |
-| **Editor** | `--format html` (intake template) | All sections by category with layer badges, entity details, transactions — editable | During Steps 3–4, after each data update |
-| **Report view** | `--format report` | Full document — all sections with category headers and X-ray mode | After Step 4, on user request |
+| **Expert Mode** | `--format combined` | All-in-one workspace: dashboard, editor, notes, X-ray, review/signoff | Primary view during Steps 3–5, after each data update |
 | **Final PDF** | `--format pdf` | Submission-ready deliverable | Step 5 (generation) |
 
-All views include a top navigation bar (`Overview › Editor › Report view › Final PDF`) so the user always knows where they are and can request the next view.
+Expert Mode replaces the separate dashboard, editor, and report views with a single integrated workspace. The user can edit content, manage notes and comments, toggle X-ray mode, review and sign off sections, and save changes — all in one view.
 
-The `--section` flag and `section_editor.html` still exist for backward compatibility but are no longer the primary editing view.
+Legacy views (overview dashboard, intake preview, report view, section editor) still work via `--format html` and `--format report` for backward compatibility but are no longer the primary workflow.
 
-### Live Preview (Editor)
+### Live Preview (Expert Mode)
 
-Throughout Steps 3–4, after each meaningful data update (new entity added, transactions entered, section content written), **regenerate the Editor HTML preview** so the user can see the current state in the Cowork side panel:
+Throughout Steps 3–4, after each meaningful data update (new entity added, transactions entered, section content written), **regenerate Expert Mode** so the user can see the current state in the Cowork side panel:
 
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
@@ -273,17 +244,18 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --references "skills/local-file/references/" \
   --library "[selected-folder]/_library/" \
   --group-content "[selected-folder]/[Group Name]/Records/content/" \
-  --template "skills/local-file/assets/intake_preview.html" \
+  --template "skills/local-file/assets/combined_view.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
-  --format html
+  --format combined \
+  --blueprints-dir "[selected-folder]/[Group Name]/Records/blueprints/"
 ```
 
-This is the same assembly script with `--format html`. It reads the current records and blueprint, populates a styled HTML template, and writes a single `.html` file. Zero tokens — pure Python string replacement. Cowork renders HTML with full styling in the side panel.
+This is the same assembly script with `--format combined`. It reads the current records and blueprint, populates the Expert Mode template, and writes a single `.html` file. Zero tokens — pure Python string replacement. Cowork renders HTML with full styling in the side panel.
 
-### Section Dashboard (Overview)
+### Section Dashboard (Legacy)
 
-The preferred starting view during Steps 3–4. Shows all sections organized by category (Report Preamble, Business Description, Industry Analysis, Functional Analysis, Controlled Transactions, Benchmark Application, Closing) with completion status badges and content layer indicators:
+Replaced by Expert Mode for new workflows. Shows all sections organized by category (Report Preamble, Business Description, Industry Analysis, Functional Analysis, Controlled Transactions, Benchmark Application, Closing) with completion status badges and content layer indicators:
 
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
@@ -300,7 +272,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
 
 This replaces the full-page intake preview as the default view during preparation. Users see progress at a glance and ask Claude to work on specific sections.
 
-### Section Editor
+### Section Editor (Legacy)
 
 When the user asks to work on a specific section (e.g., "Let's work on the group overview"), generate the section editor:
 
@@ -329,7 +301,7 @@ The section editor shows the content layer badge, source path, section note, and
 
 The preview shows section-by-section status (Complete/Pending badges), entity details, and the transactions table. It helps the user see progress without reading back through the conversation.
 
-### Report View (X-ray mode)
+### Report View (Legacy)
 
 Once sections have content, generate the **report view** — a document-style preview that dynamically renders all blueprint sections with category headers and hierarchical numbering, and includes a toggleable X-ray mode:
 
@@ -463,11 +435,11 @@ The script handles:
 
 Claude does NOT assemble the document manually. Claude prepares the inputs (records + blueprint), then calls the script.
 
-**Four views, same script:**
-- `--format html` (dashboard template) → Overview dashboard with section status **← starting view**
-- `--format html` (intake template) → Editor with all sections, entity details, transactions **← primary editing view during Steps 3–4**
-- `--format report` → annotated report view with X-ray mode **← between editing and final PDF**
+**Output formats, same script:**
+- `--format combined` → Expert Mode — all-in-one workspace with dashboard, editor, notes, X-ray **← primary view during Steps 3–5**
 - `--format pdf` → final deliverable (LaTeX → PDF) **← Step 5 generation**
+- `--format html` → legacy dashboard/editor views (backward compat)
+- `--format report` → legacy annotated report view (backward compat)
 - `--format md` → fallback preview (markdown, if HTML rendering ever fails)
 
 After the script completes, **present the output file to the user** — do NOT read it back with a file read tool.
@@ -557,6 +529,67 @@ The editor has a **"Send updates"** button. When the user clicks it, only the **
 6. **Confirm in business language**: "Updated — the purchase of finished goods is now EUR 14.4M. The preview has been refreshed."
 
 **Important:** The `counterparty` field contains the display name, not the entity ID. Match it against entity names in the data. If no match is found, ask the user.
+
+**Do NOT** echo the raw JSON back to the user. Summarize in natural language using the `_summary` field.
+
+### Handling Pasted Updates from Expert Mode
+
+Expert Mode has a **Save** button. When the user clicks it, all changes are copied to their clipboard as JSON. If the user pastes this into the chat, it looks like:
+
+```json
+{
+  "_source": "combined_view",
+  "_entity_id": "acme-nl",
+  "_fiscal_year": "2024",
+  "_summary": [
+    "Updated the Group Overview section with new content",
+    "Marked Objective as reviewed",
+    "Changed document stage to Review"
+  ],
+  "sections": {
+    "group_overview": "Updated text for the group overview section..."
+  },
+  "section_notes": {
+    "group_overview": ["Revenue confirmed by group controller", "Second year engagement"]
+  },
+  "footnotes": {
+    "preamble_objective": ["OECD Guidelines (2022), Chapter I, para. 1.6."]
+  },
+  "section_status": {
+    "preamble_objective": { "reviewed": true, "signed_off": false }
+  },
+  "stage": "review",
+  "document_meta": {
+    "title": "Local File",
+    "subtitle": "Acme Netherlands B.V.",
+    "meta": "Transfer Pricing Documentation · Fiscal Year 2024"
+  }
+}
+```
+
+**When you receive this JSON:**
+
+1. **Identify it** by the `"_source": "combined_view"` field
+2. **Read the `_summary`** array to understand what was changed
+3. **Show the summary to the user**: "I see you made these changes in Expert Mode: [summary items]"
+4. **Apply changes to the data files:**
+   - `sections` → overwrite matching keys in blueprint `sections` (these are Layer 4 edits — entity-specific text)
+   - `section_notes` → overwrite matching keys in blueprint `section_notes`
+   - `footnotes` → overwrite matching keys in blueprint `footnotes`
+   - `section_status` → merge into the `local_file` object's `section_status` in `data.json` (find the local_file matching `_entity_id`)
+   - `stage` → set `local_file.status` in `data.json`
+   - `document_meta.title` → set `local_file.document_title` in `data.json`
+   - `document_meta.subtitle` → set `local_file.document_subtitle` in `data.json`
+   - `document_meta.meta` → set `local_file.document_meta` in `data.json`
+5. **Save** updated `data.json` and blueprint JSON
+6. **Re-run assembly** with `--format combined` to refresh Expert Mode
+7. **Confirm**: "Updated — [human summary]. Expert Mode refreshed."
+
+**Key differences from the legacy editor payload:**
+- `_source` is `"combined_view"` (not `"preview_edit"`)
+- Includes `section_status`, `stage`, `footnotes`, and `document_meta` (not just sections and transactions)
+- `sections` contains Layer 4 text content (entity-specific), not transaction data
+- No `transactions` field — transaction edits happen in the chat, not in Expert Mode
 
 **Do NOT** echo the raw JSON back to the user. Summarize in natural language using the `_summary` field.
 

@@ -11,11 +11,12 @@ This is the deterministic assembly script. It:
 6. For PDF: compiles LaTeX via pdflatex
 7. Saves output to the specified directory
 
-Supports four output formats:
-    --format pdf    → LaTeX → PDF (final deliverable)
-    --format html   → HTML preview (live intake view in Cowork panel)
-    --format report → Annotated report view with X-ray mode (layer annotations)
-    --format md     → Markdown preview (fallback)
+Supports five output formats:
+    --format pdf      → LaTeX → PDF (final deliverable)
+    --format html     → HTML preview (live intake view in Cowork panel)
+    --format report   → Annotated report view with X-ray mode (layer annotations)
+    --format combined → Expert Mode (full editor + notes + dashboard in one view)
+    --format md       → Markdown preview (fallback)
 
 Usage:
     python3 assemble_local_file.py \
@@ -634,42 +635,6 @@ def build_report_body_latex(blueprint, resolved_sections, data, entity, transact
     entity_name = entity.get('name', '')
     fiscal_year = blueprint.get('fiscal_year', entity.get('fiscal_year', ''))
 
-    # Collect all section keys from the blueprint
-    all_keys = list(blueprint.get('sections', {}).keys())
-
-    # Also include auto keys that aren't in blueprint sections
-    auto_keys_to_add = ['preamble_transactions_overview', 'transactions_not_covered']
-    for tx in transactions:
-        tx_key = tx['id'].replace('-', '_')
-        tx_type = tx.get('transaction_type', '')
-        is_financial = tx_type in FINANCIAL_TYPES
-        auto_keys_to_add.append(f'{tx_key}_contractual_terms')
-        if not is_financial:
-            auto_keys_to_add.append(f'{tx_key}_characteristics')
-        auto_keys_to_add.append(f'{tx_key}_economic_circumstances')
-    for bm in data.get('benchmarks', []):
-        bm_key = bm['id'].replace('-', '_')
-        # Only include benchmarks used by covered transactions
-        bm_tx_ids = set(bm.get('transactions', []))
-        covered_tx_ids = {tx['id'] for tx in transactions}
-        if bm_tx_ids & covered_tx_ids:
-            for table_id in ['allocation', 'search_strategy', 'search_results', 'adjustments']:
-                auto_keys_to_add.append(f'bm_{bm_key}_{table_id}')
-
-    # Merge auto keys into the full key set (for categorization)
-    full_keys = list(all_keys)
-    for k in auto_keys_to_add:
-        if k not in full_keys:
-            full_keys.append(k)
-
-    # Categorize all keys
-    categorized = OrderedDict()
-    for key in full_keys:
-        cat_id, cat_label = categorize_section(key)
-        if cat_id not in categorized:
-            categorized[cat_id] = []
-        categorized[cat_id].append(key)
-
     parts = []
 
     def render_section_content(key):
@@ -681,144 +646,205 @@ def build_report_body_latex(blueprint, resolved_sections, data, entity, transact
             return escape_latex(text)
         return escape_latex(f'[{humanize_section_key(key)} -- pending]')
 
-    # --- 1. Executive Summary ---
-    parts.append('\\section{Executive Summary}')
-    preamble_keys = categorized.get('preamble', [])
-    business_keys_for_preamble = categorized.get('business', [])
+    chapters = blueprint.get('chapters', [])
 
-    # Preamble content sections
-    for key in preamble_keys:
-        label = humanize_section_key(key)
-        parts.append(f'\\subsection{{{escape_latex(label)}}}')
-        parts.append(render_section_content(key))
-        parts.append('')
+    if chapters:
+        # --- New path: iterate chapters array from blueprint ---
+        for chapter in chapters:
+            chapter_title = chapter.get('title', '')
+            parts.append(f'\\section{{{escape_latex(chapter_title)}}}')
 
-    # --- 2. Business Description ---
-    parts.append('\\section{Business Description}')
-    for key in business_keys_for_preamble:
-        label = humanize_section_key(key)
-        parts.append(f'\\subsection{{{escape_latex(label)}}}')
-        parts.append(render_section_content(key))
-        parts.append('')
+            for key in chapter.get('sections', []):
+                label = humanize_section_key(key)
+                parts.append(f'\\subsection{{{escape_latex(label)}}}')
+                parts.append(render_section_content(key))
+                parts.append('')
 
-    # --- 3. Industry Analysis ---
-    industry_keys = categorized.get('industry', [])
-    if industry_keys:
-        parts.append('\\section{Industry Analysis}')
-        for key in industry_keys:
+                # Auto tables that follow _intro keys
+                # e.g., after tx_001_contractual_terms_intro -> auto table tx_001_contractual_terms
+                if key.endswith('_intro'):
+                    auto_suffix = key[:-len('_intro')]
+                    if auto_suffix != key and is_auto_section(auto_suffix):
+                        parts.append(render_section_content(auto_suffix))
+                        parts.append('')
+
+    else:
+        # --- Fallback: prefix-based categorization (backward compat) ---
+
+        # Collect all section keys from the blueprint
+        all_keys = list(blueprint.get('sections', {}).keys())
+
+        # Also include auto keys that aren't in blueprint sections
+        auto_keys_to_add = ['preamble_transactions_overview', 'transactions_not_covered']
+        for tx in transactions:
+            tx_key = tx['id'].replace('-', '_')
+            tx_type = tx.get('transaction_type', '')
+            is_financial = tx_type in FINANCIAL_TYPES
+            auto_keys_to_add.append(f'{tx_key}_contractual_terms')
+            if not is_financial:
+                auto_keys_to_add.append(f'{tx_key}_characteristics')
+            auto_keys_to_add.append(f'{tx_key}_economic_circumstances')
+        for bm in data.get('benchmarks', []):
+            bm_key = bm['id'].replace('-', '_')
+            # Only include benchmarks used by covered transactions
+            bm_tx_ids = set(bm.get('transactions', []))
+            covered_tx_ids = {tx['id'] for tx in transactions}
+            if bm_tx_ids & covered_tx_ids:
+                for table_id in ['allocation', 'search_strategy', 'search_results', 'adjustments']:
+                    auto_keys_to_add.append(f'bm_{bm_key}_{table_id}')
+
+        # Merge auto keys into the full key set (for categorization)
+        full_keys = list(all_keys)
+        for k in auto_keys_to_add:
+            if k not in full_keys:
+                full_keys.append(k)
+
+        # Categorize all keys
+        categorized = OrderedDict()
+        for key in full_keys:
+            cat_id, cat_label = categorize_section(key)
+            if cat_id not in categorized:
+                categorized[cat_id] = []
+            categorized[cat_id].append(key)
+
+        # --- 1. Executive Summary ---
+        parts.append('\\section{Executive Summary}')
+        preamble_keys = categorized.get('preamble', [])
+        business_keys_for_preamble = categorized.get('business', [])
+
+        # Preamble content sections
+        for key in preamble_keys:
             label = humanize_section_key(key)
             parts.append(f'\\subsection{{{escape_latex(label)}}}')
             parts.append(render_section_content(key))
             parts.append('')
 
-    # --- 4. Economic Analysis ---
-    parts.append('\\section{Economic Analysis}')
+        # --- 2. Business Description ---
+        parts.append('\\section{Business Description}')
+        for key in business_keys_for_preamble:
+            label = humanize_section_key(key)
+            parts.append(f'\\subsection{{{escape_latex(label)}}}')
+            parts.append(render_section_content(key))
+            parts.append('')
 
-    # 4a. Functional Analysis
-    fp_keys = categorized.get('functional', [])
-    if fp_keys:
-        parts.append('\\subsection{Functional Analysis}')
-        # Group by profile slug
-        profiles = OrderedDict()
-        for key in fp_keys:
-            # fp_{slug}_{block} — extract slug
-            match = re.match(r'^fp_(.+?)_(overview|functions|assets|risks)$', key)
-            if match:
-                slug = match.group(1)
-                if slug not in profiles:
-                    profiles[slug] = []
-                profiles[slug].append(key)
-            else:
-                profiles.setdefault('_other', []).append(key)
-
-        for slug, keys in profiles.items():
-            profile_name = slug.replace('_', ' ').title()
-            parts.append(f'\\subsubsection{{{escape_latex(profile_name)}}}')
-            for key in keys:
-                block_label = humanize_section_key(key)
-                parts.append(f'\\paragraph{{{escape_latex(block_label)}}}')
+        # --- 3. Industry Analysis ---
+        industry_keys = categorized.get('industry', [])
+        if industry_keys:
+            parts.append('\\section{Industry Analysis}')
+            for key in industry_keys:
+                label = humanize_section_key(key)
+                parts.append(f'\\subsection{{{escape_latex(label)}}}')
                 parts.append(render_section_content(key))
                 parts.append('')
 
-    # 4b. Controlled Transactions
-    tx_keys = categorized.get('transactions', [])
-    if tx_keys:
-        parts.append('\\subsection{Controlled Transactions}')
+        # --- 4. Economic Analysis ---
+        parts.append('\\section{Economic Analysis}')
 
-        # Group transactions by transaction_type
-        tx_by_type = OrderedDict()
-        for key in tx_keys:
-            tx_match = re.match(r'^tx_(\d+)_', key)
-            if tx_match:
-                tx_num = tx_match.group(1)
-                tx_id_hyphen = f'tx-{tx_num}'
-                tx_type = ''
-                for tx in data.get('transactions', []):
-                    if tx['id'] == tx_id_hyphen:
-                        tx_type = tx.get('transaction_type', '')
+        # 4a. Functional Analysis
+        fp_keys = categorized.get('functional', [])
+        if fp_keys:
+            parts.append('\\subsection{Functional Analysis}')
+            # Group by profile slug
+            profiles = OrderedDict()
+            for key in fp_keys:
+                # fp_{slug}_{block} — extract slug
+                match = re.match(r'^fp_(.+?)_(overview|functions|assets|risks)$', key)
+                if match:
+                    slug = match.group(1)
+                    if slug not in profiles:
+                        profiles[slug] = []
+                    profiles[slug].append(key)
+                else:
+                    profiles.setdefault('_other', []).append(key)
+
+            for slug, keys in profiles.items():
+                profile_name = slug.replace('_', ' ').title()
+                parts.append(f'\\subsubsection{{{escape_latex(profile_name)}}}')
+                for key in keys:
+                    block_label = humanize_section_key(key)
+                    parts.append(f'\\paragraph{{{escape_latex(block_label)}}}')
+                    parts.append(render_section_content(key))
+                    parts.append('')
+
+        # 4b. Controlled Transactions
+        tx_keys = categorized.get('transactions', [])
+        if tx_keys:
+            parts.append('\\subsection{Controlled Transactions}')
+
+            # Group transactions by transaction_type
+            tx_by_type = OrderedDict()
+            for key in tx_keys:
+                tx_match = re.match(r'^tx_(\d+)_', key)
+                if tx_match:
+                    tx_num = tx_match.group(1)
+                    tx_id_hyphen = f'tx-{tx_num}'
+                    tx_type = ''
+                    for tx in data.get('transactions', []):
+                        if tx['id'] == tx_id_hyphen:
+                            tx_type = tx.get('transaction_type', '')
+                            break
+                    type_label = humanize_transaction_type(tx_type)
+                    if type_label not in tx_by_type:
+                        tx_by_type[type_label] = []
+                    tx_by_type[type_label].append(key)
+
+            for type_label, keys in tx_by_type.items():
+                parts.append(f'\\subsubsection{{{escape_latex(type_label)}}}')
+                for key in keys:
+                    section_label = humanize_section_key(key)
+                    parts.append(f'\\paragraph{{{escape_latex(section_label)}}}')
+                    parts.append(render_section_content(key))
+                    parts.append('')
+
+        # 4c. Benchmark Application
+        bm_keys = categorized.get('benchmark', [])
+        if bm_keys:
+            parts.append('\\subsection{Benchmark Application}')
+
+            # Build list of known benchmark slugs from data
+            known_bm_slugs = [bm['id'].replace('-', '_') for bm in data.get('benchmarks', [])]
+
+            # Group by benchmark slug
+            benchmarks = OrderedDict()
+            for key in bm_keys:
+                # Strip 'bm_' prefix and match against known benchmark slugs
+                rest = key[3:]  # Remove 'bm_'
+                matched_slug = None
+                for slug in known_bm_slugs:
+                    if rest.startswith(slug + '_') or rest == slug:
+                        matched_slug = slug
                         break
-                type_label = humanize_transaction_type(tx_type)
-                if type_label not in tx_by_type:
-                    tx_by_type[type_label] = []
-                tx_by_type[type_label].append(key)
+                if not matched_slug:
+                    # Fallback: take everything up to last known suffix
+                    matched_slug = rest.rsplit('_', 1)[0] if '_' in rest else rest
+                if matched_slug not in benchmarks:
+                    benchmarks[matched_slug] = []
+                benchmarks[matched_slug].append(key)
 
-        for type_label, keys in tx_by_type.items():
-            parts.append(f'\\subsubsection{{{escape_latex(type_label)}}}')
-            for key in keys:
-                section_label = humanize_section_key(key)
-                parts.append(f'\\paragraph{{{escape_latex(section_label)}}}')
+            for slug, keys in benchmarks.items():
+                # Look up benchmark name
+                bm_id_hyphen = slug.replace('_', '-')
+                bm_name = slug.replace('_', ' ').title()
+                for bm in data.get('benchmarks', []):
+                    if bm['id'] == bm_id_hyphen:
+                        bm_name = bm.get('name', bm_name)
+                        break
+                parts.append(f'\\subsubsection{{{escape_latex(bm_name)}}}')
+                for key in keys:
+                    section_label = humanize_section_key(key)
+                    parts.append(f'\\paragraph{{{escape_latex(section_label)}}}')
+                    parts.append(render_section_content(key))
+                    parts.append('')
+
+        # --- 5. Closing ---
+        closing_keys = categorized.get('closing', [])
+        if closing_keys:
+            parts.append('\\section{Closing}')
+            for key in closing_keys:
+                label = humanize_section_key(key)
+                parts.append(f'\\subsection{{{escape_latex(label)}}}')
                 parts.append(render_section_content(key))
                 parts.append('')
-
-    # 4c. Benchmark Application
-    bm_keys = categorized.get('benchmark', [])
-    if bm_keys:
-        parts.append('\\subsection{Benchmark Application}')
-
-        # Build list of known benchmark slugs from data
-        known_bm_slugs = [bm['id'].replace('-', '_') for bm in data.get('benchmarks', [])]
-
-        # Group by benchmark slug
-        benchmarks = OrderedDict()
-        for key in bm_keys:
-            # Strip 'bm_' prefix and match against known benchmark slugs
-            rest = key[3:]  # Remove 'bm_'
-            matched_slug = None
-            for slug in known_bm_slugs:
-                if rest.startswith(slug + '_') or rest == slug:
-                    matched_slug = slug
-                    break
-            if not matched_slug:
-                # Fallback: take everything up to last known suffix
-                matched_slug = rest.rsplit('_', 1)[0] if '_' in rest else rest
-            if matched_slug not in benchmarks:
-                benchmarks[matched_slug] = []
-            benchmarks[matched_slug].append(key)
-
-        for slug, keys in benchmarks.items():
-            # Look up benchmark name
-            bm_id_hyphen = slug.replace('_', '-')
-            bm_name = slug.replace('_', ' ').title()
-            for bm in data.get('benchmarks', []):
-                if bm['id'] == bm_id_hyphen:
-                    bm_name = bm.get('name', bm_name)
-                    break
-            parts.append(f'\\subsubsection{{{escape_latex(bm_name)}}}')
-            for key in keys:
-                section_label = humanize_section_key(key)
-                parts.append(f'\\paragraph{{{escape_latex(section_label)}}}')
-                parts.append(render_section_content(key))
-                parts.append('')
-
-    # --- 5. Closing ---
-    closing_keys = categorized.get('closing', [])
-    if closing_keys:
-        parts.append('\\section{Closing}')
-        for key in closing_keys:
-            label = humanize_section_key(key)
-            parts.append(f'\\subsection{{{escape_latex(label)}}}')
-            parts.append(render_section_content(key))
-            parts.append('')
 
     return '\n'.join(parts)
 
@@ -1952,6 +1978,371 @@ def compile_pdf(tex_path, output_dir):
 
 
 # ---------------------------------------------------------------------------
+# Combined (Expert Mode) helpers
+# ---------------------------------------------------------------------------
+
+def build_progress_metrics(blueprint, local_file):
+    """Calculate progress metrics from blueprint sections and local_file status."""
+    sections = blueprint.get('sections', {})
+    total = len(sections)
+    status_map = local_file.get('section_status', {}) if local_file else {}
+    reviewed = sum(1 for s in status_map.values() if s.get('reviewed'))
+    signoff = sum(1 for s in status_map.values() if s.get('signed_off'))
+    review_pct = round(reviewed / total * 100) if total else 0
+    signoff_pct = round(signoff / total * 100) if total else 0
+    return {
+        'total': total,
+        'reviewed': reviewed,
+        'signoff': signoff,
+        'review_pct': review_pct,
+        'signoff_pct': signoff_pct,
+    }
+
+
+def build_jurisdiction_svg(country, references_dir):
+    """Build an SVG map element highlighting the given country."""
+    maps_path = os.path.join(references_dir, 'jurisdiction-maps.json')
+    if not os.path.exists(maps_path):
+        return ''
+    with open(maps_path, 'r') as f:
+        maps_data = json.load(f)
+
+    jurisdictions = maps_data.get('jurisdictions', {})
+    if country not in jurisdictions:
+        return ''
+
+    view_box = maps_data.get('viewBox', '0 0 800 700')
+    base_paths = maps_data.get('base_paths', [])
+    highlight = jurisdictions[country]
+
+    parts = [f'<svg class="map-svg" viewBox="{escape_html(view_box)}" xmlns="http://www.w3.org/2000/svg">']
+    for bp in base_paths:
+        parts.append(f'  <path class="map-land" d="{bp["d"]}"/>')
+    parts.append(f'  <path class="map-highlight" d="{highlight["d"]}"/>')
+    parts.append('</svg>')
+    return '\n'.join(parts)
+
+
+def build_general_notes_html(data, entity, transactions):
+    """Build note-group divs for the general notes panel."""
+    groups = []
+
+    # Group notes
+    group = data.get('group', {})
+    if isinstance(group, dict) and group.get('notes'):
+        items = ''.join(f'<li>{escape_html(n)}</li>' for n in group['notes'])
+        groups.append(
+            f'<div class="note-group">'
+            f'<div class="note-group-title" contenteditable="true">{escape_html(group.get("name", "Group"))}</div>'
+            f'<ul class="note-list" contenteditable="true">{items}</ul>'
+            f'</div>'
+        )
+
+    # Entity notes
+    if entity.get('notes'):
+        items = ''.join(f'<li>{escape_html(n)}</li>' for n in entity['notes'])
+        groups.append(
+            f'<div class="note-group">'
+            f'<div class="note-group-title" contenteditable="true">{escape_html(entity.get("name", "Entity"))}</div>'
+            f'<ul class="note-list" contenteditable="true">{items}</ul>'
+            f'</div>'
+        )
+
+    # Transaction notes
+    for tx in transactions:
+        if tx.get('notes'):
+            items = ''.join(f'<li>{escape_html(n)}</li>' for n in tx['notes'])
+            groups.append(
+                f'<div class="note-group">'
+                f'<div class="note-group-title" contenteditable="true">{escape_html(tx.get("name", "Transaction"))}</div>'
+                f'<ul class="note-list" contenteditable="true">{items}</ul>'
+                f'</div>'
+            )
+
+    return '\n'.join(groups)
+
+
+def build_blueprint_modal_html(blueprints_dir, current_blueprint):
+    """Build blueprint cards for the modal from all blueprint files in directory."""
+    cards = []
+    current_name = current_blueprint.get('name', '')
+    current_entity = current_blueprint.get('entity', '')
+
+    if blueprints_dir and os.path.isdir(blueprints_dir):
+        for fname in sorted(os.listdir(blueprints_dir)):
+            if not fname.endswith('.json'):
+                continue
+            fpath = os.path.join(blueprints_dir, fname)
+            try:
+                with open(fpath, 'r') as f:
+                    bp = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                continue
+
+            bp_name = escape_html(bp.get('name', fname.replace('.json', '')))
+            bp_entity = bp.get('entity', '')
+            bp_fy = bp.get('fiscal_year', '')
+            bp_type = bp.get('type', 'local-file')
+            section_count = len(bp.get('sections', {}))
+            is_active = (bp_name == escape_html(current_name) and bp_entity == current_entity)
+            active_cls = ' active' if is_active else ''
+            badge_cls = 'builtin' if bp.get('builtin') else 'custom'
+            badge_label = 'Built-in' if bp.get('builtin') else 'Custom'
+
+            # Build miniature preview from chapters
+            preview_parts = []
+            for ch in bp.get('chapters', []):
+                preview_parts.append(f'<div class="bp-preview-chapter">{escape_html(ch.get("title", ""))}</div>')
+                for _ in ch.get('sections', []):
+                    preview_parts.append('<div class="bp-preview-section l4" style="width:80%"></div>')
+
+            cards.append(
+                f'<div class="bp-card{active_cls}">'
+                f'<div class="bp-card-preview">{"".join(preview_parts)}</div>'
+                f'<div class="bp-card-info">'
+                f'<span class="bp-card-badge {badge_cls}">{badge_label}</span>'
+                f'<div class="bp-card-name">{bp_name}</div>'
+                f'<div class="bp-card-meta">{escape_html(bp_type.replace("-", " ").title())} &middot; {section_count} sections</div>'
+                f'</div></div>'
+            )
+
+    # Always add the "New Blueprint" card at the end
+    cards.append(
+        '<div class="bp-card">'
+        '<div class="bp-card-new">'
+        '<div class="bp-card-new-icon">+</div>'
+        'New Blueprint'
+        '</div></div>'
+    )
+
+    return '\n'.join(cards)
+
+
+def build_combined_element_html(key, text, meta, note, footnotes, status,
+                                chapter_num, sub_num, data, entity_id,
+                                transactions, blueprint):
+    """Generate HTML for one content element in the Expert Mode view."""
+    parts = []
+    slug = slugify(key)
+    reviewed = 'true' if status.get('reviewed') else 'false'
+    signed_off = 'true' if status.get('signed_off') else 'false'
+    layer = meta.get('layer', 4)
+    layer_cls = f'xray-layer{layer}'
+    label = humanize_section_key(key)
+    is_auto = is_auto_section(key)
+
+    # Subheading
+    parts.append(
+        f'<div class="section-subheading" id="{slug}" '
+        f'data-section-key="{escape_html(key)}" '
+        f'data-reviewed="{reviewed}" data-signed-off="{signed_off}">'
+        f'{chapter_num}.{sub_num} {escape_html(label)}'
+        f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span>'
+        f'</div>'
+    )
+
+    # Insert divider
+    parts.append(
+        '<div class="insert-divider">'
+        '<div class="insert-divider-hit" onclick="insertElement(this.parentNode.querySelector(\'.insert-divider-btn\'))"></div>'
+        '<button class="insert-divider-btn" onclick="insertElement(this)" title="Add element here"><svg><use href="#icon-chat"/></svg></button>'
+        '<div class="insert-divider-line"></div>'
+        '</div>'
+    )
+
+    # Content body
+    if is_auto:
+        auto_html = build_auto_table_html(key, data, entity_id, transactions, blueprint)
+        parts.append(
+            f'<div class="section-body-wrapper">'
+            f'<div class="section-body {layer_cls} collapsed" contenteditable="false" '
+            f'data-section-key="{escape_html(key)}">'
+            f'{auto_html}'
+            f'<button class="expand-btn" onclick="toggleExpand(this)"><span class="expand-icon">&#9662;</span></button>'
+            f'</div>'
+            f'</div>'
+        )
+    else:
+        escaped_text = escape_html(text) if text else ''
+        # data-original stores the original text for dirty tracking
+        attr_original = escape_html(text).replace('"', '&quot;') if text else ''
+        parts.append(
+            f'<div class="section-body-wrapper">'
+            f'<div class="section-body {layer_cls} collapsed" contenteditable="true" '
+            f'data-section-key="{escape_html(key)}" data-original="{attr_original}">'
+            f'<button class="chat-btn" title="AI edit" onclick="chatEdit(this)"><svg><use href="#icon-chat"/></svg></button>'
+            f'{escaped_text}'
+            f'<button class="expand-btn" onclick="toggleExpand(this)"><span class="expand-icon">&#9662;</span></button>'
+            f'</div>'
+        )
+
+        # Element note
+        note_items = ''
+        if isinstance(note, list):
+            note_items = ''.join(f'<li>{escape_html(n)}</li>' for n in note)
+        elif isinstance(note, str) and note:
+            note_items = f'<li>{escape_html(note)}</li>'
+        parts.append(
+            f'<div class="element-note">'
+            f'<div class="element-note-header">'
+            f'<div class="element-note-label">{escape_html(label)} notes</div>'
+            f'<button class="note-chat-btn" title="AI edit notes" onclick="chatEditNote(this)"><svg><use href="#icon-chat"/></svg></button>'
+            f'</div>'
+            f'<ul class="note-list" contenteditable="true">{note_items}</ul>'
+            f'</div>'
+        )
+
+        # Footnotes
+        if footnotes:
+            fn_entries = ''
+            for i, ft in enumerate(footnotes, 1):
+                fn_entries += (
+                    f'<div class="footnote-entry">'
+                    f'<span class="footnote-num">{i}</span>'
+                    f'<span class="footnote-text">{escape_html(ft)}</span>'
+                    f'</div>'
+                )
+            parts.append(f'<div class="element-footnote">{fn_entries}</div>')
+
+        parts.append('</div>')  # close section-body-wrapper
+
+    return '\n'.join(parts)
+
+
+def build_combined_sections_html(blueprint, resolved_sections, section_meta,
+                                 data, entity_id, transactions):
+    """Build all document sections HTML from blueprint chapters."""
+    parts = []
+    local_file = None
+    for lf in data.get('local_files', []):
+        if lf.get('entity') == entity_id:
+            local_file = lf
+            break
+
+    section_notes = blueprint.get('section_notes', {})
+    section_status = local_file.get('section_status', {}) if local_file else {}
+    footnotes_all = blueprint.get('footnotes', {})
+
+    for chapter_num, chapter in enumerate(blueprint.get('chapters', []), 1):
+        chapter_id = chapter.get('id', slugify(chapter.get('title', f'chapter-{chapter_num}')))
+        chapter_title = chapter.get('title', f'Chapter {chapter_num}')
+        section_keys = chapter.get('sections', [])
+
+        parts.append(f'<div class="section" id="{escape_html(chapter_id)}">')
+        parts.append(
+            f'  <div class="section-heading">{chapter_num}. {escape_html(chapter_title)}'
+            f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span></div>'
+        )
+
+        for sub_num, key in enumerate(section_keys, 1):
+            meta = section_meta.get(key, classify_source('', key))
+            text = resolved_sections.get(key, '')
+            note = section_notes.get(key, '')
+            fn = footnotes_all.get(key, [])
+            status = section_status.get(key, {})
+
+            parts.append(build_combined_element_html(
+                key, text, meta, note, fn, status,
+                chapter_num, sub_num, data, entity_id, transactions, blueprint
+            ))
+
+        parts.append('</div>')  # close section div
+
+    return '\n'.join(parts)
+
+
+def populate_combined_template(template_content, data, blueprint, entity,
+                               transactions, resolved_sections, section_meta,
+                               blueprints_dir, references_dir=None):
+    """Replace all <<PLACEHOLDER>> markers in the Expert Mode template."""
+    result = template_content
+    entity_id = entity.get('id', '')
+    entity_name = entity.get('name', '')
+    fiscal_year = str(blueprint.get('fiscal_year', entity.get('fiscal_year', '')))
+    country = entity.get('jurisdiction', entity.get('country', ''))
+    blueprint_name = blueprint.get('name', '')
+
+    # Find local_file object for this entity
+    local_file = None
+    for lf in data.get('local_files', []):
+        if lf.get('entity') == entity_id:
+            local_file = lf
+            break
+
+    # Group name
+    group = data.get('group', {})
+    group_name = group.get('name', '') if isinstance(group, dict) else ''
+
+    # Document meta
+    doc_title = 'Local File'
+    doc_subtitle = entity_name
+    doc_meta_parts = ['Transfer Pricing Documentation']
+    if fiscal_year:
+        doc_meta_parts.append(f'Fiscal Year {fiscal_year}')
+    doc_meta = ' &middot; '.join(doc_meta_parts)
+    if local_file:
+        doc_title = local_file.get('title', doc_title)
+        doc_subtitle = local_file.get('subtitle', doc_subtitle)
+        if local_file.get('meta'):
+            doc_meta = escape_html(local_file['meta'])
+
+    # Simple string replacements
+    result = result.replace('<<GROUP_NAME>>', escape_html(group_name))
+    result = result.replace('<<ENTITY_NAME>>', escape_html(entity_name))
+    result = result.replace('<<ENTITY_ID>>', escape_html(entity_id))
+    result = result.replace('<<FISCAL_YEAR>>', escape_html(fiscal_year))
+    result = result.replace('<<COUNTRY>>', escape_html(country))
+    result = result.replace('<<BLUEPRINT_NAME>>', escape_html(blueprint_name))
+    result = result.replace('<<DOCUMENT_TITLE>>', escape_html(doc_title))
+    result = result.replace('<<DOCUMENT_SUBTITLE>>', escape_html(doc_subtitle))
+    result = result.replace('<<DOCUMENT_META>>', doc_meta)
+
+    # Stage
+    stage = local_file.get('status', 'draft') if local_file else 'draft'
+    stage_map = {'draft': 0, 'review': 1, 'final': 2}
+    stage_idx = stage_map.get(stage, 0)
+    result = result.replace('<<STAGE_DRAFT_CLASS>>', 'active' if stage_idx == 0 else '')
+    result = result.replace('<<STAGE_REVIEW_CLASS>>', 'active' if stage_idx == 1 else '')
+    result = result.replace('<<STAGE_FINAL_CLASS>>', 'active' if stage_idx == 2 else '')
+    result = result.replace('<<STAGE_FILL_1>>', '100%' if stage_idx >= 1 else '0%')
+    result = result.replace('<<STAGE_FILL_2>>', '100%' if stage_idx >= 2 else '0%')
+
+    # Progress
+    metrics = build_progress_metrics(blueprint, local_file)
+    result = result.replace('<<TOTAL_SECTIONS>>', str(metrics['total']))
+    result = result.replace('<<REVIEWED_COUNT>>', str(metrics['reviewed']))
+    result = result.replace('<<SIGNOFF_COUNT>>', str(metrics['signoff']))
+    result = result.replace('<<REVIEW_PCT>>', f'{metrics["review_pct"]}%')
+    result = result.replace('<<SIGNOFF_PCT>>', f'{metrics["signoff_pct"]}%')
+
+    # Jurisdiction SVG
+    if not references_dir:
+        references_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            'references'
+        )
+    svg_html = build_jurisdiction_svg(country, references_dir)
+    result = result.replace('<<JURISDICTION_SVG>>', svg_html)
+
+    # Document sections
+    sections_html = build_combined_sections_html(
+        blueprint, resolved_sections, section_meta,
+        data, entity.get('id', ''), transactions
+    )
+    result = result.replace('<<DOCUMENT_SECTIONS>>', sections_html)
+
+    # General notes
+    notes_html = build_general_notes_html(data, entity, transactions)
+    result = result.replace('<<GENERAL_NOTES>>', notes_html)
+
+    # Blueprint modal
+    bp_html = build_blueprint_modal_html(blueprints_dir, blueprint)
+    result = result.replace('<<BLUEPRINT_CARDS>>', bp_html)
+
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -1967,8 +2358,10 @@ def main():
                         help='Path to group content directory for @group/ references (e.g., [Group]/Records/content/)')
     parser.add_argument('--brand', default=None,
                         help='Path to brand.css design system (default: assets/brand.css relative to plugin root)')
-    parser.add_argument('--format', choices=['pdf', 'html', 'md', 'report'], default='pdf',
-                        help='Output format: pdf (LaTeX → PDF), html (intake preview), md (markdown preview), report (annotated report view)')
+    parser.add_argument('--format', choices=['pdf', 'html', 'md', 'report', 'combined'], default='pdf',
+                        help='Output format: pdf (LaTeX → PDF), html (intake preview), md (markdown preview), report (annotated report view), combined (Expert Mode)')
+    parser.add_argument('--blueprints-dir', default=None,
+                        help='Path to blueprints directory (for Expert Mode blueprint modal)')
     parser.add_argument('--section', default=None,
                         help='Render a single section in the editor (requires --format html). '
                              'Omit for dashboard overview. Example: --section group_overview')
@@ -1989,7 +2382,7 @@ def main():
         template_content = f.read()
 
     # Inject brand.css into HTML templates (has <<BRAND_CSS>> placeholder)
-    if args.format in ('html', 'report'):
+    if args.format in ('html', 'report', 'combined'):
         brand_path = args.brand or 'assets/brand.css'
         template_content = inject_brand_css(template_content, brand_path)
 
@@ -2107,6 +2500,28 @@ def main():
             with open(html_path, 'w') as f:
                 f.write(populated_html)
             print(f"\nDone! Editor: {html_path}")
+
+    elif args.format == 'combined':
+        # --- Expert Mode (combined view) ---
+        print("Resolving with layer metadata for Expert Mode...")
+        resolved_sections_meta, section_meta = resolve_blueprint_sections_with_meta(
+            blueprint, args.references, args.library, group_content
+        )
+
+        blueprints_dir = getattr(args, 'blueprints_dir', None)
+
+        print("Populating Expert Mode template...")
+        populated = populate_combined_template(
+            template_content, data, blueprint, entity, transactions,
+            resolved_sections_meta, section_meta, blueprints_dir,
+            references_dir=args.references
+        )
+
+        expert_base = slugify(f"{entity_name}_Expert_Mode_FY{fiscal_year}") if fiscal_year else slugify(f"{entity_name}_Expert_Mode")
+        html_path = os.path.join(args.output, f'{expert_base}.html')
+        with open(html_path, 'w') as f:
+            f.write(populated)
+        print(f"\nDone! Expert Mode: {html_path}")
 
     else:
         # --- PDF (default) ---

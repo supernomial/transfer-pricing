@@ -3,7 +3,7 @@ name: local-file
 description: Prepare OECD-compliant transfer pricing local file documentation from start to finish. Use when the user asks to "prepare a local file", "create transfer pricing documentation", "draft a local file report", or "prepare documentation" for an entity. Handles data gathering, structuring, and final deliverable generation (PDF/Word).
 metadata:
   author: Supernomial
-  version: 0.2.0
+  version: 0.3.2
 ---
 
 # Local File Skill
@@ -154,7 +154,7 @@ If a `workflows` entry has multiple steps, the user describes the same multi-ste
 
 ## Pipeline
 
-Intake (+ read memory/notes/session log) → Data + notes (JSON) → Blueprint + section notes → Content resolution → Assembly script → Overview (dashboard) → Editor (HTML) → Report view (X-ray) → Final PDF → Save memory + session log
+Intake (+ read memory/notes/session log) → Data + notes (JSON) → Blueprint + section notes → Content resolution → Assembly script → Expert Mode (combined editor/dashboard/report) or individual views → Final PDF → Save memory + session log
 
 ## Efficiency
 
@@ -170,6 +170,7 @@ Intake (+ read memory/notes/session log) → Data + notes (JSON) → Blueprint +
 | Assembly script | `skills/local-file/scripts/assemble_local_file.py` |
 | Design system (brand tokens) | `assets/brand.css` (plugin-wide, shared by all skills) |
 | LaTeX template | `skills/local-file/assets/local_file.tex` |
+| Expert Mode template (combined editor + notes + dashboard) | `skills/local-file/assets/combined_view.html` |
 | Editor template (all sections + entity details) | `skills/local-file/assets/intake_preview.html` |
 | HTML report view template (X-ray) | `skills/local-file/assets/report_view.html` |
 | Markdown preview template | `skills/local-file/assets/intake_preview.md` |
@@ -231,7 +232,24 @@ Create or update the blueprint for this entity/deliverable. Each section maps to
 
 Do NOT assemble the document manually. Once the records and blueprint are ready, call the deterministic Python script.
 
-**Four views, same script — different `--format` and `--template` flags:**
+**Same script, different `--format` and `--template` flags:**
+
+**Expert Mode** (primary view — run after data/blueprint updates):
+```bash
+python3 skills/local-file/scripts/assemble_local_file.py \
+  --data "[selected-folder]/[Group Name]/Records/data.json" \
+  --blueprint "[selected-folder]/[Group Name]/Records/blueprints/local-file-[entity-id].json" \
+  --references "skills/local-file/references/" \
+  --library "[selected-folder]/_library/" \
+  --group-content "[selected-folder]/[Group Name]/Records/content/" \
+  --template "skills/local-file/assets/combined_view.html" \
+  --brand "assets/brand.css" \
+  --output "[selected-folder]/[Group Name]/" \
+  --format combined \
+  --blueprints-dir "[selected-folder]/[Group Name]/Records/blueprints/"
+```
+
+**Legacy views** (still work for backward compatibility):
 
 **1. Overview** (dashboard — run to show section progress):
 ```bash
@@ -296,26 +314,39 @@ The script reads the inputs, resolves content references, populates the template
 2. **Consolidate memory:** Merge duplicates, remove outdated entries, cap categories at ~15. See "Consolidation" in the Memory System section for the full checklist.
 3. **Present to user:** Show where the file is saved, what was included, and suggest next steps. Do NOT mention the session log or memory to the user — they just experience continuity next time.
 
-## Four Views — One Pipeline
+## Views — One Pipeline
 
-The user moves through four connected views during the preparation workflow:
+**Expert Mode** is the primary view — a single HTML file combining editor, notes panel, dashboard metrics, and document navigation with X-ray layer colors.
 
 | View | `--format` | Template | Purpose |
 |---|---|---|---|
-| **Overview** | `html` | `section_dashboard.html` | Dashboard showing all sections with status badges |
-| **Editor** | `html` | `intake_preview.html` | All sections by category with layer badges, entity details, transactions table |
-| **Report view** | `report` | `report_view.html` | Full document with all sections, category headers, and X-ray mode |
+| **Expert Mode** | `combined` | `combined_view.html` | Full editor + notes + dashboard + X-ray in one view. Primary authoring experience. |
+| **Overview** | `html` | `section_dashboard.html` | Dashboard showing all sections with status badges (legacy) |
+| **Editor** | `html` | `intake_preview.html` | All sections by category with layer badges (legacy) |
+| **Report view** | `report` | `report_view.html` | Full document with X-ray mode (legacy) |
 | **Final PDF** | `pdf` | `local_file.tex` | Submission-ready deliverable |
 
-The Overview dashboard is the starting point. Users see all sections at a glance, then move to the Editor for focused section-by-section editing with full entity context. The `--section` flag and `section_editor.html` still exist for backward compatibility but are no longer the primary editing view.
+Expert Mode replaces the Overview, Editor, and Report view for most workflows. The legacy views still work for backward compatibility.
 
-**X-ray mode** (report view only, toggled via button): annotates each section with its content layer source (blue = Universal, purple = Firm Library, amber = Group-wide, green = Entity-specific) and shows the impact of editing that content.
+**Expert Mode features:**
+- X-ray layer colors on every section (where content comes from)
+- Inline editing with save-to-clipboard flow
+- Section-level review and signoff tracking
+- Document stage progression (Draft → Review → Final)
+- Notes panel (object notes, section comments, footnotes)
+- Immersive reading mode
+- Blueprint browsing modal
+- Jurisdiction map card
 
-## Interactive Editor (Edit data)
+**X-ray layers:** Layer 1 (gray) = Standard content, Layer 2 (gray/white) = Firm library, Layer 3 (purple) = Group-wide, Layer 4 (blue) = Entity-specific.
 
-The editor (`--format html`) has **editable fields**. Users can edit section text and transaction data directly in the Cowork side panel, then click **"Send updates"** to copy only the **changed fields** to their clipboard. If they paste it in the chat, it includes a `_summary` array with human-readable change descriptions and only the modified data. Parse it and update accordingly. See `commands/prep-local-file.md` for the full handling flow.
+## Interactive Editing (Save Flow)
 
-The pasted data always has `"_source": "preview_edit"` — use this to detect edits vs. regular messages.
+**Expert Mode** and the legacy editor both have editable fields. Users edit content inline, then click **Save** to copy changes to clipboard. When pasted in chat, the JSON includes a `_summary` array with business-language descriptions and only the changed data.
+
+**Expert Mode** (`_source: "combined_view"`): Collects sections, section_notes, footnotes, section_status, stage, and document_meta. See `commands/prep-local-file.md` for the full handling flow.
+
+**Legacy editor** (`_source: "preview_edit"`): Collects section text and transaction data only.
 
 ## Behavior Guidelines
 

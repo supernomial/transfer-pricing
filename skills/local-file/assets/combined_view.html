@@ -1,0 +1,1955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expert Mode</title>
+<style>
+  /* --- Dark theme (default) --- */
+  :root, [data-theme="dark"] {
+    --sn-bg:             #020612;
+    --sn-surface:        #0c1528;
+    --sn-surface-hover:  #1e293b;
+    --sn-border:         #1e293b;
+    --sn-border-accent:  rgba(10, 106, 252, 0.3);
+    --sn-border-focus:   #0a6afc;
+    --sn-text:           #fafafa;
+    --sn-text-muted:     #7d7d7d;
+    --sn-text-dim:       #4a5568;
+    --sn-primary:        #0a6afc;
+    --sn-primary-hover:  #0858d1;
+    --sn-primary-dim:    rgba(10, 106, 252, 0.12);
+    --sn-success:        #22c55e;
+    --sn-success-dim:    rgba(34, 197, 94, 0.12);
+    --sn-warning:        #f59e0b;
+    --sn-warning-dim:    rgba(245, 158, 11, 0.12);
+    --sn-destructive:    #ef4444;
+    --sn-destructive-dim: rgba(239, 68, 68, 0.10);
+    --sn-layer1:         #64748b;
+    --sn-layer2:         #94a3b8;
+    --sn-layer3:         #a855f7;
+    --sn-layer4:         #3b82f6;
+    --sn-font:           -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    --sn-font-mono:      'SF Mono', 'Fira Code', Menlo, monospace;
+    --sn-font-serif:     Georgia, 'Times New Roman', serif;
+    --sn-radius:         8px;
+    --sn-radius-sm:      4px;
+    --sn-radius-lg:      12px;
+    --sn-topbar-bg:      rgba(2, 6, 18, 0.92);
+  }
+
+  /* --- Light theme --- */
+  [data-theme="light"] {
+    --sn-bg:             #fafbfd;
+    --sn-surface:        #ffffff;
+    --sn-surface-hover:  #f1f5f9;
+    --sn-border:         #e2e8f0;
+    --sn-border-accent:  rgba(10, 106, 252, 0.2);
+    --sn-border-focus:   #0a6afc;
+    --sn-text:           #0f172a;
+    --sn-text-muted:     #64748b;
+    --sn-text-dim:       #94a3b8;
+    --sn-primary:        #0a6afc;
+    --sn-primary-hover:  #0858d1;
+    --sn-primary-dim:    rgba(10, 106, 252, 0.08);
+    --sn-success:        #16a34a;
+    --sn-success-dim:    rgba(22, 163, 74, 0.10);
+    --sn-warning:        #d97706;
+    --sn-warning-dim:    rgba(217, 119, 6, 0.10);
+    --sn-destructive:    #dc2626;
+    --sn-destructive-dim: rgba(220, 38, 38, 0.08);
+    --sn-layer1:         #64748b;
+    --sn-layer2:         #64748b;
+    --sn-layer3:         #9333ea;
+    --sn-layer4:         #2563eb;
+    --sn-topbar-bg:      rgba(250, 251, 253, 0.92);
+  }
+
+  /* --- Reset + base --- */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--sn-font);
+    background: var(--sn-bg);
+    color: var(--sn-text);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* --- Top bar --- */
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 24px;
+    background: var(--sn-topbar-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--sn-border);
+  }
+
+  .top-bar-left { display: flex; align-items: center; gap: 12px; }
+  .top-bar-title { font-weight: 600; font-size: 14px; }
+  .top-bar-right { display: flex; align-items: center; gap: 10px; }
+
+  /* --- Save button (hidden by default, appears on changes) --- */
+  .save-btn {
+    display: none;
+    align-items: center;
+    padding: 6px 14px;
+    font-family: var(--sn-font);
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    background: var(--sn-primary);
+    border: 1px solid var(--sn-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .save-btn:hover {
+    background: var(--sn-primary-hover);
+    border-color: var(--sn-primary-hover);
+  }
+  .save-btn.visible {
+    display: inline-flex;
+  }
+
+  /* --- Toast notification --- */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--sn-surface);
+    border: 1px solid var(--sn-border);
+    border-radius: var(--sn-radius);
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--sn-text-muted);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 200;
+    pointer-events: none;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .theme-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; background: transparent;
+    color: var(--sn-text-dim); border: 1px solid var(--sn-border);
+    border-radius: 6px; cursor: pointer; font-size: 14px;
+    transition: all 0.15s; padding: 0;
+  }
+  .theme-toggle:hover { color: var(--sn-text); border-color: var(--sn-text-dim); }
+
+  /* --- Cards row --- */
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--sn-border);
+  }
+
+  .card {
+    background: var(--sn-surface);
+    border: 1px solid var(--sn-border);
+    border-radius: var(--sn-radius);
+    padding: 16px 20px;
+  }
+
+  .card-label {
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--sn-text-dim); margin-bottom: 4px;
+    line-height: 1;
+  }
+  .card-value { font-size: 13px; font-weight: 600; color: var(--sn-text); }
+  .card-detail { font-size: 11px; color: var(--sn-text-muted); margin-top: 1px; }
+
+  .card-scope {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+    align-content: start;
+  }
+
+  .card-scope-cell {
+    min-width: 0;
+  }
+
+  .card-mini {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--sn-text-dim);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .card-val {
+    font-size: 12px;
+    color: var(--sn-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .blueprint-tag {
+    color: var(--sn-primary);
+    font-weight: 500;
+  }
+
+  .blueprint-edit-btn {
+    font-family: var(--sn-font);
+    font-size: 10px;
+    color: var(--sn-text-dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 6px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .card-scope:hover .blueprint-edit-btn {
+    opacity: 1;
+  }
+
+  .blueprint-edit-btn:hover {
+    color: var(--sn-primary);
+  }
+
+  /* --- Blueprint modal --- */
+  .bp-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    justify-content: center;
+    align-items: center;
+  }
+
+  .bp-modal-overlay.open {
+    display: flex;
+  }
+
+  .bp-modal {
+    width: 90vw;
+    max-width: 900px;
+    max-height: 80vh;
+    background: var(--sn-surface);
+    border: 1px solid var(--sn-border);
+    border-radius: var(--sn-radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .bp-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--sn-border);
+  }
+
+  .bp-modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--sn-text);
+  }
+
+  .bp-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: none;
+    border: 1px solid var(--sn-border);
+    border-radius: 6px;
+    color: var(--sn-text-dim);
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.15s;
+  }
+
+  .bp-modal-close:hover {
+    color: var(--sn-text);
+    border-color: var(--sn-text-dim);
+  }
+
+  .bp-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  .bp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .bp-card {
+    background: var(--sn-bg);
+    border: 1px solid var(--sn-border);
+    border-radius: var(--sn-radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .bp-card:hover {
+    border-color: var(--sn-border-accent);
+  }
+
+  .bp-card.active {
+    border-color: var(--sn-primary);
+    box-shadow: 0 0 0 1px var(--sn-primary);
+  }
+
+  .bp-card-preview {
+    padding: 16px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .bp-preview-chapter {
+    font-size: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--sn-text-dim);
+    margin-top: 4px;
+  }
+
+  .bp-preview-chapter:first-child {
+    margin-top: 0;
+  }
+
+  .bp-preview-section {
+    height: 3px;
+    border-radius: 1.5px;
+    background: var(--sn-border);
+  }
+
+  .bp-preview-section.l1 { background: rgba(100, 116, 139, 0.2); }
+  .bp-preview-section.l2 { background: var(--sn-border); }
+  .bp-preview-section.l3 { background: rgba(168, 85, 247, 0.3); }
+  .bp-preview-section.l4 { background: rgba(59, 130, 246, 0.3); }
+
+  .bp-card-info {
+    padding: 12px 16px;
+    border-top: 1px solid var(--sn-border);
+  }
+
+  .bp-card-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sn-text);
+  }
+
+  .bp-card-meta {
+    font-size: 11px;
+    color: var(--sn-text-dim);
+    margin-top: 2px;
+  }
+
+  .bp-card-badge {
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    float: right;
+  }
+
+  .bp-card-badge.builtin {
+    color: var(--sn-primary);
+    background: var(--sn-primary-dim);
+  }
+
+  .bp-card-badge.custom {
+    color: var(--sn-warning);
+    background: var(--sn-warning-dim);
+  }
+
+  .bp-card-new {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 170px;
+    color: var(--sn-text-dim);
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .bp-card-new-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px dashed var(--sn-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.15s;
+  }
+
+  .bp-card:hover .bp-card-new-icon {
+    border-color: var(--sn-primary);
+    color: var(--sn-primary);
+  }
+
+  .progress-metrics {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+  }
+
+  .progress-metric {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .progress-num {
+    font-weight: 600;
+    font-family: var(--sn-font-mono);
+    font-size: 13px;
+    color: var(--sn-text);
+    line-height: 1;
+  }
+
+  .progress-lbl {
+    color: var(--sn-text-dim);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .progress-track {
+    position: relative;
+    height: 4px; border-radius: 2px; background: var(--sn-border);
+    margin-top: 8px; overflow: hidden;
+  }
+
+  .progress-fill {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%; border-radius: 2px;
+  }
+
+  .progress-fill-review {
+    background: var(--sn-primary);
+  }
+
+  .progress-fill-signoff {
+    background: var(--sn-success);
+    z-index: 1;
+  }
+
+  .progress-fill-stage {
+    background: var(--sn-primary);
+  }
+
+  /* --- Stage bar (Draft — Review — Final) --- */
+  .stage-bar {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 6px; margin-bottom: 10px;
+  }
+  .stage-track {
+    flex: 1; height: 4px; border-radius: 2px;
+    background: var(--sn-border); overflow: hidden;
+    position: relative;
+  }
+  .stage-track-fill {
+    position: absolute; top: 0; left: 0;
+    height: 100%; border-radius: 2px;
+    background: var(--sn-primary);
+    width: 0%; transition: width 0.2s;
+  }
+  .stage-label {
+    font-size: 11px; font-weight: 500; color: var(--sn-text-dim);
+    cursor: pointer; transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  .stage-label:hover { color: var(--sn-text-muted); }
+  .stage-label.active {
+    color: var(--sn-primary); font-weight: 600;
+  }
+
+  /* --- Map card --- */
+  .card-map {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-map .card-label {
+    position: relative;
+    z-index: 2;
+  }
+
+  .card-map-country {
+    position: relative;
+    z-index: 2;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sn-text);
+  }
+
+  .map-container {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 0;
+  }
+
+  .map-container::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 20%, var(--sn-surface) 75%);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .map-svg {
+    width: 160%;
+    height: 160%;
+    opacity: 0.5;
+  }
+
+  .map-land {
+    fill: var(--sn-surface-hover);
+    stroke: var(--sn-border);
+    stroke-width: 0.5;
+  }
+
+  .map-highlight {
+    fill: var(--sn-primary-dim);
+    stroke: var(--sn-primary);
+    stroke-width: 1;
+  }
+
+  /* --- Layout: sidebar + content --- */
+  .layout { display: flex; }
+
+  /* --- Sidebar nav --- */
+  .sidebar {
+    width: 240px; flex-shrink: 0;
+    position: sticky; top: 49px; height: calc(100vh - 49px);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-nav {
+    flex: 1 1 0; min-height: 0; overflow-y: auto; padding: 28px 0 16px 0;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 8px 6px 18px; font-size: 11px; color: var(--sn-text-muted);
+    cursor: pointer; transition: all 0.12s;
+    border-left: 2px solid transparent; text-decoration: none;
+    white-space: nowrap;
+  }
+  .nav-item:hover { color: var(--sn-text); background: var(--sn-surface-hover); }
+  .nav-item.active {
+    color: var(--sn-primary); border-left-color: var(--sn-primary);
+    background: var(--sn-primary-dim); font-weight: 500;
+  }
+  .nav-item .nav-icon {
+    font-size: 11px; width: 14px; text-align: center; flex-shrink: 0;
+    transition: transform 0.15s; display: inline-block;
+  }
+  .nav-item.has-subs .nav-icon { cursor: pointer; }
+  .nav-item.open > .nav-icon { transform: rotate(90deg); }
+  .nav-item .nav-label {
+    overflow: hidden; text-overflow: clip; min-width: 0;
+  }
+  .nav-item .nav-label.overflow {
+    mask-image: linear-gradient(to right, black calc(100% - 20px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 20px), transparent 100%);
+  }
+  .nav-sub-item { padding-left: 36px; font-size: 10px; }
+  .nav-divider { height: 1px; background: var(--sn-border); margin: 8px 16px 8px 16px; margin-right: 0; }
+
+  /* --- Collapsible sub-nav --- */
+  .nav-group-subs {
+    display: none; overflow: hidden;
+  }
+  .nav-group-subs.open { display: block; }
+
+  /* --- Nav status icons (review + sign-off) --- */
+  .nav-item { justify-content: flex-start; }
+
+  .nav-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .nav-status {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .sidebar:hover .nav-status {
+    opacity: 1;
+  }
+
+  .nav-status-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: var(--sn-text-dim);
+    opacity: 0.25;
+    transition: all 0.15s;
+    border-radius: 3px;
+  }
+
+  .nav-status-btn:hover {
+    opacity: 0.8;
+  }
+
+  .nav-status-btn.done {
+    opacity: 1;
+  }
+  .nav-status-btn.done[title="Reviewed"] {
+    color: var(--sn-primary);
+  }
+  .nav-status-btn.done[title="Signed off"] {
+    color: var(--sn-success);
+  }
+
+  .nav-status-btn svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  /* --- Content area (takes remaining space) --- */
+  .content-area {
+    flex: 1;
+    min-width: 0;
+    padding: 32px 270px 32px 40px;
+    position: relative;
+  }
+  @media (max-width: 1100px) {
+    .content-area { padding-right: 40px; }
+  }
+
+  /* --- Document header --- */
+  .doc-title, .doc-subtitle, .doc-meta, .section-heading, .section-subheading {
+    position: relative;
+  }
+  .edit-pen {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; margin-left: 6px; vertical-align: middle;
+    color: var(--sn-text-dim); opacity: 0; cursor: pointer;
+    transition: opacity 0.12s;
+  }
+  .edit-pen svg { width: 13px; height: 13px; }
+  .edit-pen:hover { color: var(--sn-primary); }
+  .doc-title:hover .edit-pen,
+  .doc-subtitle:hover .edit-pen,
+  .doc-meta:hover .edit-pen,
+  .section-heading:hover .edit-pen,
+  .section-subheading:hover .edit-pen { opacity: 1; }
+
+  .doc-title {
+    font-family: var(--sn-font-serif); font-size: 22px; font-weight: 700;
+    color: var(--sn-text); text-align: center; margin-bottom: 4px;
+    max-width: 620px;
+  }
+  .doc-subtitle {
+    font-family: var(--sn-font-serif); font-size: 15px;
+    color: var(--sn-text-muted); text-align: center; margin-bottom: 4px;
+    max-width: 620px;
+  }
+  .doc-meta {
+    font-size: 11px; color: var(--sn-text-dim); text-align: center; margin-bottom: 24px;
+    max-width: 620px;
+  }
+
+  /* --- X-ray legend (sidebar bottom, collapsible) --- */
+  .xray-legend {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 240px;
+    font-size: 11px; color: var(--sn-text-muted);
+    padding: 10px 16px;
+    background: var(--sn-bg);
+    border-top: 1px solid var(--sn-border);
+    z-index: 50;
+  }
+  .xray-legend-toggle {
+    display: flex; align-items: center; gap: 8px;
+    background: none; border: none; cursor: pointer;
+    font-family: var(--sn-font); font-size: 11px; font-weight: 500;
+    color: var(--sn-text-dim); padding: 0; width: 100%;
+  }
+  .xray-legend-toggle:hover { color: var(--sn-text-muted); }
+  .xray-legend-toggle.active { color: var(--sn-primary); }
+  .xray-legend-dots {
+    display: flex; gap: 5px; align-items: center;
+  }
+  .xray-dot {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--dot-color);
+  }
+  .xray-legend-detail {
+    display: none; flex-direction: column; gap: 5px;
+    margin-top: 10px; font-size: 11px; color: var(--sn-text-muted);
+  }
+  .xray-legend-detail.open { display: flex; }
+  .xray-legend-detail .xray-dot { margin-right: 6px; }
+
+  /* --- Sections --- */
+  .section { margin-bottom: 32px; max-width: 620px; }
+
+  .section-heading {
+    font-family: var(--sn-font-serif); font-size: 16px; font-weight: 700;
+    color: var(--sn-text); margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--sn-border);
+  }
+  .section-subheading {
+    font-family: var(--sn-font-serif); font-size: 14px; font-weight: 600;
+    color: var(--sn-text); margin-bottom: 8px; margin-top: 20px;
+  }
+
+  /* --- Section body wrapper (holds body + element note side by side) --- */
+  .section-body-wrapper {
+    position: relative;
+  }
+
+  .section-body {
+    font-size: 13px; line-height: 1.8;
+    padding: 12px 40px 12px 16px; border-radius: var(--sn-radius);
+    border: 1px solid transparent; position: relative;
+    max-height: calc(1.8em * 5 + 24px);
+    overflow: hidden;
+  }
+
+  .section-body:focus { outline: none; }
+  .xray-layer1:focus { border-color: rgba(100, 116, 139, 0.35); }
+  .xray-layer2:focus { border-color: rgba(100, 116, 139, 0.5); }
+  .xray-layer3:focus { border-color: rgba(168, 85, 247, 0.4); }
+  .xray-layer4:focus { border-color: rgba(59, 130, 246, 0.4); }
+
+  .section-body.collapsed::after {
+    content: ""; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2.4em;
+    background: linear-gradient(to bottom, transparent, var(--fade-color, var(--sn-bg)));
+    pointer-events: none;
+  }
+  .section-body.expanded { max-height: none; }
+  .section-body.expanded::after { display: none; }
+
+  .expand-btn {
+    position: absolute; bottom: 6px; right: 8px; font-size: 14px;
+    color: var(--sn-text-dim); cursor: pointer; background: none;
+    border: none; padding: 2px 4px; font-family: var(--sn-font); z-index: 1;
+    -webkit-user-select: none; user-select: none;
+  }
+  .expand-btn:hover { color: var(--sn-text-muted); }
+  .expand-icon { transition: transform 0.15s; }
+  .expand-btn.expanded .expand-icon { transform: rotate(180deg); }
+
+  /* --- Chat button inside element box --- */
+  .section-body {
+    position: relative;
+  }
+
+  .chat-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 2;
+  }
+
+  .section-body:hover .chat-btn {
+    opacity: 0.5;
+  }
+
+  .chat-btn:hover {
+    opacity: 1 !important;
+  }
+
+  .chat-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* --- Stacked elements: spacing via the divider between them --- */
+  .section-body-wrapper + .insert-divider + .section-body-wrapper {
+    margin-top: 0;
+  }
+
+  /* --- Insert-element divider (between stacked elements) --- */
+  .insert-divider {
+    position: relative;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  .insert-divider-hit {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40%;
+    height: 100%;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .insert-divider-btn,
+  .insert-divider-line {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .insert-divider-hit:hover ~ .insert-divider-btn,
+  .insert-divider-hit:hover ~ .insert-divider-line,
+  .insert-divider-btn:hover,
+  .insert-divider-btn:hover ~ .insert-divider-line {
+    opacity: 1;
+  }
+
+  .insert-divider-btn {
+    pointer-events: auto;
+  }
+
+  .insert-divider-line {
+    position: absolute;
+    left: 22px;
+    width: 33%;
+    height: 1px;
+    background: var(--sn-primary);
+    pointer-events: none;
+  }
+
+  .insert-divider-btn {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: none;
+    border: none;
+    color: var(--sn-primary);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .insert-divider-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+
+  /* X-ray layer indicators */
+  /* Standard: slate gray — subdued reference content */
+  .xray-layer1 { background: rgba(100, 116, 139, 0.06); border-color: rgba(100, 116, 139, 0.12); color: var(--sn-layer1); }
+  /* Firm Language: same background as standard */
+  .xray-layer2 { background: rgba(100, 116, 139, 0.06); border-color: rgba(100, 116, 139, 0.12); color: var(--sn-text); }
+  /* Group-specific: purple */
+  .xray-layer3 { background: rgba(168, 85, 247, 0.08); border-color: rgba(168, 85, 247, 0.15); color: var(--sn-layer3); }
+  /* Entity-specific: blue */
+  .xray-layer4 { background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.15); color: var(--sn-layer4); }
+
+  [data-theme="light"] .xray-layer1 { background: rgba(100, 116, 139, 0.05); border-color: rgba(100, 116, 139, 0.10); color: var(--sn-layer1); }
+  [data-theme="light"] .xray-layer2 { background: rgba(100, 116, 139, 0.05); border-color: rgba(100, 116, 139, 0.10); color: var(--sn-text); }
+  [data-theme="light"] .xray-layer3 { background: rgba(147, 51, 234, 0.06); border-color: rgba(147, 51, 234, 0.12); color: var(--sn-layer3); }
+  [data-theme="light"] .xray-layer4 { background: rgba(37, 99, 235, 0.06); border-color: rgba(37, 99, 235, 0.12); color: var(--sn-layer4); }
+
+  /* --- Tables --- */
+  .doc-table-wrap {
+    border: 1px solid var(--sn-border);
+    border-radius: var(--sn-radius);
+    overflow: hidden;
+  }
+
+  .doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .doc-table thead th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--sn-text-dim);
+    background: var(--sn-surface);
+    border-bottom: 1px solid var(--sn-border);
+  }
+
+  .doc-table tbody td {
+    padding: 10px 14px;
+    color: var(--sn-text);
+    border-bottom: 1px solid var(--sn-border);
+    outline: none;
+  }
+
+  .doc-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .doc-table tbody tr:hover {
+    background: var(--sn-surface-hover);
+  }
+
+  .doc-table .num {
+    text-align: right;
+    font-family: var(--sn-font-mono);
+    font-size: 12px;
+  }
+
+  /* --- Element notes (positioned in right margin, aligned with section) --- */
+  .element-note {
+    position: absolute;
+    left: calc(100% + 24px);
+    top: 0;
+    width: 210px;
+    overflow: hidden;
+  }
+
+  .element-note.collapsed::after {
+    content: ""; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2em;
+    background: linear-gradient(to bottom, transparent, var(--sn-bg));
+    pointer-events: none;
+  }
+  .element-note.expanded { max-height: none; z-index: 10; }
+  .element-note.expanded::after { display: none; }
+
+  .note-expand-btn {
+    position: absolute; bottom: 2px; right: 0; font-size: 12px;
+    color: var(--sn-text-dim); cursor: pointer; background: none;
+    border: none; padding: 2px 4px; font-family: var(--sn-font); z-index: 1;
+    -webkit-user-select: none; user-select: none;
+  }
+  .note-expand-btn:hover { color: var(--sn-text-muted); }
+  .note-expand-btn .expand-icon { transition: transform 0.15s; }
+  .note-expand-btn.expanded .expand-icon { transform: rotate(180deg); }
+
+  .element-note-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 3px;
+  }
+
+  .element-note-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--sn-text-muted);
+  }
+
+  .note-chat-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: var(--sn-text-dim);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .element-note:hover .note-chat-btn {
+    opacity: 0.5;
+  }
+
+  .note-chat-btn:hover {
+    opacity: 1 !important;
+  }
+
+  .note-chat-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* --- General notes (floating in top-right of content area) --- */
+  .general-notes {
+    width: 210px;
+    padding-top: 12px;
+    pointer-events: auto;
+    background: var(--sn-bg);
+  }
+
+  .general-notes-block {
+    position: relative;
+  }
+
+  .note-group { margin-bottom: 12px; }
+
+  .note-group-title {
+    font-size: 11px; font-weight: 600;
+    color: var(--sn-text-muted); margin-bottom: 4px;
+  }
+
+  .note-list { list-style: none; padding: 0; outline: none; }
+
+  .note-list li {
+    font-size: 11px; color: var(--sn-text-dim);
+    line-height: 1.5; padding-left: 10px;
+    position: relative; margin-bottom: 2px;
+    outline: none;
+  }
+
+  .note-list li::before {
+    content: "\2022"; position: absolute; left: 0; color: var(--sn-text-dim);
+  }
+
+  .note-list li:focus {
+    color: var(--sn-text-muted);
+  }
+
+  .note-group-title {
+    outline: none;
+  }
+
+  .note-group-title:focus {
+    color: var(--sn-text);
+  }
+
+  /* --- Immersive mode transitions --- */
+  .cards-row { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+  .sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+  .xray-legend { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+  .general-notes { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+  .element-note { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+  .content-area { transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  body.immersive .cards-row { transform: translateY(-100%); opacity: 0; margin-top: -120px; pointer-events: none; }
+  body.immersive .sidebar { transform: translateX(-240px); }
+  body.immersive .xray-legend { transform: translateX(-240px); }
+  /* Tab bar stays visible in immersive — notes content hides */
+  body.immersive .general-notes { transform: translateX(calc(100% + 40px)); opacity: 0; pointer-events: none; }
+  body.immersive .element-note { transform: translateX(40px); opacity: 0; pointer-events: none; }
+  body.immersive .element-footnote { transform: translateX(40px); opacity: 0; pointer-events: none; }
+  body.immersive .content-area { margin-left: 0; }
+
+  /* In immersive+notes-visible: restore transform only — tab visibility CSS controls opacity */
+  body.immersive.notes-visible .general-notes,
+  body.immersive.notes-visible .element-note,
+  body.immersive.notes-visible .element-footnote { transform: none; }
+
+  /* Then let the active tab through */
+  body.immersive.notes-visible[data-notes-tab="notes"] .general-notes { opacity: 1; pointer-events: auto; }
+  body.immersive.notes-visible[data-notes-tab="comments"] .element-note { opacity: 1; pointer-events: auto; }
+  body.immersive.notes-visible[data-notes-tab="footnotes"] .element-footnote { opacity: 1; pointer-events: auto; }
+
+  /* --- Notes panel tab bar --- */
+  .notes-panel-wrap {
+    position: absolute; top: 0; right: 40px; bottom: 0; width: 210px;
+    pointer-events: none;
+    z-index: 50;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .notes-panel-sticky {
+    position: sticky; top: 50px; width: 210px;
+    z-index: 50; pointer-events: auto;
+  }
+  .notes-panel-header {
+    width: 210px;
+    display: flex; gap: 12px; padding: 28px 0 10px 0;
+    border-bottom: 1px solid var(--sn-border);
+    pointer-events: auto;
+    background: var(--sn-bg);
+  }
+  .notes-tab-btn {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--sn-text-dim);
+    background: none; border: none; cursor: pointer; padding: 0;
+  }
+  .notes-tab-btn:hover { color: var(--sn-text-muted); }
+  .notes-tab-btn.active { color: var(--sn-primary); }
+
+  /* --- Tab visibility (controlled by data-notes-tab on body) --- */
+  body:not([data-notes-tab]) .element-note,
+  body:not([data-notes-tab]) .element-footnote,
+  body[data-notes-tab="notes"] .element-note,
+  body[data-notes-tab="notes"] .element-footnote { opacity: 0; pointer-events: none; }
+
+  body[data-notes-tab="comments"] .general-notes { opacity: 0; pointer-events: none; }
+  body[data-notes-tab="comments"] .element-footnote { opacity: 0; pointer-events: none; }
+
+  body[data-notes-tab="footnotes"] .general-notes { opacity: 0; pointer-events: none; }
+  body[data-notes-tab="footnotes"] .element-note { opacity: 0; pointer-events: none; }
+
+  /* All notes hidden */
+  body[data-notes-tab="none"] .general-notes,
+  body[data-notes-tab="none"] .element-note,
+  body[data-notes-tab="none"] .element-footnote { opacity: 0; pointer-events: none; }
+
+  /* --- Footnotes --- */
+  .element-footnote {
+    position: absolute; left: calc(100% + 24px); top: 0; width: 210px;
+    overflow: hidden;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .element-footnote.collapsed::after {
+    content: ""; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2em;
+    background: linear-gradient(to bottom, transparent, var(--sn-bg));
+    pointer-events: none;
+  }
+  .element-footnote.expanded { max-height: none; z-index: 10; }
+  .element-footnote.expanded::after { display: none; }
+  .footnote-entry { display: flex; gap: 4px; margin-bottom: 6px; }
+  .footnote-num {
+    font-size: 10px; font-weight: 600; color: var(--sn-text-dim);
+    font-family: var(--sn-font-mono); flex-shrink: 0; line-height: 1.5;
+  }
+  .footnote-text {
+    font-size: 11px; color: var(--sn-text-dim); font-style: italic; line-height: 1.5;
+  }
+  .fn-marker {
+    font-size: 9px; color: var(--sn-text-dim); vertical-align: super;
+    font-family: var(--sn-font-mono); cursor: default;
+  }
+
+  /* --- Narrow viewport: hide notes, show hint --- */
+  .narrow-hint {
+    display: none;
+    position: fixed; bottom: 16px; right: 16px;
+    font-size: 11px; color: var(--sn-primary);
+    background: var(--sn-primary-dim); border-radius: 6px;
+    padding: 6px 12px; z-index: 100;
+  }
+  @media (max-width: 1100px) {
+    .notes-panel-wrap,
+    .general-notes,
+    .element-note,
+    .element-footnote { display: none !important; }
+    .narrow-hint { display: block; }
+  }
+</style>
+<!-- BRAND_CSS_INJECT -->
+</head>
+<body data-theme="dark" data-notes-tab="notes" data-entity-id="<<ENTITY_ID>>" data-fiscal-year="<<FISCAL_YEAR>>">
+
+  <div class="narrow-hint">Widen the pane to view notes, comments, and footnotes</div>
+
+  <!-- SVG icon definitions (hidden) -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="icon-chat" viewBox="0 0 15 15"><path d="M12.5 3L2.5 3.00002C1.67157 3.00002 1 3.6716 1 4.50002V9.50003C1 10.3285 1.67157 11 2.5 11H7.50003C7.63264 11 7.75982 11.0527 7.85358 11.1465L10 13.2929V11.5C10 11.2239 10.2239 11 10.5 11H12.5C13.3284 11 14 10.3285 14 9.50003V4.5C14 3.67157 13.3284 3 12.5 3ZM2.49999 2.00002L12.5 2C13.8807 2 15 3.11929 15 4.5V9.50003C15 10.8807 13.8807 12 12.5 12H11V14.5C11 14.7022 10.8782 14.8845 10.6913 14.9619C10.5045 15.0393 10.2894 14.9965 10.1464 14.8536L7.29292 12H2.5C1.11929 12 0 10.8807 0 9.50003V4.50002C0 3.11931 1.11928 2.00003 2.49999 2.00002Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"/></symbol>
+    <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="icon-signature" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 17-2.156-1.868A.5.5 0 0 0 18 15.5v.5a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1c0-2.545-3.991-3.97-8.5-4a1 1 0 0 0 0 5c4.153 0 4.745-11.295 5.708-13.5a2.5 2.5 0 1 1 3.31 3.284"/><path d="M3 21h18"/></symbol>
+    <symbol id="icon-enter-fs" viewBox="0 0 15 15"><path d="M2 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1H3v2.5a.5.5 0 0 1-1 0v-3ZM12.5 2a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0V3H9.5a.5.5 0 0 1 0-1h3ZM2 12.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 0-1H3V9.5a.5.5 0 0 0-1 0v3ZM12.5 13a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-1 0V12H9.5a.5.5 0 0 0 0 1h3Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"/></symbol>
+    <symbol id="icon-pencil" viewBox="0 0 15 15"><path d="M11.8536 1.14645C11.6583 0.951184 11.3417 0.951184 11.1465 1.14645L3.71455 8.57836C3.62459 8.66832 3.55263 8.77461 3.50251 8.89155L2.04044 12.303C1.9599 12.491 2.00189 12.709 2.14646 12.8536C2.29103 12.9981 2.50905 13.0401 2.69697 12.9596L6.10847 11.4975C6.2254 11.4474 6.3317 11.3754 6.42166 11.2855L13.8536 3.85355C14.0488 3.65829 14.0488 3.34171 13.8536 3.14645L11.8536 1.14645ZM4.42166 9.28547L11.5 2.20711L12.7929 3.5L5.71455 10.5784L4.21924 11.2192L3.78081 10.7808L4.42166 9.28547Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"/></symbol>
+    <symbol id="icon-exit-fs" viewBox="0 0 15 15"><path d="M5.5 2C5.77614 2 6 2.22386 6 2.5V5.5C6 5.77614 5.77614 6 5.5 6H2.5C2.22386 6 2 5.77614 2 5.5C2 5.22386 2.22386 5 2.5 5H5V2.5C5 2.22386 5.22386 2 5.5 2ZM9.5 2C9.77614 2 10 2.22386 10 2.5V5H12.5C12.7761 5 13 5.22386 13 5.5C13 5.77614 12.7761 6 12.5 6H9.5C9.22386 6 9 5.77614 9 5.5V2.5C9 2.22386 9.22386 2 9.5 2ZM2 9.5C2 9.22386 2.22386 9 2.5 9H5.5C5.77614 9 6 9.22386 6 9.5V12.5C6 12.7761 5.77614 13 5.5 13C5.22386 13 5 12.7761 5 12.5V10H2.5C2.22386 10 2 9.77614 2 9.5ZM9 9.5C9 9.22386 9.22386 9 9.5 9H12.5C12.7761 9 13 9.22386 13 9.5C13 9.77614 12.7761 10 12.5 10H10V12.5C10 12.7761 9.77614 13 9.5 13C9.22386 13 9 12.7761 9 12.5V9.5Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"/></symbol>
+  </svg>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="top-bar-title">Expert Mode</span>
+    </div>
+    <div class="top-bar-right">
+      <button class="save-btn" id="save-btn" onclick="saveChanges()">Save</button>
+      <button class="theme-toggle" id="immersive-btn" onclick="toggleImmersive()" title="Immersive view"><svg width="15" height="15"><use href="#icon-enter-fs"/></svg></button>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9790;</button>
+    </div>
+  </div>
+
+  <!-- Cards row -->
+  <div class="cards-row">
+    <div class="card card-scope">
+      <div class="card-scope-cell"><div class="card-mini">Group</div><div class="card-val"><<GROUP_NAME>></div></div>
+      <div class="card-scope-cell"><div class="card-mini">Blueprint</div><div class="card-val"><span class="blueprint-tag"><<BLUEPRINT_NAME>></span> <button class="blueprint-edit-btn" onclick="openBlueprintModal()">edit</button></div></div>
+      <div class="card-scope-cell"><div class="card-mini">Entity</div><div class="card-val"><<ENTITY_NAME>></div></div>
+      <div class="card-scope-cell"><div class="card-mini">FY</div><div class="card-val"><<FISCAL_YEAR>></div></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Progress</div>
+      <div class="stage-bar">
+        <span class="stage-label <<STAGE_DRAFT_CLASS>>" onclick="setStage(this, 0)">Draft</span>
+        <div class="stage-track"><div class="stage-track-fill" style="width: <<STAGE_FILL_1>>"></div></div>
+        <span class="stage-label <<STAGE_REVIEW_CLASS>>" onclick="setStage(this, 1)">Review</span>
+        <div class="stage-track"><div class="stage-track-fill" style="width: <<STAGE_FILL_2>>"></div></div>
+        <span class="stage-label <<STAGE_FINAL_CLASS>>" onclick="setStage(this, 2)">Final</span>
+      </div>
+      <div class="progress-metrics">
+        <div class="progress-metric"><span class="progress-num"><<TOTAL_SECTIONS>></span><span class="progress-lbl">sections</span></div>
+        <div class="progress-metric"><span class="progress-num" style="color: var(--sn-primary)"><<REVIEWED_COUNT>></span><span class="progress-lbl">reviewed</span></div>
+        <div class="progress-metric"><span class="progress-num" style="color: var(--sn-success)"><<SIGNOFF_COUNT>></span><span class="progress-lbl">signed off</span></div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill progress-fill-signoff" style="width: <<SIGNOFF_PCT>>;"></div>
+        <div class="progress-fill progress-fill-review" style="width: <<REVIEW_PCT>>;"></div>
+      </div>
+    </div>
+    <div class="card card-map">
+      <div class="card-label">Jurisdiction</div>
+      <div class="card-map-country"><<COUNTRY>></div>
+      <div class="map-container">
+        <<JURISDICTION_SVG>>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layout -->
+  <div class="layout">
+
+    <!-- Left: Navigation -->
+    <nav class="sidebar">
+      <div class="sidebar-nav" id="sidebar-nav"></div>
+
+      <!-- X-ray layer legend -->
+      <div class="xray-legend">
+        <button class="xray-legend-toggle" onclick="toggleLegend(this)">
+          Legend
+          <span class="xray-legend-dots">
+            <span class="xray-dot" style="--dot-color: var(--sn-layer1);"></span>
+            <span class="xray-dot" style="--dot-color: var(--sn-text);"></span>
+            <span class="xray-dot" style="--dot-color: var(--sn-layer3);"></span>
+            <span class="xray-dot" style="--dot-color: var(--sn-layer4);"></span>
+          </span>
+        </button>
+        <div class="xray-legend-detail">
+          <span><span class="xray-dot" style="--dot-color: var(--sn-layer1);"></span>Standard</span>
+          <span><span class="xray-dot" style="--dot-color: var(--sn-text);"></span>Firm Language</span>
+          <span><span class="xray-dot" style="--dot-color: var(--sn-layer3);"></span>Group-specific</span>
+          <span><span class="xray-dot" style="--dot-color: var(--sn-layer4);"></span>Entity-specific</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Content area (full remaining width, notes positioned absolutely) -->
+    <div class="content-area">
+
+      <!-- Notes panel (sticky tab bar + general notes) -->
+      <div class="notes-panel-wrap">
+        <div class="notes-panel-sticky">
+          <div class="notes-panel-header">
+            <button class="notes-tab-btn active" data-tab="notes" onclick="switchNotesTab('notes')">Notes</button>
+            <button class="notes-tab-btn" data-tab="comments" onclick="switchNotesTab('comments')">Comments</button>
+            <button class="notes-tab-btn" data-tab="footnotes" onclick="switchNotesTab('footnotes')">Footnotes</button>
+          </div>
+          <div class="general-notes">
+            <div class="general-notes-block" id="general-notes">
+              <<GENERAL_NOTES>>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Document header -->
+      <div class="doc-title"><<DOCUMENT_TITLE>><span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span></div>
+      <div class="doc-subtitle"><<DOCUMENT_SUBTITLE>><span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span></div>
+      <div class="doc-meta"><<DOCUMENT_META>><span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span></div>
+
+
+      <<DOCUMENT_SECTIONS>>
+
+    </div><!-- /content-area -->
+
+  </div><!-- /layout -->
+
+<!-- Blueprint modal -->
+<div class="bp-modal-overlay" id="bp-modal" onclick="closeBlueprintModal(event)">
+  <div class="bp-modal" onclick="event.stopPropagation()">
+    <div class="bp-modal-header">
+      <div class="bp-modal-title">Blueprints</div>
+      <button class="bp-modal-close" onclick="closeBlueprintModal()">&times;</button>
+    </div>
+    <div class="bp-modal-body">
+      <div class="bp-grid">
+        <<BLUEPRINT_CARDS>>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Changes copied — paste in chat to save</div>
+
+<script>
+function toggleExpand(btn) {
+  window.getSelection().removeAllRanges();
+  const body = btn.parentElement;
+  const isExpanded = body.classList.contains('expanded');
+  if (isExpanded) {
+    body.classList.remove('expanded');
+    body.classList.add('collapsed');
+    btn.classList.remove('expanded');
+  } else {
+    body.classList.remove('collapsed');
+    body.classList.add('expanded');
+    btn.classList.add('expanded');
+  }
+  // Sync sibling notes max-height to new element height
+  syncNoteHeights(body);
+}
+
+function syncNoteHeights(sectionBody) {
+  var wrapper = sectionBody.closest('.section-body-wrapper');
+  if (!wrapper) return;
+  // Small delay to let CSS reflow
+  requestAnimationFrame(function() {
+    var h = sectionBody.offsetHeight;
+    wrapper.querySelectorAll('.element-note, .element-footnote').forEach(function(el) {
+      if (!el.classList.contains('expanded')) {
+        el.style.maxHeight = h + 'px';
+      }
+    });
+  });
+}
+
+function toggleNoteExpand(btn) {
+  var note = btn.parentElement;
+  var isExpanded = note.classList.contains('expanded');
+  if (isExpanded) {
+    note.classList.remove('expanded');
+    note.classList.add('collapsed');
+    btn.classList.remove('expanded');
+    // Restore opacity on notes below
+    dimNotesBelow(note, false);
+  } else {
+    note.classList.remove('collapsed');
+    note.classList.add('expanded');
+    btn.classList.add('expanded');
+    // Dim notes below that might be overlapped
+    dimNotesBelow(note, true);
+  }
+}
+
+function dimNotesBelow(expandedNote, dim) {
+  // Find sibling notes of same type in subsequent wrappers
+  var wrapper = expandedNote.closest('.section-body-wrapper');
+  if (!wrapper) return;
+  var cls = expandedNote.classList.contains('element-note') ? '.element-note' : '.element-footnote';
+  var next = wrapper.nextElementSibling;
+  while (next) {
+    if (next.classList && next.classList.contains('section-body-wrapper')) {
+      var sibling = next.querySelector(cls);
+      if (sibling) sibling.style.opacity = dim ? '0.2' : '';
+    }
+    next = next.nextElementSibling;
+  }
+}
+
+// Init: match note max-height to sibling element box, add collapse/expand
+(function() {
+  document.querySelectorAll('.element-note, .element-footnote').forEach(function(el) {
+    var wrapper = el.closest('.section-body-wrapper');
+    if (!wrapper) return;
+    var body = wrapper.querySelector('.section-body');
+    if (body) {
+      var h = body.offsetHeight;
+      el.style.maxHeight = h + 'px';
+    }
+    el.classList.add('collapsed');
+    var btn = document.createElement('button');
+    btn.className = 'note-expand-btn';
+    btn.innerHTML = '<span class="expand-icon">&#9662;</span>';
+    btn.onclick = function() { toggleNoteExpand(this); };
+    el.appendChild(btn);
+  });
+})();
+
+function switchNotesTab(tab) {
+  var body = document.body;
+  var current = body.getAttribute('data-notes-tab') || 'notes';
+
+  // Clicking the active tab toggles all notes off; clicking again restores it
+  if (current === tab) {
+    body.setAttribute('data-notes-tab', 'none');
+    document.querySelectorAll('.notes-tab-btn').forEach(function(btn) {
+      btn.classList.remove('active');
+    });
+    if (body.classList.contains('immersive')) body.classList.remove('notes-visible');
+    return;
+  }
+  if (current === 'none' && tab === undefined) return;
+
+  body.setAttribute('data-notes-tab', tab);
+  document.querySelectorAll('.notes-tab-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+  });
+  if (body.classList.contains('immersive')) body.classList.add('notes-visible');
+}
+
+function setStage(el, index) {
+  var bar = el.closest('.stage-bar');
+  var labels = bar.querySelectorAll('.stage-label');
+  var fills = bar.querySelectorAll('.stage-track-fill');
+  labels.forEach(function(l) { l.classList.remove('active'); });
+  el.classList.add('active');
+  fills.forEach(function(f, i) {
+    f.style.width = (i < index) ? '100%' : '0%';
+  });
+  if (!isDirty) {
+    isDirty = true;
+    var saveBtn = document.getElementById('save-btn');
+    if (saveBtn) saveBtn.classList.add('visible');
+  }
+}
+
+function toggleLegend(btn) {
+  var detail = btn.nextElementSibling;
+  var isOpen = detail.classList.contains('open');
+  detail.classList.toggle('open');
+  btn.classList.toggle('active', !isOpen);
+}
+
+function toggleTheme() {
+  const body = document.body;
+  if (body.getAttribute('data-theme') === 'dark') {
+    body.setAttribute('data-theme', 'light');
+  } else {
+    body.setAttribute('data-theme', 'dark');
+  }
+  var icon = body.getAttribute('data-theme') === 'dark' ? '\u263E' : '\u2600';
+  document.querySelectorAll('.theme-toggle').forEach(function(btn) {
+    if (btn.id !== 'immersive-btn') btn.innerHTML = icon;
+  });
+}
+
+// --- Immersive mode ---
+var _preImmersiveTab = null;
+
+function toggleImmersive() {
+  var body = document.body;
+  body.classList.toggle('immersive');
+  var btn = document.getElementById('immersive-btn');
+  var use = btn.querySelector('use');
+  if (body.classList.contains('immersive')) {
+    use.setAttribute('href', '#icon-exit-fs');
+    btn.title = 'Exit immersive';
+    // Remember active tab, then deactivate
+    _preImmersiveTab = body.getAttribute('data-notes-tab') || 'notes';
+    body.setAttribute('data-notes-tab', 'none');
+    document.querySelectorAll('.notes-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    body.classList.remove('notes-visible');
+  } else {
+    use.setAttribute('href', '#icon-enter-fs');
+    btn.title = 'Immersive view';
+    body.classList.remove('notes-visible');
+    // Restore whichever tab the user last used in immersive, or the pre-immersive tab
+    var current = body.getAttribute('data-notes-tab');
+    var tab = (current && current !== 'none') ? current : (_preImmersiveTab || 'notes');
+    body.setAttribute('data-notes-tab', tab);
+    document.querySelectorAll('.notes-tab-btn').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+    });
+    _preImmersiveTab = null;
+  }
+}
+
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.body.classList.contains('immersive')) {
+    toggleImmersive();
+  }
+});
+
+// --- Build nav dynamically from headings ---
+(function() {
+  var nav = document.getElementById('sidebar-nav');
+  var headings = document.querySelectorAll('.section-heading, .section-subheading');
+  var currentGroup = null;
+  var currentSubs = null;
+  var topIndex = 0;
+  var subIndex = 0;
+
+  function stripNum(text) {
+    return text.replace(/^\d+(\.\d+)?\s+/, '');
+  }
+
+  headings.forEach(function(h) {
+    var section = h.closest('.section') || h.parentElement;
+    var id = h.id || section.id;
+    if (!id) return;
+    var label = stripNum(h.textContent.trim());
+
+    if (h.classList.contains('section-heading')) {
+      // Top-level item
+      topIndex++;
+      subIndex = 0;
+      var hasSubs = section.querySelector('.section-subheading') !== null;
+      var headReviewed = h.getAttribute('data-reviewed') === 'true';
+      var headSignedOff = h.getAttribute('data-signed-off') === 'true';
+      var item = document.createElement('a');
+      item.className = 'nav-item';
+      item.href = '#' + id;
+      item.onclick = function(e) { scrollToSection(e); };
+      item.innerHTML = '<span class="nav-icon">&#9656;</span><span class="nav-label">' + label + '</span>' +
+        '<span class="nav-status">' +
+        '<button class="nav-status-btn' + (headReviewed ? ' done' : '') + '" title="Reviewed" onclick="toggleNavStatus(event,this)"><svg><use href="#icon-eye"/></svg></button>' +
+        '<button class="nav-status-btn' + (headSignedOff ? ' done' : '') + '" title="Signed off" onclick="toggleNavStatus(event,this)"><svg><use href="#icon-signature"/></svg></button>' +
+        '</span>';
+
+      if (hasSubs) {
+        item.classList.add('has-subs');
+        item.querySelector('.nav-icon').onclick = function(e) {
+          e.preventDefault(); e.stopPropagation();
+          var navItem = this.closest('.nav-item');
+          navItem.classList.toggle('open');
+          var subs = navItem.nextElementSibling;
+          if (subs && subs.classList.contains('nav-group-subs')) subs.classList.toggle('open');
+        };
+      }
+
+      nav.appendChild(item);
+      currentGroup = item;
+
+      if (hasSubs) {
+        currentSubs = document.createElement('div');
+        currentSubs.className = 'nav-group-subs';
+        nav.appendChild(currentSubs);
+      } else {
+        currentSubs = null;
+      }
+
+    } else if (h.classList.contains('section-subheading') && currentSubs) {
+      subIndex++;
+      var isReviewed = h.getAttribute('data-reviewed') === 'true';
+      var isSignedOff = h.getAttribute('data-signed-off') === 'true';
+      var sub = document.createElement('a');
+      sub.className = 'nav-item nav-sub-item';
+      sub.href = '#' + id;
+      sub.onclick = function(e) { scrollToSection(e); };
+      sub.innerHTML = '<span class="nav-label">' + topIndex + '.' + subIndex + ' ' + label + '</span>' +
+        '<span class="nav-status">' +
+        '<button class="nav-status-btn' + (isReviewed ? ' done' : '') + '" title="Reviewed" onclick="toggleNavStatus(event,this)"><svg><use href="#icon-eye"/></svg></button>' +
+        '<button class="nav-status-btn' + (isSignedOff ? ' done' : '') + '" title="Signed off" onclick="toggleNavStatus(event,this)"><svg><use href="#icon-signature"/></svg></button>' +
+        '</span>';
+      currentSubs.appendChild(sub);
+    }
+  });
+
+  // Add dividers between groups (top-level item + its subs)
+  var children = Array.from(nav.children);
+  for (var i = children.length - 1; i > 0; i--) {
+    var child = children[i];
+    // Insert divider before each top-level nav-item (except the first)
+    if (child.classList.contains('nav-item') && !child.classList.contains('nav-sub-item')) {
+      var div = document.createElement('div');
+      div.className = 'nav-divider';
+      nav.insertBefore(div, child);
+    }
+  }
+
+  // Set first nav item as active
+  var firstItem = nav.querySelector('.nav-item');
+  if (firstItem) firstItem.classList.add('active');
+
+  // Mark labels that overflow so only those get the fade
+  // Temporarily show all sub-groups so we can measure
+  var hiddenSubs = nav.querySelectorAll('.nav-group-subs:not(.open)');
+  hiddenSubs.forEach(function(s) { s.style.display = 'block'; });
+  nav.querySelectorAll('.nav-label').forEach(function(label) {
+    if (label.scrollWidth > label.clientWidth) label.classList.add('overflow');
+  });
+  hiddenSubs.forEach(function(s) { s.style.display = ''; });
+})();
+
+// --- Scroll spy: highlight active nav item based on scroll position ---
+var navItems = document.querySelectorAll('.nav-item[href]');
+var sections = [];
+navItems.forEach(function(item) {
+  var id = item.getAttribute('href').substring(1);
+  var el = document.getElementById(id);
+  if (el) sections.push({ id: id, el: el, nav: item });
+});
+
+window.addEventListener('scroll', function() {
+  var scrollY = window.scrollY + 80;
+  var active = null;
+  for (var i = sections.length - 1; i >= 0; i--) {
+    if (sections[i].el.getBoundingClientRect().top + window.scrollY <= scrollY) {
+      active = sections[i];
+      break;
+    }
+  }
+  if (active) {
+    navItems.forEach(function(n) { n.classList.remove('active'); });
+    active.nav.classList.add('active');
+    // Auto-expand parent group if sub-item is active
+    var subs = active.nav.closest('.nav-group-subs');
+    if (subs && !subs.classList.contains('open')) {
+      subs.classList.add('open');
+      var prev = subs.previousElementSibling;
+      if (prev) prev.classList.add('open');
+    }
+  }
+});
+
+// --- Nav status toggle (review / sign-off) ---
+function toggleNavStatus(e, btn) {
+  e.preventDefault();
+  e.stopPropagation();
+  btn.classList.toggle('done');
+
+  // Sync status to corresponding section-subheading data attributes
+  var navItem = btn.closest('.nav-item');
+  if (navItem) {
+    var href = navItem.getAttribute('href');
+    if (href) {
+      var heading = document.querySelector(href);
+      if (heading && heading.classList.contains('section-subheading')) {
+        var statusBtns = navItem.querySelectorAll('.nav-status-btn');
+        if (statusBtns.length >= 2) {
+          heading.setAttribute('data-reviewed', statusBtns[0].classList.contains('done') ? 'true' : 'false');
+          heading.setAttribute('data-signed-off', statusBtns[1].classList.contains('done') ? 'true' : 'false');
+        }
+      }
+    }
+  }
+
+  if (!isDirty) {
+    isDirty = true;
+    saveBtn.classList.add('visible');
+  }
+}
+
+// --- Chat edit: sends element context to chat ---
+function chatEdit(btn) {
+  var body = btn.closest('.section-body');
+  var section = btn.closest('.section');
+  var sectionName = section ? section.querySelector('.section-heading').textContent : 'this section';
+  var clone = body.cloneNode(true);
+  clone.querySelectorAll('.chat-btn, .expand-btn').forEach(function(b) { b.remove(); });
+  var text = clone.textContent.trim();
+  var preview = text.length > 60 ? text.substring(0, 57) + '…' : text;
+  var msg = 'Edit element in ' + sectionName + ': "' + preview + '"';
+
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 3000);
+}
+
+// --- Chat edit notes: sends note context to chat ---
+function chatEditNote(btn) {
+  var note = btn.closest('.element-note');
+  var label = note.querySelector('.element-note-label');
+  var section = note.closest('.section');
+  var sectionName = section ? section.querySelector('.section-heading').textContent : 'this section';
+  var noteName = label ? label.textContent : 'notes';
+  var msg = 'Edit "' + noteName + '" in ' + sectionName;
+
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 3000);
+}
+
+// --- Insert element: sends context to chat ---
+function insertElement(btn) {
+  var divider = btn.closest('.insert-divider');
+  var prev = divider.previousElementSibling;
+  var next = divider.nextElementSibling;
+  var section = divider.closest('.section');
+  var sectionName = section ? section.querySelector('.section-heading').textContent : 'this section';
+
+  // Build context message
+  var prevLabel = getElementLabel(prev);
+  var nextLabel = getElementLabel(next);
+  var msg = 'Add a content element to ' + sectionName + ', between "' + prevLabel + '" and "' + nextLabel + '"';
+
+  // In production: send to chat. For prototype: show toast.
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 3000);
+}
+
+function getElementLabel(wrapper) {
+  if (!wrapper || !wrapper.classList.contains('section-body-wrapper')) return '…';
+  var body = wrapper.querySelector('.section-body');
+  if (!body) return '…';
+  // Use first ~60 chars of text content
+  var clone = body.cloneNode(true);
+  clone.querySelectorAll('.chat-btn, .expand-btn').forEach(function(b) { b.remove(); });
+  var text = clone.textContent.trim();
+  return text.length > 60 ? text.substring(0, 57) + '…' : text;
+}
+
+// --- Nav scroll to section ---
+function scrollToSection(e) {
+  e.preventDefault();
+  var href = e.currentTarget.getAttribute('href');
+  var target = document.querySelector(href);
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Update active nav item
+    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+    e.currentTarget.classList.add('active');
+  }
+}
+
+// --- Enter key in note lists creates new bullet ---
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  var list = e.target.closest('.note-list');
+  if (!list) return;
+  e.preventDefault();
+  var li = document.createElement('li');
+  li.innerHTML = '\u200B'; // zero-width space so cursor lands inside
+  var currentLi = window.getSelection().anchorNode;
+  if (currentLi && currentLi.nodeType === 3) currentLi = currentLi.parentElement;
+  if (currentLi && currentLi.tagName === 'LI') {
+    currentLi.after(li);
+  } else {
+    list.appendChild(li);
+  }
+  // Place cursor in new li
+  var range = document.createRange();
+  var sel = window.getSelection();
+  range.setStart(li, 0);
+  range.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(range);
+});
+
+// --- Blueprint modal ---
+function openBlueprintModal() {
+  var modal = document.getElementById('bp-modal');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBlueprintModal(e) {
+  // If called from overlay click, only close if clicking the overlay itself
+  if (e && e.target !== document.getElementById('bp-modal')) return;
+  var modal = document.getElementById('bp-modal');
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// --- Dirty tracking ---
+var isDirty = false;
+var saveBtn = document.getElementById('save-btn');
+
+document.addEventListener('input', function(e) {
+  if (e.target.closest('[contenteditable]') && !isDirty) {
+    isDirty = true;
+    saveBtn.classList.add('visible');
+  }
+});
+
+// --- Helper: humanize section keys for business-friendly summaries ---
+function humanizeSectionKey(key) {
+  var display = key;
+  // Strip known prefixes
+  ['preamble_', 'fp_', 'tx_', 'bm_'].forEach(function(prefix) {
+    if (display.startsWith(prefix)) display = display.substring(prefix.length);
+  });
+  return display.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+}
+
+// --- Helper: extract clean text from a section body element ---
+function cleanSectionText(el) {
+  var clone = el.cloneNode(true);
+  clone.querySelectorAll('.icon-bar, .expand-btn, .chat-btn').forEach(function(c) { c.remove(); });
+  return clone.textContent.trim();
+}
+
+function saveChanges() {
+  var payload = {
+    _source: 'combined_view'
+  };
+  var summary = [];
+
+  // Read entity/fiscal-year from body data attributes if present
+  var body = document.body;
+  var entityId = body.getAttribute('data-entity-id');
+  var fiscalYear = body.getAttribute('data-fiscal-year');
+  if (entityId) payload._entity_id = entityId;
+  if (fiscalYear) payload._fiscal_year = fiscalYear;
+
+  // --- Collect sections ---
+  var sections = {};
+  document.querySelectorAll('.section-body[contenteditable]').forEach(function(el) {
+    var key = el.getAttribute('data-section-key');
+    if (!key) return;
+    var current = cleanSectionText(el);
+    var original = el.getAttribute('data-original');
+    if (original !== null && current !== original) {
+      sections[key] = current;
+      summary.push('Updated the ' + humanizeSectionKey(key) + ' section with new content');
+    }
+  });
+  if (Object.keys(sections).length > 0) payload.sections = sections;
+
+  // --- Collect section_notes ---
+  var sectionNotes = {};
+  document.querySelectorAll('.element-note').forEach(function(note) {
+    var wrapper = note.closest('.section-body-wrapper');
+    if (!wrapper) return;
+    var sectionBody = wrapper.querySelector('.section-body[data-section-key]');
+    if (!sectionBody) return;
+    var key = sectionBody.getAttribute('data-section-key');
+    var list = note.querySelector('.note-list');
+    if (!list) return;
+    var items = [];
+    list.querySelectorAll('li').forEach(function(li) {
+      var text = li.textContent.trim();
+      if (text && text !== '\u200B') items.push(text);
+    });
+    if (items.length > 0) sectionNotes[key] = items;
+  });
+  if (Object.keys(sectionNotes).length > 0) payload.section_notes = sectionNotes;
+
+  // --- Collect footnotes ---
+  var footnotes = {};
+  document.querySelectorAll('.element-footnote').forEach(function(fn) {
+    var wrapper = fn.closest('.section-body-wrapper');
+    if (!wrapper) return;
+    var sectionBody = wrapper.querySelector('.section-body[data-section-key]');
+    if (!sectionBody) return;
+    var key = sectionBody.getAttribute('data-section-key');
+    var items = [];
+    fn.querySelectorAll('.footnote-entry .footnote-text').forEach(function(ft) {
+      var text = ft.textContent.trim();
+      if (text) items.push(text);
+    });
+    if (items.length > 0) footnotes[key] = items;
+  });
+  if (Object.keys(footnotes).length > 0) payload.footnotes = footnotes;
+
+  // --- Collect section_status from nav status buttons ---
+  var sectionStatus = {};
+  document.querySelectorAll('.section-subheading[data-section-key]').forEach(function(sub) {
+    var key = sub.getAttribute('data-section-key');
+    var reviewed = sub.getAttribute('data-reviewed') === 'true';
+    var signedOff = sub.getAttribute('data-signed-off') === 'true';
+    if (reviewed || signedOff) {
+      sectionStatus[key] = { reviewed: reviewed, signed_off: signedOff };
+      if (reviewed) summary.push('Marked ' + humanizeSectionKey(key) + ' as reviewed');
+      if (signedOff) summary.push('Signed off on ' + humanizeSectionKey(key));
+    }
+  });
+  // Also check nav status buttons for headings without data-section-key
+  document.querySelectorAll('.nav-item[href]').forEach(function(navItem) {
+    var href = navItem.getAttribute('href').substring(1);
+    var heading = document.getElementById(href);
+    if (!heading) return;
+    var key = heading.getAttribute('data-section-key');
+    if (!key) return;
+    var statusBtns = navItem.querySelectorAll('.nav-status-btn');
+    if (statusBtns.length >= 2) {
+      var reviewed = statusBtns[0].classList.contains('done');
+      var signedOff = statusBtns[1].classList.contains('done');
+      if (reviewed || signedOff) {
+        sectionStatus[key] = { reviewed: reviewed, signed_off: signedOff };
+      }
+    }
+  });
+  if (Object.keys(sectionStatus).length > 0) payload.section_status = sectionStatus;
+
+  // --- Collect stage ---
+  var activeStage = document.querySelector('.stage-label.active');
+  if (activeStage) {
+    var stage = activeStage.textContent.trim().toLowerCase();
+    payload.stage = stage;
+    if (stage !== 'draft') {
+      summary.push('Changed document stage to ' + activeStage.textContent.trim());
+    }
+  }
+
+  // --- Collect document_meta ---
+  var docMeta = {};
+  var titleEl = document.querySelector('.doc-title');
+  var subtitleEl = document.querySelector('.doc-subtitle');
+  var metaEl = document.querySelector('.doc-meta');
+  if (titleEl) {
+    var clone = titleEl.cloneNode(true);
+    clone.querySelectorAll('.edit-pen').forEach(function(c) { c.remove(); });
+    docMeta.title = clone.textContent.trim();
+  }
+  if (subtitleEl) {
+    var clone = subtitleEl.cloneNode(true);
+    clone.querySelectorAll('.edit-pen').forEach(function(c) { c.remove(); });
+    docMeta.subtitle = clone.textContent.trim();
+  }
+  if (metaEl) {
+    var clone = metaEl.cloneNode(true);
+    clone.querySelectorAll('.edit-pen').forEach(function(c) { c.remove(); });
+    docMeta.meta = clone.textContent.trim();
+  }
+  if (Object.keys(docMeta).length > 0) payload.document_meta = docMeta;
+
+  // --- Build summary ---
+  if (summary.length === 0) summary.push('No substantive changes detected');
+  payload._summary = summary;
+
+  // --- Copy to clipboard ---
+  var json = JSON.stringify(payload, null, 2);
+  navigator.clipboard.writeText(json).then(function() {
+    showToast('Changes copied \u2014 paste in chat to update your data');
+    isDirty = false;
+    saveBtn.classList.remove('visible');
+  }).catch(function() {
+    showToast('Could not copy \u2014 check clipboard permissions');
+  });
+}
+
+function showToast(msg) {
+  var toast = document.getElementById('toast');
+  if (msg) toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 2500);
+}
+</script>
+</body>
+</html>

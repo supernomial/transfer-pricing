@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.5.0",
+  "schema_version": "0.6.0",
   "group": {
     "id": "solara-group",
     "name": "Solara Dynamics SE",
@@ -1520,6 +1520,10 @@
       "entity": "solara-dist-fr",
       "fiscal_year": "2024",
       "status": "draft",
+      "document_title": "Local File",
+      "document_subtitle": null,
+      "document_meta": null,
+      "section_status": {},
       "covered_transactions": ["tx-001", "tx-003", "tx-005"],
       "notes": [
         "France local file covers: goods purchases from Italy, shared services from Singapore, trademark license from Ireland",
@@ -1532,6 +1536,10 @@
       "entity": "solara-mfg-it",
       "fiscal_year": "2024",
       "status": "draft",
+      "document_title": "Local File",
+      "document_subtitle": null,
+      "document_meta": null,
+      "section_status": {},
       "covered_transactions": ["tx-001", "tx-002", "tx-007", "tx-009", "tx-012"],
       "notes": [
         "Italy local file covers: goods sales to France and UAE, term loan from Luxembourg, guarantee from Luxembourg, captive insurance from Bermuda",
@@ -1544,6 +1552,10 @@
       "entity": "solara-fin-lu",
       "fiscal_year": "2024",
       "status": "draft",
+      "document_title": "Local File",
+      "document_subtitle": null,
+      "document_meta": null,
+      "section_status": {},
       "covered_transactions": ["tx-007", "tx-008", "tx-009", "tx-010", "tx-011", "tx-014"],
       "notes": [
         "Luxembourg local file covers all financial transactions: term loan, cash pool, guarantee, factoring, hybrid instrument, and asset management received",
