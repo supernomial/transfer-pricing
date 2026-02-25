@@ -26,9 +26,9 @@ The plugin folder is **read-only** in Cowork. All client data, blueprints, firm 
 **Once a folder is selected:**
 - The selected folder IS the working directory — Claude has full read/write access
 - All records, blueprints, deliverables, and output go here
-- The `_library/` subfolder (at root) holds firm-level reusable content + style guide override
-- Each client gets a folder with: `Admin/`, `Source-Documents/`, `Working-Files/`, `Deliverables/`, `Records/`
-- Create `_library/` and client subfolders if they don't exist on first use
+- The `.library/` subfolder (at root) holds firm-level reusable content + style guide override
+- Each client gets a folder with: `1. Admin/`, `2. Source Files/`, `3. Working Papers/`, `4. Deliverables/`, `.records/`
+- Create `.library/` and client subfolders if they don't exist on first use
 - Files persist across sessions because they live on the user's actual filesystem
 
 **Critical rules:**
@@ -41,7 +41,7 @@ The plugin folder is **read-only** in Cowork. All client data, blueprints, firm 
 Before writing any content or having extended conversation with the user, load the style guides:
 
 1. Always read `references/style-guide.md` from this skill's folder — this contains **conversation tone** (how you talk to the user) and default **report writing style** (how you write deliverable content).
-2. Then check `_library/style-guide.md` in the user's selected folder — if found, it **overrides the report writing style only**. Conversation tone always comes from the plugin.
+2. Then check `.library/style-guide.md` in the user's selected folder — if found, it **overrides the report writing style only**. Conversation tone always comes from the plugin.
 
 **Two distinct concerns:**
 - **Conversation tone** (Part 1 of plugin style guide): How you interact with the user. Controlled by Supernomial, not user-configurable.
@@ -56,8 +56,8 @@ Memory is the always-on layer that gives you continuity across conversations. Yo
 Before doing any work, load memory silently:
 
 1. **Personal memory** — read `[working-folder]/.supernomial/me.json` if it exists. This tells you about the person: how they work, how they communicate, what's going on in their life. Adapt your tone and approach accordingly. Don't dump it — surface relevant items naturally.
-2. **Group memory** — if a group folder exists, read `[Group]/Records/memory.json`. This tells you about the client: business context, contacts, deadlines, domain knowledge. Use it to provide context-aware assistance.
-3. **Firm memory** — read `[working-folder]/_library/memory.json` if it exists. This tells you about the firm: house style, methodology, conventions.
+2. **Group memory** — if a group folder exists, read `[Group]/.records/memory.json`. This tells you about the client: business context, contacts, deadlines, domain knowledge. Use it to provide context-aware assistance.
+3. **Firm memory** — read `[working-folder]/.library/memory.json` if it exists. This tells you about the firm: house style, methodology, conventions.
 
 **Do NOT mention the memory system to the user.** They just experience a colleague who remembers them.
 
@@ -74,8 +74,8 @@ User says something → Is it about the user's OWN preferences, style, or person
       └─ NO → Is it about HOW a report section should be written?
           ├─ YES → section_notes on the blueprint
           └─ NO → Should it be remembered across ALL clients?
-              ├─ YES → _library/memory.json (firm memory)
-              └─ NO → [Group]/Records/memory.json (group memory)
+              ├─ YES → .library/memory.json (firm memory)
+              └─ NO → [Group]/.records/memory.json (group memory)
 ```
 
 **Compression rules:** Each entry is `"YYYY-MM-DD | content"` format, max ~100 characters after the timestamp. Compress hard:
@@ -99,7 +99,7 @@ User says something → Is it about the user's OWN preferences, style, or person
 | `life` | Personal things shared in conversation — be human, be sensitive |
 | `context` | Current workload, situation, what's on their plate |
 
-**Group memory** (`[Group]/Records/memory.json`):
+**Group memory** (`[Group]/.records/memory.json`):
 | Category | What it remembers |
 |---|---|
 | `client` | Business context — audit status, acquisitions, structure, listings |
@@ -109,7 +109,7 @@ User says something → Is it about the user's OWN preferences, style, or person
 | `domain` | TP-specific facts — restructurings, prior advisors, historical data |
 | `workflows` | Recurring processes for this client |
 
-**Firm memory** (`[working-folder]/_library/memory.json`):
+**Firm memory** (`[working-folder]/.library/memory.json`):
 | Category | What it remembers |
 |---|---|
 | `style` | Firm writing preferences — tone, formatting, terminology |
@@ -146,8 +146,8 @@ If a `workflows` entry has multiple steps, the user describes the same multi-ste
 | What | Path |
 |---|---|
 | Personal memory | `[working-folder]/.supernomial/me.json` |
-| Group memory | `[Group]/Records/memory.json` |
-| Firm memory | `[working-folder]/_library/memory.json` |
+| Group memory | `[Group]/.records/memory.json` |
+| Firm memory | `[working-folder]/.library/memory.json` |
 | Sample group memory | `data/examples/sample-group-memory.json` |
 | Sample personal memory | `data/examples/sample-personal-memory.json` |
 | Sample firm memory | `data/examples/sample-firm-memory.json` |
@@ -205,22 +205,22 @@ Intake (+ read memory/notes/session log) → Data + notes (JSON) → Blueprint +
      ```
      [working-folder]/
      ├── Acme-Group/
-     │   ├── Admin/
-     │   ├── Source-Documents/
-     │   ├── Working-Files/
-     │   ├── Deliverables/
+     │   ├── 1. Admin/
+     │   ├── 2. Source Files/
+     │   ├── 3. Working Papers/
+     │   ├── 4. Deliverables/
      │   │   └── FY2025/
      │   │       └── Local-File/
      │   │           └── DE/
      │   │               └── Acme-Manufacturing/
-     │   └── Records/
+     │   └── .records/
      │       ├── data.json
      │       ├── session-log.json
      │       ├── content/
      │       └── blueprints/
      │           └── local-file-acme-mfg-de.json
      ```
-     Copy sample data into `Records/data.json` and sample blueprint into `Records/blueprints/`.
+     Copy sample data into `.records/data.json` and sample blueprint into `.records/blueprints/`.
 
    - **Submode B (Existing group, no local file):** Groups exist but no deliverable for the entity. Use existing group data, create a blueprint, generate views.
 
@@ -229,26 +229,26 @@ Intake (+ read memory/notes/session log) → Data + notes (JSON) → Blueprint +
 4. **Generate Expert Mode** using the assembly script (NOT by creating content from scratch):
    ```bash
    python3 skills/local-file/scripts/assemble_local_file.py \
-     --data "[working-folder]/[Group]/Records/data.json" \
-     --blueprint "[working-folder]/[Group]/Records/blueprints/[blueprint].json" \
+     --data "[working-folder]/[Group]/.records/data.json" \
+     --blueprint "[working-folder]/[Group]/.records/blueprints/[blueprint].json" \
      --references "skills/local-file/references/" \
-     --library "[working-folder]/_library/" \
+     --library "[working-folder]/.library/" \
      --template "skills/local-file/assets/combined_view.html" \
      --brand "assets/brand.css" \
-     --output "[working-folder]/[Group]/Deliverables/FY[Year]/Local-File/[Country]/[Entity]/" \
+     --output "[working-folder]/[Group]/4. Deliverables/FY[Year]/Local-File/[Country]/[Entity]/" \
      --format combined \
-     --blueprints-dir "[working-folder]/[Group]/Records/blueprints/"
+     --blueprints-dir "[working-folder]/[Group]/.records/blueprints/"
    ```
 
 5. **Generate PDF** into the same deliverable folder:
    ```bash
    python3 skills/local-file/scripts/assemble_local_file.py \
-     --data "[working-folder]/[Group]/Records/data.json" \
-     --blueprint "[working-folder]/[Group]/Records/blueprints/[blueprint].json" \
+     --data "[working-folder]/[Group]/.records/data.json" \
+     --blueprint "[working-folder]/[Group]/.records/blueprints/[blueprint].json" \
      --references "skills/local-file/references/" \
-     --library "[working-folder]/_library/" \
+     --library "[working-folder]/.library/" \
      --template "skills/local-file/assets/local_file.tex" \
-     --output "[working-folder]/[Group]/Deliverables/FY[Year]/Local-File/[Country]/[Entity]/" \
+     --output "[working-folder]/[Group]/4. Deliverables/FY[Year]/Local-File/[Country]/[Entity]/" \
      --format pdf
    ```
 
@@ -280,7 +280,7 @@ Before doing any work, gather context like an associate receiving instructions. 
 1. Parse what the user already provided (entity, year, uploaded files, text)
 2. Identify group, year, entity — only ask for what's missing
 3. Scan the client folder for existing records, prior year deliverables, source documents
-4. **Read memory, notes, and session log** — load memory files silently (`.supernomial/me.json`, `[Group]/Records/memory.json`, `_library/memory.json`), read notes on objects in `Records/data.json`, and check `Records/session-log.json`. Use all of these for continuity: welcome back with context, adapt tone to the person, surface pending items, skip already-answered questions
+4. **Read memory, notes, and session log** — load memory files silently (`.supernomial/me.json`, `[Group]/.records/memory.json`, `.library/memory.json`), read notes on objects in `.records/data.json`, and check `.records/session-log.json`. Use all of these for continuity: welcome back with context, adapt tone to the person, surface pending items, skip already-answered questions
 5. Acknowledge any uploaded reference materials
 6. Present an intake summary and get confirmation before proceeding
 
@@ -288,26 +288,26 @@ Before doing any work, gather context like an associate receiving instructions. 
 
 ### Step 3: Build/Update Data (Records)
 
-Create or update `data.json` in the client's `Records/` folder with structured data: group info, entities, transactions. Confirm changes with the user before saving.
+Create or update `data.json` in the client's `.records/` folder with structured data: group info, entities, transactions. Confirm changes with the user before saving.
 
 **Capture notes:** When the user shares context, reasoning, or flags pending items during data entry, save them as `notes` arrays on the relevant objects. Notes persist across sessions — they're both AI memory and professional documentation.
 
-**Functional profiles:** For each transaction, collect the entity's functional profile content (4 blocks: Overview, Functions, Assets, Risks). Read the relevant reference checklist from `references/functional-profiles/[slug].md` and present all sub-topics as bullet points in one prompt. Draft paragraphs proactively and ask the user to review — don't ask for each sub-topic individually. Store content in `_library/functional-profiles/` (firm-reusable), `@group/functional-profiles/` (group-specific), or as plain text in the blueprint (entity-specific). See `commands/prep-local-file.md` Step 3b for the full approach.
+**Functional profiles:** For each transaction, collect the entity's functional profile content (4 blocks: Overview, Functions, Assets, Risks). Read the relevant reference checklist from `references/functional-profiles/[slug].md` and present all sub-topics as bullet points in one prompt. Draft paragraphs proactively and ask the user to review — don't ask for each sub-topic individually. Store content in `.library/functional-profiles/` (firm-reusable), `@group/functional-profiles/` (group-specific), or as plain text in the blueprint (entity-specific). See `commands/prep-local-file.md` Step 3b for the full approach.
 
-**File location:** `[selected-folder]/[Group Name]/Records/data.json`
+**File location:** `[selected-folder]/[Group Name]/.records/data.json`
 
 ### Step 4: Build/Update Blueprint
 
 Create or update the blueprint for this entity/deliverable. Each section maps to a content source:
 - `@references/...` → plugin folder `skills/local-file/references/` (Layer 1 — read-only)
-- `@library/...` → selected folder `_library/` (Layer 2 — firm-wide)
-- `@group/...` → selected folder `[Group Name]/Records/content/` (Layer 3 — group-specific, shared across entities)
+- `@library/...` → selected folder `.library/` (Layer 2 — firm-wide)
+- `@group/...` → selected folder `[Group Name]/.records/content/` (Layer 3 — group-specific, shared across entities)
 - Plain text → entity-specific content (Layer 4)
 - Array → composite section combining multiple layers (each element resolved independently, concatenated in order)
 
 **Capture section notes:** When the user explains why a section should be written a certain way, save it in the blueprint's `section_notes` object. These editorial notes persist across sessions.
 
-**File location:** `[selected-folder]/[Group Name]/Records/blueprints/local-file-[entity-id].json`
+**File location:** `[selected-folder]/[Group Name]/.records/blueprints/local-file-[entity-id].json`
 
 ### Step 5: Assemble and Generate (Script)
 
@@ -318,16 +318,16 @@ Do NOT assemble the document manually. Once the records and blueprint are ready,
 **Expert Mode** (primary view — run after data/blueprint updates):
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[selected-folder]/[Group Name]/Records/data.json" \
-  --blueprint "[selected-folder]/[Group Name]/Records/blueprints/local-file-[entity-id].json" \
+  --data "[selected-folder]/[Group Name]/.records/data.json" \
+  --blueprint "[selected-folder]/[Group Name]/.records/blueprints/local-file-[entity-id].json" \
   --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --group-content "[selected-folder]/[Group Name]/Records/content/" \
+  --library "[selected-folder]/.library/" \
+  --group-content "[selected-folder]/[Group Name]/.records/content/" \
   --template "skills/local-file/assets/combined_view.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
   --format combined \
-  --blueprints-dir "[selected-folder]/[Group Name]/Records/blueprints/"
+  --blueprints-dir "[selected-folder]/[Group Name]/.records/blueprints/"
 ```
 
 **Legacy views** (still work for backward compatibility):
@@ -335,11 +335,11 @@ python3 skills/local-file/scripts/assemble_local_file.py \
 **1. Overview** (dashboard — run to show section progress):
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[selected-folder]/[Group Name]/Records/data.json" \
-  --blueprint "[selected-folder]/[Group Name]/Records/blueprints/local-file-[entity-id].json" \
+  --data "[selected-folder]/[Group Name]/.records/data.json" \
+  --blueprint "[selected-folder]/[Group Name]/.records/blueprints/local-file-[entity-id].json" \
   --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --group-content "[selected-folder]/[Group Name]/Records/content/" \
+  --library "[selected-folder]/.library/" \
+  --group-content "[selected-folder]/[Group Name]/.records/content/" \
   --template "skills/local-file/assets/section_dashboard.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -349,11 +349,11 @@ python3 skills/local-file/scripts/assemble_local_file.py \
 **2. Editor** (all sections by category, entity details, transactions — run during Steps 3–4 after each data update):
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[selected-folder]/[Group Name]/Records/data.json" \
-  --blueprint "[selected-folder]/[Group Name]/Records/blueprints/local-file-[entity-id].json" \
+  --data "[selected-folder]/[Group Name]/.records/data.json" \
+  --blueprint "[selected-folder]/[Group Name]/.records/blueprints/local-file-[entity-id].json" \
   --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --group-content "[selected-folder]/[Group Name]/Records/content/" \
+  --library "[selected-folder]/.library/" \
+  --group-content "[selected-folder]/[Group Name]/.records/content/" \
   --template "skills/local-file/assets/intake_preview.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -363,11 +363,11 @@ python3 skills/local-file/scripts/assemble_local_file.py \
 **3. Report view** (annotated view with X-ray — run after all sections populated):
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[selected-folder]/[Group Name]/Records/data.json" \
-  --blueprint "[selected-folder]/[Group Name]/Records/blueprints/local-file-[entity-id].json" \
+  --data "[selected-folder]/[Group Name]/.records/data.json" \
+  --blueprint "[selected-folder]/[Group Name]/.records/blueprints/local-file-[entity-id].json" \
   --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --group-content "[selected-folder]/[Group Name]/Records/content/" \
+  --library "[selected-folder]/.library/" \
+  --group-content "[selected-folder]/[Group Name]/.records/content/" \
   --template "skills/local-file/assets/report_view.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -377,13 +377,13 @@ python3 skills/local-file/scripts/assemble_local_file.py \
 **4. Final PDF** (run when ready to deliver):
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[selected-folder]/[Group Name]/Records/data.json" \
-  --blueprint "[selected-folder]/[Group Name]/Records/blueprints/local-file-[entity-id].json" \
+  --data "[selected-folder]/[Group Name]/.records/data.json" \
+  --blueprint "[selected-folder]/[Group Name]/.records/blueprints/local-file-[entity-id].json" \
   --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --group-content "[selected-folder]/[Group Name]/Records/content/" \
+  --library "[selected-folder]/.library/" \
+  --group-content "[selected-folder]/[Group Name]/.records/content/" \
   --template "skills/local-file/assets/local_file.tex" \
-  --output "[selected-folder]/[Group Name]/Deliverables/FY[Year]/Local-Files/[Country]/[Entity Name]/" \
+  --output "[selected-folder]/[Group Name]/4. Deliverables/FY[Year]/Local-Files/[Country]/[Entity Name]/" \
   --format pdf
 ```
 
@@ -391,7 +391,7 @@ The script reads the inputs, resolves content references, populates the template
 
 ### Step 6: Deliver and Save Session
 
-1. **Write session log:** Append an entry to `[Group Name]/Records/session-log.json` (create if needed). Include date, command, entity, summary, key decisions, and pending items. Keep it concise — this is a professional engagement log. Note: after any data change, file generation, or important decision — append to the session log immediately. Don't wait for end of conversation; users close chats randomly.
+1. **Write session log:** Append an entry to `[Group Name]/.records/session-log.json` (create if needed). Include date, command, entity, summary, key decisions, and pending items. Keep it concise — this is a professional engagement log. Note: after any data change, file generation, or important decision — append to the session log immediately. Don't wait for end of conversation; users close chats randomly.
 2. **Consolidate memory:** Merge duplicates, remove outdated entries, cap categories at ~15. See "Consolidation" in the Memory System section for the full checklist.
 3. **Present to user:** Show where the file is saved, what was included, and suggest next steps. Do NOT mention the session log or memory to the user — they just experience continuity next time.
 

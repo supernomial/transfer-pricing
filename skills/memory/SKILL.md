@@ -30,7 +30,7 @@ The plugin folder is **read-only** in Cowork. All memory files must be stored in
 **Once a folder is selected:**
 - The selected folder IS the working directory — Claude has full read/write access
 - Memory files persist across sessions because they live on the user's actual filesystem
-- Create `.supernomial/` and `_library/` if they don't exist on first use
+- Create `.supernomial/` and `.library/` if they don't exist on first use
 
 **Critical rules:**
 - NEVER write files inside the plugin folder — it is read-only
@@ -42,7 +42,7 @@ The plugin folder is **read-only** in Cowork. All memory files must be stored in
 Before having extended conversation with the user, load the style guides:
 
 1. Always read `skills/local-file/references/style-guide.md` from the plugin folder — Part 1 contains **conversation tone** (how you talk to the user).
-2. Then check `_library/style-guide.md` in the user's selected folder — if found, it may contain firm-level preferences.
+2. Then check `.library/style-guide.md` in the user's selected folder — if found, it may contain firm-level preferences.
 
 **Conversation tone** comes from the plugin and is not user-configurable.
 
@@ -51,8 +51,8 @@ Before having extended conversation with the user, load the style guides:
 Before doing any work, load memory silently:
 
 1. **Personal memory** — read `[working-folder]/.supernomial/me.json` if it exists. This tells you about the person: how they work, how they communicate, what's going on in their life. Adapt your tone and approach accordingly.
-2. **Group memory** — if a group folder exists, read `[Group]/Records/memory.json`. This tells you about the client: business context, contacts, deadlines, domain knowledge.
-3. **Firm memory** — read `[working-folder]/_library/memory.json` if it exists. This tells you about the firm: house style, methodology, conventions.
+2. **Group memory** — if a group folder exists, read `[Group]/.records/memory.json`. This tells you about the client: business context, contacts, deadlines, domain knowledge.
+3. **Firm memory** — read `[working-folder]/.library/memory.json` if it exists. This tells you about the firm: house style, methodology, conventions.
 
 Surface relevant items naturally. Don't dump everything — weave what you know into the conversation as a colleague would.
 
@@ -69,8 +69,8 @@ User says something → Is it about the user's OWN preferences, style, or person
       └─ NO → Is it about HOW a report section should be written?
           ├─ YES → section_notes on the blueprint
           └─ NO → Should it be remembered across ALL clients?
-              ├─ YES → _library/memory.json (firm memory)
-              └─ NO → [Group]/Records/memory.json (group memory)
+              ├─ YES → .library/memory.json (firm memory)
+              └─ NO → [Group]/.records/memory.json (group memory)
 ```
 
 **Writing to memory:**
@@ -98,7 +98,7 @@ Each entry is `"YYYY-MM-DD | content"` format, max ~100 characters after the tim
 | `life` | Personal things shared in conversation — be human, be sensitive |
 | `context` | Current workload, situation, what's on their plate |
 
-**Group memory** (`[Group]/Records/memory.json`):
+**Group memory** (`[Group]/.records/memory.json`):
 | Category | What it remembers |
 |---|---|
 | `client` | Business context — audit status, acquisitions, structure, listings |
@@ -108,7 +108,7 @@ Each entry is `"YYYY-MM-DD | content"` format, max ~100 characters after the tim
 | `domain` | TP-specific facts — restructurings, prior advisors, historical data |
 | `workflows` | Recurring processes for this client |
 
-**Firm memory** (`[working-folder]/_library/memory.json`):
+**Firm memory** (`[working-folder]/.library/memory.json`):
 | Category | What it remembers |
 |---|---|
 | `style` | Firm writing preferences — tone, formatting, terminology |
@@ -139,7 +139,7 @@ If a `workflows` entry has multiple steps, the user describes the same multi-ste
 These rules are non-negotiable. Every response must follow them.
 
 **NEVER:**
-- Show file paths (`.supernomial/me.json`, `memory.json`, `_library/`, `Records/`)
+- Show file paths (`.supernomial/me.json`, `memory.json`, `.library/`, `.records/`)
 - Say "memory file", "JSON", "schema", "personal memory", "group memory", "firm memory"
 - Say "I've saved that to memory" or "I'll update your memory file"
 - Say "memory system", "memory model", "memory capture", or any technical term for the memory layer

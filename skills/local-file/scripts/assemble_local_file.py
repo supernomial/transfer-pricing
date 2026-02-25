@@ -2110,7 +2110,7 @@ def build_blueprint_modal_html(blueprints_dir, current_blueprint):
             except (json.JSONDecodeError, IOError):
                 continue
 
-            bp_name = escape_html(bp.get('name', fname.replace('.json', '')))
+            bp_name = escape_html(bp.get('name', 'OECD Blueprint'))
             bp_entity = bp.get('entity', '')
             bp_fy = bp.get('fiscal_year', '')
             bp_type = bp.get('type', 'local-file')
@@ -2137,14 +2137,8 @@ def build_blueprint_modal_html(blueprints_dir, current_blueprint):
                 f'</div></div>'
             )
 
-    # Always add the "New Blueprint" card at the end
-    cards.append(
-        '<div class="bp-card">'
-        '<div class="bp-card-new">'
-        '<div class="bp-card-new-icon">+</div>'
-        'New Blueprint'
-        '</div></div>'
-    )
+    # "New Blueprint" card — hidden for now (only one template available)
+    # Will re-enable when additional blueprint templates are introduced
 
     return '\n'.join(cards)
 
@@ -2260,9 +2254,15 @@ def build_combined_sections_html(blueprint, resolved_sections, section_meta,
         chapter_title = chapter.get('title', f'Chapter {chapter_num}')
         sections = chapter.get('sections', [])
 
+        chapter_status = section_status.get(chapter_id, {})
+        ch_reviewed = 'true' if chapter_status.get('reviewed') else 'false'
+        ch_signed_off = 'true' if chapter_status.get('signed_off') else 'false'
+
         parts.append(f'<div class="section" id="{escape_html(chapter_id)}">')
         parts.append(
-            f'  <div class="section-heading">{chapter_num}. {escape_html(chapter_title)}'
+            f'  <div class="section-heading" data-section-key="{escape_html(chapter_id)}"'
+            f' data-reviewed="{ch_reviewed}" data-signed-off="{ch_signed_off}">'
+            f'{chapter_num}. {escape_html(chapter_title)}'
             f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span></div>'
         )
 
@@ -2350,7 +2350,7 @@ def populate_combined_template(template_content, data, blueprint, entity,
     entity_name = entity.get('name', '')
     fiscal_year = str(blueprint.get('fiscal_year', entity.get('fiscal_year', '')))
     country = entity.get('jurisdiction', entity.get('country', ''))
-    blueprint_name = blueprint.get('name', '')
+    blueprint_name = blueprint.get('name', 'OECD Blueprint')
 
     # Find local_file object for this entity
     local_file = None
@@ -2445,7 +2445,7 @@ def main():
     parser.add_argument('--template', required=True, help='Path to template (LaTeX or HTML)')
     parser.add_argument('--output', required=True, help='Output directory')
     parser.add_argument('--group-content', default=None,
-                        help='Path to group content directory for @group/ references (e.g., [Group]/Records/content/)')
+                        help='Path to group content directory for @group/ references (e.g., [Group]/.records/content/)')
     parser.add_argument('--brand', default=None,
                         help='Path to brand.css design system (default: assets/brand.css relative to plugin root)')
     parser.add_argument('--format', choices=['pdf', 'html', 'md', 'report', 'combined'], default='pdf',

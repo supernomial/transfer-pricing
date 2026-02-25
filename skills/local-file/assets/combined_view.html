@@ -1708,6 +1708,82 @@ document.addEventListener('keydown', function(e) {
   hiddenSubs.forEach(function(s) { s.style.display = ''; });
 })();
 
+// --- Snapshot initial state for diff-based save ---
+var initialState = { sectionStatus: {}, stage: '', documentMeta: {}, sectionNotes: {}, footnotes: {} };
+var sectionKeyToLabel = {};
+
+(function() {
+  // Build sectionKeyToLabel from heading elements (they contain numbered text like "1. Executive Summary")
+  document.querySelectorAll('.section-heading[data-section-key], .section-subheading[data-section-key]').forEach(function(h) {
+    var key = h.getAttribute('data-section-key');
+    // Clone to strip edit-pen icons
+    var clone = h.cloneNode(true);
+    clone.querySelectorAll('.edit-pen, .icon-bar').forEach(function(c) { c.remove(); });
+    sectionKeyToLabel[key] = clone.textContent.trim();
+  });
+
+  // Snapshot section_status from all elements with data-section-key + review attrs
+  document.querySelectorAll('[data-section-key][data-reviewed]').forEach(function(el) {
+    var key = el.getAttribute('data-section-key');
+    initialState.sectionStatus[key] = {
+      reviewed: el.getAttribute('data-reviewed') === 'true',
+      signed_off: el.getAttribute('data-signed-off') === 'true'
+    };
+  });
+
+  // Snapshot stage
+  var activeStage = document.querySelector('.stage-label.active');
+  if (activeStage) initialState.stage = activeStage.textContent.trim().toLowerCase();
+
+  // Snapshot document_meta
+  var titleEl = document.querySelector('.doc-title');
+  var subtitleEl = document.querySelector('.doc-subtitle');
+  var metaEl = document.querySelector('.doc-meta');
+  function cleanText(el) {
+    if (!el) return '';
+    var clone = el.cloneNode(true);
+    clone.querySelectorAll('.edit-pen').forEach(function(c) { c.remove(); });
+    return clone.textContent.trim();
+  }
+  initialState.documentMeta = {
+    title: cleanText(titleEl),
+    subtitle: cleanText(subtitleEl),
+    meta: cleanText(metaEl)
+  };
+
+  // Snapshot section_notes
+  document.querySelectorAll('.element-note').forEach(function(note) {
+    var wrapper = note.closest('.section-body-wrapper');
+    if (!wrapper) return;
+    var sectionBody = wrapper.querySelector('.section-body[data-section-key]');
+    if (!sectionBody) return;
+    var key = sectionBody.getAttribute('data-section-key');
+    var list = note.querySelector('.note-list');
+    if (!list) return;
+    var items = [];
+    list.querySelectorAll('li').forEach(function(li) {
+      var text = li.textContent.trim();
+      if (text && text !== '\u200B') items.push(text);
+    });
+    if (items.length > 0) initialState.sectionNotes[key] = items;
+  });
+
+  // Snapshot footnotes
+  document.querySelectorAll('.element-footnote').forEach(function(fn) {
+    var wrapper = fn.closest('.section-body-wrapper');
+    if (!wrapper) return;
+    var sectionBody = wrapper.querySelector('.section-body[data-section-key]');
+    if (!sectionBody) return;
+    var key = sectionBody.getAttribute('data-section-key');
+    var items = [];
+    fn.querySelectorAll('.footnote-entry .footnote-text').forEach(function(ft) {
+      var text = ft.textContent.trim();
+      if (text) items.push(text);
+    });
+    if (items.length > 0) initialState.footnotes[key] = items;
+  });
+})();
+
 // --- Scroll spy: highlight active nav item based on scroll position ---
 var navItems = document.querySelectorAll('.nav-item[data-target]');
 var sections = [];
@@ -1745,13 +1821,18 @@ function toggleNavStatus(e, btn) {
   e.stopPropagation();
   btn.classList.toggle('done');
 
-  // Sync status to corresponding section-subheading data attributes
+  // Sync status to corresponding heading data attributes
   var navItem = btn.closest('.nav-item');
   if (navItem) {
     var href = navItem.getAttribute('data-target');
     if (href) {
-      var heading = document.querySelector(href);
-      if (heading && heading.classList.contains('section-subheading')) {
+      var targetEl = document.querySelector(href);
+      // For chapter nav items, the target is the .section wrapper — find the heading inside
+      var heading = targetEl;
+      if (targetEl && targetEl.classList.contains('section')) {
+        heading = targetEl.querySelector('.section-heading[data-section-key]');
+      }
+      if (heading && (heading.classList.contains('section-subheading') || heading.classList.contains('section-heading'))) {
         var statusBtns = navItem.querySelectorAll('.nav-status-btn');
         if (statusBtns.length >= 2) {
           heading.setAttribute('data-reviewed', statusBtns[0].classList.contains('done') ? 'true' : 'false');
@@ -1916,6 +1997,20 @@ function saveChanges() {
   };
   var summary = [];
 
+  // Helper: get display label for a section key
+  function labelFor(key) {
+    return sectionKeyToLabel[key] || humanizeSectionKey(key);
+  }
+
+  // Helper: compare arrays
+  function arraysEqual(a, b) {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
+    for (var i = 0; i < a.length; i++) { if (a[i] !== b[i]) return false; }
+    return true;
+  }
+
   // Read entity/fiscal-year from body data attributes if present
   var body = document.body;
   var entityId = body.getAttribute('data-entity-id');
@@ -1923,7 +2018,7 @@ function saveChanges() {
   if (entityId) payload._entity_id = entityId;
   if (fiscalYear) payload._fiscal_year = fiscalYear;
 
-  // --- Collect sections ---
+  // --- Collect sections (already diff-based via data-original) ---
   var sections = {};
   document.querySelectorAll('.section-body[contenteditable]').forEach(function(el) {
     var key = el.getAttribute('data-section-key');
@@ -1932,12 +2027,12 @@ function saveChanges() {
     var original = el.getAttribute('data-original');
     if (original !== null && current !== original) {
       sections[key] = current;
-      summary.push('Updated the ' + humanizeSectionKey(key) + ' section with new content');
+      summary.push('Updated ' + labelFor(key) + ' with new content');
     }
   });
   if (Object.keys(sections).length > 0) payload.sections = sections;
 
-  // --- Collect section_notes ---
+  // --- Collect section_notes (diff against initial) ---
   var sectionNotes = {};
   document.querySelectorAll('.element-note').forEach(function(note) {
     var wrapper = note.closest('.section-body-wrapper');
@@ -1952,11 +2047,15 @@ function saveChanges() {
       var text = li.textContent.trim();
       if (text && text !== '\u200B') items.push(text);
     });
-    if (items.length > 0) sectionNotes[key] = items;
+    var initNotes = initialState.sectionNotes[key] || [];
+    if (!arraysEqual(items, initNotes)) {
+      sectionNotes[key] = items;
+      summary.push('Updated notes on ' + labelFor(key));
+    }
   });
   if (Object.keys(sectionNotes).length > 0) payload.section_notes = sectionNotes;
 
-  // --- Collect footnotes ---
+  // --- Collect footnotes (diff against initial) ---
   var footnotes = {};
   document.querySelectorAll('.element-footnote').forEach(function(fn) {
     var wrapper = fn.closest('.section-body-wrapper');
@@ -1969,78 +2068,90 @@ function saveChanges() {
       var text = ft.textContent.trim();
       if (text) items.push(text);
     });
-    if (items.length > 0) footnotes[key] = items;
+    var initFn = initialState.footnotes[key] || [];
+    if (!arraysEqual(items, initFn)) {
+      footnotes[key] = items;
+      summary.push('Updated footnotes on ' + labelFor(key));
+    }
   });
   if (Object.keys(footnotes).length > 0) payload.footnotes = footnotes;
 
-  // --- Collect section_status from nav status buttons ---
+  // --- Collect section_status (diff against initial) ---
+  // Read current status from all elements with data-section-key + review attrs
   var sectionStatus = {};
-  document.querySelectorAll('.section-subheading[data-section-key]').forEach(function(sub) {
-    var key = sub.getAttribute('data-section-key');
-    var reviewed = sub.getAttribute('data-reviewed') === 'true';
-    var signedOff = sub.getAttribute('data-signed-off') === 'true';
-    if (reviewed || signedOff) {
+  document.querySelectorAll('[data-section-key][data-reviewed]').forEach(function(el) {
+    var key = el.getAttribute('data-section-key');
+    var reviewed = el.getAttribute('data-reviewed') === 'true';
+    var signedOff = el.getAttribute('data-signed-off') === 'true';
+    var init = initialState.sectionStatus[key] || { reviewed: false, signed_off: false };
+    if (reviewed !== init.reviewed || signedOff !== init.signed_off) {
       sectionStatus[key] = { reviewed: reviewed, signed_off: signedOff };
-      if (reviewed) summary.push('Marked ' + humanizeSectionKey(key) + ' as reviewed');
-      if (signedOff) summary.push('Signed off on ' + humanizeSectionKey(key));
+      if (reviewed && !init.reviewed) summary.push('Mark ' + labelFor(key) + ' as reviewed');
+      if (!reviewed && init.reviewed) summary.push('Unmark ' + labelFor(key) + ' as reviewed');
+      if (signedOff && !init.signed_off) summary.push('Sign off on ' + labelFor(key));
+      if (!signedOff && init.signed_off) summary.push('Remove sign-off from ' + labelFor(key));
     }
   });
-  // Also check nav status buttons for headings without data-section-key
+  // Also check nav status buttons (for chapter headings where nav toggles update .done class)
   document.querySelectorAll('.nav-item[data-target]').forEach(function(navItem) {
     var href = navItem.getAttribute('data-target').substring(1);
     var heading = document.getElementById(href);
     if (!heading) return;
     var key = heading.getAttribute('data-section-key');
-    if (!key) return;
+    if (!key || sectionStatus[key]) return; // already captured above
     var statusBtns = navItem.querySelectorAll('.nav-status-btn');
     if (statusBtns.length >= 2) {
       var reviewed = statusBtns[0].classList.contains('done');
       var signedOff = statusBtns[1].classList.contains('done');
-      if (reviewed || signedOff) {
+      var init = initialState.sectionStatus[key] || { reviewed: false, signed_off: false };
+      if (reviewed !== init.reviewed || signedOff !== init.signed_off) {
         sectionStatus[key] = { reviewed: reviewed, signed_off: signedOff };
+        if (reviewed && !init.reviewed) summary.push('Mark ' + labelFor(key) + ' as reviewed');
+        if (!reviewed && init.reviewed) summary.push('Unmark ' + labelFor(key) + ' as reviewed');
+        if (signedOff && !init.signed_off) summary.push('Sign off on ' + labelFor(key));
+        if (!signedOff && init.signed_off) summary.push('Remove sign-off from ' + labelFor(key));
       }
     }
   });
   if (Object.keys(sectionStatus).length > 0) payload.section_status = sectionStatus;
 
-  // --- Collect stage ---
+  // --- Collect stage (diff against initial) ---
   var activeStage = document.querySelector('.stage-label.active');
   if (activeStage) {
     var stage = activeStage.textContent.trim().toLowerCase();
-    payload.stage = stage;
-    if (stage !== 'draft') {
-      summary.push('Changed document stage to ' + activeStage.textContent.trim());
+    if (stage !== initialState.stage) {
+      payload.stage = stage;
+      summary.push('Change document stage to ' + activeStage.textContent.trim());
     }
   }
 
-  // --- Collect document_meta ---
+  // --- Collect document_meta (diff against initial) ---
   var docMeta = {};
-  var titleEl = document.querySelector('.doc-title');
-  var subtitleEl = document.querySelector('.doc-subtitle');
-  var metaEl = document.querySelector('.doc-meta');
-  if (titleEl) {
-    var clone = titleEl.cloneNode(true);
+  function cleanMetaText(el) {
+    if (!el) return '';
+    var clone = el.cloneNode(true);
     clone.querySelectorAll('.edit-pen').forEach(function(c) { c.remove(); });
-    docMeta.title = clone.textContent.trim();
+    return clone.textContent.trim();
   }
-  if (subtitleEl) {
-    var clone = subtitleEl.cloneNode(true);
-    clone.querySelectorAll('.edit-pen').forEach(function(c) { c.remove(); });
-    docMeta.subtitle = clone.textContent.trim();
-  }
-  if (metaEl) {
-    var clone = metaEl.cloneNode(true);
-    clone.querySelectorAll('.edit-pen').forEach(function(c) { c.remove(); });
-    docMeta.meta = clone.textContent.trim();
-  }
+  var curTitle = cleanMetaText(document.querySelector('.doc-title'));
+  var curSubtitle = cleanMetaText(document.querySelector('.doc-subtitle'));
+  var curMeta = cleanMetaText(document.querySelector('.doc-meta'));
+  if (curTitle !== initialState.documentMeta.title) { docMeta.title = curTitle; summary.push('Updated document title'); }
+  if (curSubtitle !== initialState.documentMeta.subtitle) { docMeta.subtitle = curSubtitle; summary.push('Updated document subtitle'); }
+  if (curMeta !== initialState.documentMeta.meta) { docMeta.meta = curMeta; summary.push('Updated document meta'); }
   if (Object.keys(docMeta).length > 0) payload.document_meta = docMeta;
 
-  // --- Build summary ---
-  if (summary.length === 0) summary.push('No substantive changes detected');
+  // --- Build summary and clipboard content ---
+  if (summary.length === 0) summary.push('No changes detected');
   payload._summary = summary;
 
-  // --- Copy to clipboard ---
   var json = JSON.stringify(payload, null, 2);
+  var clipboardText;
+  if (summary.length === 1 && summary[0] === 'No changes detected') {
+    clipboardText = 'No changes to apply.\n\n<!-- COWORK_DATA\n' + json + '\nCOWORK_DATA -->';
+  } else {
+    clipboardText = summary.join('\n') + '\n\n<!-- COWORK_DATA\n' + json + '\nCOWORK_DATA -->';
+  }
 
   function onCopySuccess() {
     // Show prominent banner instead of small toast
@@ -2065,36 +2176,36 @@ function saveChanges() {
 
   // Try clipboard API first
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(json).then(onCopySuccess).catch(function() {
+    navigator.clipboard.writeText(clipboardText).then(onCopySuccess).catch(function() {
       // Fallback: hidden textarea + execCommand
       try {
         var ta = document.createElement('textarea');
-        ta.value = json;
+        ta.value = clipboardText;
         ta.style.position = 'fixed';
         ta.style.left = '-9999px';
         document.body.appendChild(ta);
         ta.select();
         var ok = document.execCommand('copy');
         document.body.removeChild(ta);
-        if (ok) { onCopySuccess(); } else { showCopyModal(json); }
+        if (ok) { onCopySuccess(); } else { showCopyModal(clipboardText); }
       } catch(e) {
-        showCopyModal(json);
+        showCopyModal(clipboardText);
       }
     });
   } else {
     // No clipboard API — try execCommand directly
     try {
       var ta = document.createElement('textarea');
-      ta.value = json;
+      ta.value = clipboardText;
       ta.style.position = 'fixed';
       ta.style.left = '-9999px';
       document.body.appendChild(ta);
       ta.select();
       var ok = document.execCommand('copy');
       document.body.removeChild(ta);
-      if (ok) { onCopySuccess(); } else { showCopyModal(json); }
+      if (ok) { onCopySuccess(); } else { showCopyModal(clipboardText); }
     } catch(e) {
-      showCopyModal(json);
+      showCopyModal(clipboardText);
     }
   }
 }

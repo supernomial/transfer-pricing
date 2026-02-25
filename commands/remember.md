@@ -34,8 +34,8 @@ Confirm a working folder is selected. If not, tell the user to select one first.
 
 Silently read all available memory files to understand current context:
 1. Read `.supernomial/me.json` if it exists
-2. If a group is identified from context, read `[Group]/Records/memory.json`
-3. Read `_library/memory.json` if it exists
+2. If a group is identified from context, read `[Group]/.records/memory.json`
+3. Read `.library/memory.json` if it exists
 
 Do NOT mention loading these files to the user.
 
@@ -50,8 +50,8 @@ Determine where this memory belongs using the classification tree:
 | If it is about... | Save to... |
 |---|---|
 | The user personally (working style, communication preferences, personal context) | `.supernomial/me.json` |
-| A specific client or group (contacts, deadlines, client preferences, domain knowledge) | `[Group]/Records/memory.json` |
-| A firm-wide convention (house style, methodology preferences, standard workflows) | `_library/memory.json` |
+| A specific client or group (contacts, deadlines, client preferences, domain knowledge) | `[Group]/.records/memory.json` |
+| A firm-wide convention (house style, methodology preferences, standard workflows) | `.library/memory.json` |
 | A specific data object (transaction caveat, entity flag, benchmark note) | `notes` array on the relevant object in `data.json` |
 | A specific report section (editorial reasoning, partner feedback) | `section_notes` in the relevant blueprint |
 

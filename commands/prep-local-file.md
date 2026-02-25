@@ -43,17 +43,17 @@ Creates the complete convention tree with example data:
 ```
 [working-folder]/
 ├── Acme-Group/
-│   ├── Admin/
-│   ├── Source-Documents/
-│   ├── Working-Files/
-│   ├── Deliverables/
+│   ├── 1. Admin/
+│   ├── 2. Source Files/
+│   ├── 3. Working Papers/
+│   ├── 4. Deliverables/
 │   │   └── FY2025/
 │   │       └── Local-File/
 │   │           └── DE/
 │   │               └── Acme-Manufacturing/
 │   │                   ├── Expert_Mode_FY2025.html
 │   │                   └── Local_File_FY2025.pdf
-│   └── Records/
+│   └── .records/
 │       ├── data.json
 │       ├── session-log.json
 │       ├── content/
@@ -63,33 +63,33 @@ Creates the complete convention tree with example data:
 
 Steps:
 1. Create the folder tree above
-2. Copy `data/examples/sample-group.json` content into `Acme-Group/Records/data.json`
-3. Copy `data/examples/sample-blueprint.json` content into `Acme-Group/Records/blueprints/local-file-acme-mfg-de.json`
-4. Generate Expert Mode HTML into `Acme-Group/Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/Expert_Mode_FY2025.html`:
+2. Copy `data/examples/sample-group.json` content into `Acme-Group/.records/data.json`
+3. Copy `data/examples/sample-blueprint.json` content into `Acme-Group/.records/blueprints/local-file-acme-mfg-de.json`
+4. Generate Expert Mode HTML into `Acme-Group/4. Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/Expert_Mode_FY2025.html`:
 
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[working-folder]/Acme-Group/Records/data.json" \
-  --blueprint "[working-folder]/Acme-Group/Records/blueprints/local-file-acme-mfg-de.json" \
+  --data "[working-folder]/Acme-Group/.records/data.json" \
+  --blueprint "[working-folder]/Acme-Group/.records/blueprints/local-file-acme-mfg-de.json" \
   --references "skills/local-file/references/" \
-  --library "[working-folder]/_library/" \
+  --library "[working-folder]/.library/" \
   --template "skills/local-file/assets/combined_view.html" \
   --brand "assets/brand.css" \
-  --output "[working-folder]/Acme-Group/Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/" \
+  --output "[working-folder]/Acme-Group/4. Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/" \
   --format combined \
-  --blueprints-dir "[working-folder]/Acme-Group/Records/blueprints/"
+  --blueprints-dir "[working-folder]/Acme-Group/.records/blueprints/"
 ```
 
 5. Generate PDF into the same folder:
 
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[working-folder]/Acme-Group/Records/data.json" \
-  --blueprint "[working-folder]/Acme-Group/Records/blueprints/local-file-acme-mfg-de.json" \
+  --data "[working-folder]/Acme-Group/.records/data.json" \
+  --blueprint "[working-folder]/Acme-Group/.records/blueprints/local-file-acme-mfg-de.json" \
   --references "skills/local-file/references/" \
-  --library "[working-folder]/_library/" \
+  --library "[working-folder]/.library/" \
   --template "skills/local-file/assets/local_file.tex" \
-  --output "[working-folder]/Acme-Group/Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/" \
+  --output "[working-folder]/Acme-Group/4. Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/" \
   --format pdf
 ```
 
@@ -137,7 +137,7 @@ Check that the user has a folder selected. Try listing the contents of the worki
 
 Before any conversation or content writing, load the style guides:
 1. Read `skills/local-file/references/style-guide.md` — always apply Part 1 (conversation tone)
-2. Check `_library/style-guide.md` in the user's selected folder — if found, use it for report writing style (overrides Part 2 of plugin default)
+2. Check `.library/style-guide.md` in the user's selected folder — if found, use it for report writing style (overrides Part 2 of plugin default)
 3. If no user style guide, apply Part 2 of the plugin default for report writing
 
 Conversation tone is always from the plugin. Report writing style is user-overridable.
@@ -174,23 +174,23 @@ Check the working directory for existing groups:
 **First, load memory files** (if they exist) to personalize the session and skip redundant questions:
 
 - **Personal preferences** (`.supernomial/me.json`): Read this file in the working directory root. Adapt tone, approach, and defaults based on the user's personal preferences (e.g., preferred TP method terminology, communication style, default currency).
-- **Group/client memory** (`[Group]/Records/memory.json`): Surface relevant client context — audit status, upcoming deadlines, key contacts, domain knowledge, prior decisions. Use this to enrich the welcome: "Welcome back — I remember [relevant context from memory]."
-- **Firm conventions** (`_library/memory.json`): Apply firm-wide conventions — naming standards, preferred methods, house style notes, recurring instructions.
+- **Group/client memory** (`[Group]/.records/memory.json`): Surface relevant client context — audit status, upcoming deadlines, key contacts, domain knowledge, prior decisions. Use this to enrich the welcome: "Welcome back — I remember [relevant context from memory]."
+- **Firm conventions** (`.library/memory.json`): Apply firm-wide conventions — naming standards, preferred methods, house style notes, recurring instructions.
 
 Use memory to **skip questions already answered** in prior sessions. For example, if memory records "OECD 2022 guidelines" as the applicable framework, do not ask which version. If memory notes the partner's preferences, apply them without re-asking.
 
 **Then scan the working directory** for this group and report findings:
-- **Records** (`Records/data.json`): How many entities, how many transactions, what data is available
+- **Records** (`.records/data.json`): How many entities, how many transactions, what data is available
 - **Notes on objects**: If `data.json` has `notes` arrays on group, entities, or transactions, surface them: "I see some notes from last time — [summary of relevant notes]"
-- **Session log** (`Records/session-log.json`): If it exists, read the most recent entry and use it to:
+- **Session log** (`.records/session-log.json`): If it exists, read the most recent entry and use it to:
   - Welcome the user back with context: "Welcome back — last time we worked on [entity], [summary]. We left off with [pending items]."
   - Skip questions that were already answered (don't re-ask about group, entity, or year if the session log is clear)
   - Highlight pending items: "Last time we noted [pending item] — has that been resolved?"
-- **Blueprint notes** (`Records/blueprints/`): If a blueprint has `section_notes`, mention relevant ones during the intake
-- **Prior year deliverables** (`Deliverables/`): "I found a 2023 local file for this entity" — this is the most common starting point (rollforward)
-- **Source documents** (`Source-Documents/`): "I see financial statements and contracts uploaded"
-- **Working files** (`Working-Files/`): "There's a draft from [date] for this entity"
-- **Existing blueprint** (`Records/blueprints/`): "There's a report already configured for this entity"
+- **Blueprint notes** (`.records/blueprints/`): If a blueprint has `section_notes`, mention relevant ones during the intake
+- **Prior year deliverables** (`4. Deliverables/`): "I found a 2023 local file for this entity" — this is the most common starting point (rollforward)
+- **Source documents** (`2. Source Files/`): "I see financial statements and contracts uploaded"
+- **Working files** (`3. Working Papers/`): "There's a draft from [date] for this entity"
+- **Existing blueprint** (`.records/blueprints/`): "There's a report already configured for this entity"
 
 If nothing exists, say so: "This is a fresh start — no prior work found for this entity."
 
@@ -255,16 +255,16 @@ Throughout Steps 3–4, after each meaningful data update (new entity added, tra
 
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[selected-folder]/[Group Name]/Records/data.json" \
-  --blueprint "[selected-folder]/[Group Name]/Records/blueprints/local-file-[entity-id].json" \
+  --data "[selected-folder]/[Group Name]/.records/data.json" \
+  --blueprint "[selected-folder]/[Group Name]/.records/blueprints/local-file-[entity-id].json" \
   --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --group-content "[selected-folder]/[Group Name]/Records/content/" \
+  --library "[selected-folder]/.library/" \
+  --group-content "[selected-folder]/[Group Name]/.records/content/" \
   --template "skills/local-file/assets/combined_view.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
   --format combined \
-  --blueprints-dir "[selected-folder]/[Group Name]/Records/blueprints/"
+  --blueprints-dir "[selected-folder]/[Group Name]/.records/blueprints/"
 ```
 
 This is the same assembly script with `--format combined`. It reads the current records and blueprint, populates the Expert Mode template, and writes a single `.html` file. Zero tokens — pure Python string replacement. Cowork renders HTML with full styling in the side panel.
@@ -275,11 +275,11 @@ Replaced by Expert Mode for new workflows. Shows all sections organized by categ
 
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[selected-folder]/[Group Name]/Records/data.json" \
-  --blueprint "[selected-folder]/[Group Name]/Records/blueprints/local-file-[entity-id].json" \
+  --data "[selected-folder]/[Group Name]/.records/data.json" \
+  --blueprint "[selected-folder]/[Group Name]/.records/blueprints/local-file-[entity-id].json" \
   --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --group-content "[selected-folder]/[Group Name]/Records/content/" \
+  --library "[selected-folder]/.library/" \
+  --group-content "[selected-folder]/[Group Name]/.records/content/" \
   --template "skills/local-file/assets/section_dashboard.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -294,11 +294,11 @@ When the user asks to work on a specific section (e.g., "Let's work on the group
 
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[selected-folder]/[Group Name]/Records/data.json" \
-  --blueprint "[selected-folder]/[Group Name]/Records/blueprints/local-file-[entity-id].json" \
+  --data "[selected-folder]/[Group Name]/.records/data.json" \
+  --blueprint "[selected-folder]/[Group Name]/.records/blueprints/local-file-[entity-id].json" \
   --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --group-content "[selected-folder]/[Group Name]/Records/content/" \
+  --library "[selected-folder]/.library/" \
+  --group-content "[selected-folder]/[Group Name]/.records/content/" \
   --template "skills/local-file/assets/section_editor.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -323,11 +323,11 @@ Once sections have content, generate the **report view** — a document-style pr
 
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[selected-folder]/[Group Name]/Records/data.json" \
-  --blueprint "[selected-folder]/[Group Name]/Records/blueprints/local-file-[entity-id].json" \
+  --data "[selected-folder]/[Group Name]/.records/data.json" \
+  --blueprint "[selected-folder]/[Group Name]/.records/blueprints/local-file-[entity-id].json" \
   --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --group-content "[selected-folder]/[Group Name]/Records/content/" \
+  --library "[selected-folder]/.library/" \
+  --group-content "[selected-folder]/[Group Name]/.records/content/" \
   --template "skills/local-file/assets/report_view.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -350,11 +350,11 @@ This helps the user understand how the report is assembled before committing to 
 
 ### Step 3: Build/Update the Records
 
-Based on the intake, update the group's records (`Records/data.json`):
+Based on the intake, update the group's records (`.records/data.json`):
 
 **New client flow:**
-1. Create the client folder structure: `Admin/`, `Source-Documents/`, `Working-Files/`, `Deliverables/`, `Records/`
-2. Create `Records/data.json` with group object
+1. Create the client folder structure: `1. Admin/`, `2. Source Files/`, `3. Working Papers/`, `4. Deliverables/`, `.records/`
+2. Create `.records/data.json` with group object
 3. Add entity objects
 4. Gather transaction data from the user or reference materials
 5. Confirm all structured data with the user before saving
@@ -400,8 +400,8 @@ For each transaction, the entity's functional profile needs content for the repo
 4. **Collect in batches, not one-by-one.** Cover Functions, Assets, and Risks together in one exchange. If the user gives partial info, fill in reasonable defaults from the reference checklist and note what's assumed.
 
 5. **Store as content blocks.** Save each paragraph as a single content file:
-   - Firm-reusable profiles → `_library/functional-profiles/[slug]/functions.md` (Layer 2)
-   - Group-customized profiles → `[Group]/Records/content/functional-profiles/[slug]/functions.md` (Layer 3)
+   - Firm-reusable profiles → `.library/functional-profiles/[slug]/functions.md` (Layer 2)
+   - Group-customized profiles → `[Group]/.records/content/functional-profiles/[slug]/functions.md` (Layer 3)
    - Entity-specific → plain text in the blueprint (Layer 4)
 
 6. **Don't over-ask.** The 22 × 4 = 88 content blocks are the maximum across ALL profile types. Most entities use 1-2 profile types. Most of the content should be drafted by Claude and reviewed by the user — not dictated field by field.
@@ -432,13 +432,13 @@ This step is handled by a **deterministic Python script**, not by Claude directl
 Run the assembly script to generate the final PDF:
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[selected-folder]/[Group Name]/Records/data.json" \
-  --blueprint "[selected-folder]/[Group Name]/Records/blueprints/local-file-[entity-id].json" \
+  --data "[selected-folder]/[Group Name]/.records/data.json" \
+  --blueprint "[selected-folder]/[Group Name]/.records/blueprints/local-file-[entity-id].json" \
   --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --group-content "[selected-folder]/[Group Name]/Records/content/" \
+  --library "[selected-folder]/.library/" \
+  --group-content "[selected-folder]/[Group Name]/.records/content/" \
   --template "skills/local-file/assets/local_file.tex" \
-  --output "[selected-folder]/[Group Name]/Deliverables/FY[Year]/Local-Files/[Country]/[Entity Name]/" \
+  --output "[selected-folder]/[Group Name]/4. Deliverables/FY[Year]/Local-Files/[Country]/[Entity Name]/" \
   --format pdf
 ```
 
@@ -464,7 +464,7 @@ After the script completes, **present the output file to the user** — do NOT r
 
 **6a. Save session log and consolidate memory:**
 
-Before presenting next steps, append a session entry to `[Group Name]/Records/session-log.json`. If the file doesn't exist, create it as an array with one entry. If it exists, append to the array.
+Before presenting next steps, append a session entry to `[Group Name]/.records/session-log.json`. If the file doesn't exist, create it as an array with one entry. If it exists, append to the array.
 
 ```json
 {
@@ -550,38 +550,40 @@ The editor has a **"Send updates"** button. When the user clicks it, only the **
 
 ### Handling Pasted Updates from Expert Mode
 
-Expert Mode has a **Save** button. When the user clicks it, all changes are copied to their clipboard as JSON. If the user pastes this into the chat, it looks like:
+Expert Mode has a **Save** button. When the user clicks it, changes are copied to their clipboard in a human-readable format with embedded JSON. If the user pastes this into the chat, it looks like:
 
-```json
+```
+Mark 1. Executive Summary as reviewed
+Updated 2.1 Group Overview with new content
+Change document stage to Review
+
+<!-- COWORK_DATA
 {
   "_source": "combined_view",
   "_entity_id": "acme-nl",
   "_fiscal_year": "2024",
   "_summary": [
-    "Updated the Group Overview section with new content",
-    "Marked Objective as reviewed",
-    "Changed document stage to Review"
+    "Mark 1. Executive Summary as reviewed",
+    "Updated 2.1 Group Overview with new content",
+    "Change document stage to Review"
   ],
   "sections": {
     "group_overview": "Updated text for the group overview section..."
   },
-  "section_notes": {
-    "group_overview": ["Revenue confirmed by group controller", "Second year engagement"]
-  },
-  "footnotes": {
-    "preamble_objective": ["OECD Guidelines (2022), Chapter I, para. 1.6."]
-  },
   "section_status": {
-    "preamble_objective": { "reviewed": true, "signed_off": false }
+    "executive_summary": { "reviewed": true, "signed_off": false }
   },
-  "stage": "review",
-  "document_meta": {
-    "title": "Local File",
-    "subtitle": "Acme Netherlands B.V.",
-    "meta": "Transfer Pricing Documentation · Fiscal Year 2024"
-  }
+  "stage": "review"
 }
+COWORK_DATA -->
 ```
+
+**Important:** The payload only contains fields that actually changed — not a full dump of all state. If the user only marked a section as reviewed, the payload will only contain `section_status` for that one section.
+
+**Parsing the paste:**
+
+1. **Check for `<!-- COWORK_DATA` markers first.** Extract the JSON from between `<!-- COWORK_DATA` and `COWORK_DATA -->`. The text above the markers is the human-readable summary (for the user's benefit — you use the JSON).
+2. **Fallback:** If no markers are found, try parsing the entire paste as raw JSON (backward compatibility with older Expert Mode versions).
 
 **When you receive this JSON:**
 

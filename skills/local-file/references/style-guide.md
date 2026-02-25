@@ -2,7 +2,7 @@
 
 This style guide governs two distinct categories: how the AI **talks to the user** (conversation tone) and how the AI **writes report content** (writing style). Both are controlled by Supernomial at the plugin level.
 
-Users can override the **writing style only** by placing a `_library/style-guide.md` file in their working directory. The conversation tone is part of the Supernomial product experience and is not user-configurable.
+Users can override the **writing style only** by placing a `.library/style-guide.md` file in their working directory. The conversation tone is part of the Supernomial product experience and is not user-configurable.
 
 ---
 
@@ -21,7 +21,7 @@ How the AI interacts with the user during workflows.
 
 ## Part 2: Report Writing Style (plugin default, user-overridable)
 
-How the AI writes content for local files and other deliverables. Users can override these defaults by creating `_library/style-guide.md` in their working directory.
+How the AI writes content for local files and other deliverables. Users can override these defaults by creating `.library/style-guide.md` in their working directory.
 
 ### Register and Structure
 
