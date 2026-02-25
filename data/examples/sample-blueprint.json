@@ -2,125 +2,78 @@
   "schema_version": "0.6.0",
   "blueprint_name": "OECD Standard",
   "blueprint_type": "builtin",
-  "group": "acme-group",
-  "entity": "acme-nl",
+  "group": "solara-group",
+  "entity": "solara-dist-fr",
   "deliverable": "local-file",
   "fiscal_year": "2024",
   "chapters": [
     {
       "id": "executive-summary",
       "title": "Executive Summary",
-      "sections": ["preamble_objective", "preamble_scope", "preamble_work_performed", "preamble_summary_of_results"]
+      "sections": [
+        { "id": "objective", "title": "Objective", "keys": ["preamble_objective"] },
+        { "id": "scope", "title": "Scope", "keys": ["preamble_scope"] },
+        { "id": "work-performed", "title": "Work Performed", "keys": ["preamble_work_performed"] },
+        { "id": "transactions-under-analysis", "title": "Transactions under Analysis", "keys": ["preamble_transactions_under_analysis"] },
+        { "id": "summary-of-results", "title": "Summary of Results", "keys": ["preamble_summary_of_results"] }
+      ]
     },
     {
       "id": "business-description",
       "title": "Business Description",
-      "sections": ["executive_summary", "group_overview", "entity_introduction", "management_structure", "business_description", "business_restructurings", "intangible_transfers"]
+      "sections": [
+        {
+          "id": "group-overview",
+          "title": "Group Overview",
+          "keys": ["group_overview"],
+          "subsections": [
+            { "id": "org-structure", "title": "Organizational Structure", "keys": ["group_overview_org_structure"] },
+            { "id": "mgmt-structure", "title": "Management Structure", "keys": ["group_overview_mgmt_structure"] }
+          ]
+        },
+        {
+          "id": "local-business",
+          "title": "Local Business",
+          "keys": [],
+          "subsections": [
+            { "id": "biz-description", "title": "Business Description and Strategy", "keys": ["entity_business_description"] },
+            { "id": "restructurings", "title": "Business Restructurings", "keys": ["entity_restructurings"] },
+            { "id": "intangible-transfers", "title": "Intangible Transfers", "keys": ["entity_intangible_transfers"] }
+          ]
+        }
+      ]
     },
     {
       "id": "industry-analysis",
       "title": "Industry Analysis",
-      "sections": ["industry_analysis_primary"]
-    },
-    {
-      "id": "economic-analysis",
-      "title": "Economic Analysis",
-      "sections": ["fp_limited_risk_distributor_overview", "fp_limited_risk_distributor_functions", "fp_limited_risk_distributor_assets", "fp_limited_risk_distributor_risks", "fp_full_fledged_manufacturer_overview", "fp_full_fledged_manufacturer_functions", "fp_full_fledged_manufacturer_assets", "fp_full_fledged_manufacturer_risks"]
-    },
-    {
-      "id": "controlled-transactions",
-      "title": "Controlled Transactions",
-      "sections": ["tx_001_summary", "tx_001_contractual_terms_intro", "tx_001_characteristics_intro", "tx_001_economic_circumstances_intro", "tx_001_business_strategies", "tx_001_method_selection", "tx_001_application_intro", "tx_001_conclusion", "tx_002_summary", "tx_002_contractual_terms_intro", "tx_002_method_selection", "tx_002_conclusion", "tx_003_summary", "tx_003_contractual_terms_intro", "tx_003_method_selection", "tx_003_conclusion", "tx_004_summary", "tx_004_contractual_terms_intro", "tx_004_economic_circumstances_intro", "tx_004_method_selection", "tx_004_application_intro", "tx_004_conclusion"]
-    },
-    {
-      "id": "benchmark-application",
-      "title": "Benchmark Application",
-      "sections": ["bm_benchmark_a_search_strategy_intro", "bm_benchmark_a_search_results_intro", "bm_benchmark_a_adjustments_intro", "bm_benchmark_a_conclusion"]
-    },
-    {
-      "id": "closing",
-      "title": "Closing",
-      "sections": ["transactions_not_covered_intro"]
+      "sections": [
+        { "id": "industry-overview", "title": "Industry Overview", "keys": ["industry_overview"] },
+        { "id": "value-drivers", "title": "Industry Value Drivers", "keys": ["industry_value_drivers"] },
+        { "id": "key-competitors", "title": "Key Competitors", "keys": ["industry_key_competitors"] }
+      ]
     }
   ],
   "sections": {
     "preamble_objective": "@references/preamble/objective",
-    "preamble_scope": "This local file documents the controlled transactions of Acme Netherlands B.V. for fiscal year 2024 in accordance with Article 8b of the Dutch Corporate Income Tax Act and the OECD Transfer Pricing Guidelines.",
-    "preamble_work_performed": "@library/preamble/work-performed",
-    "preamble_summary_of_results": "The applied transfer pricing methods and documentation satisfy local transfer pricing requirements and support the Company's position that the analyzed transactions reflect arm's length terms.",
-
-    "executive_summary": "",
-    "group_overview": "Acme Group is a multinational consumer electronics company headquartered in the United States. The Group designs, manufactures, and distributes electronic devices through subsidiaries in Europe, Asia, and the Americas. The Group's transfer pricing policy is based on the arm's length principle in accordance with the OECD Transfer Pricing Guidelines.",
-    "entity_introduction": [
-      "@group/entity-introductions/distribution-hub",
-      "Acme Netherlands B.V. specifically handles EU-wide distribution with third-party logistics partners and operates under a commissionnaire arrangement restructured in 2022."
-    ],
-    "management_structure": "Acme Netherlands B.V. is governed by a local board of directors appointed by the parent company. Day-to-day management is overseen by the Managing Director, who reports to the Group's European Regional Head.",
-    "business_description": "Acme Netherlands B.V. operates as the European distribution hub for the Acme Group, purchasing finished goods from related manufacturing entities and reselling them to third-party customers across the EU.",
-    "business_restructurings": "In 2022, the entity transitioned from a full-fledged distributor to a limited-risk distributor under a commissionnaire arrangement.",
-    "intangible_transfers": "No transfers of ownership rights in intangibles occurred during the fiscal year.",
-
-    "industry_analysis_primary": "@library/industries/consumer-electronics",
-
-    "fp_limited_risk_distributor_overview": "@library/functional-profiles/limited-risk-distributor/overview",
-    "fp_limited_risk_distributor_functions": "@group/functional-profiles/limited-risk-distributor/functions",
-    "fp_limited_risk_distributor_assets": "@group/functional-profiles/limited-risk-distributor/assets",
-    "fp_limited_risk_distributor_risks": "@group/functional-profiles/limited-risk-distributor/risks",
-    "fp_full_fledged_manufacturer_overview": "@library/functional-profiles/full-fledged-manufacturer/overview",
-    "fp_full_fledged_manufacturer_functions": "@library/functional-profiles/full-fledged-manufacturer/functions",
-    "fp_full_fledged_manufacturer_assets": "@library/functional-profiles/full-fledged-manufacturer/assets",
-    "fp_full_fledged_manufacturer_risks": "@library/functional-profiles/full-fledged-manufacturer/risks",
-
-    "tx_001_summary": "Acme Netherlands B.V. purchases finished consumer electronics from Acme Manufacturing Ltd. (Ireland) for resale in the EU market. The transaction is priced on an arm's length basis using the TNMM.",
-    "tx_001_contractual_terms_intro": "The intercompany agreement between Acme Netherlands B.V. and Acme Manufacturing Ltd. governs the terms of the purchase of finished goods.",
-    "tx_001_characteristics_intro": "The products purchased are standard consumer electronics manufactured to Group specifications. The key characteristics are summarised below.",
-    "tx_001_economic_circumstances_intro": "The EU consumer electronics market is characterised by intense competition, seasonal demand patterns, and rapid product innovation cycles.",
-    "tx_001_business_strategies": "Acme Netherlands B.V. follows a volume-driven distribution strategy with limited inventory risk, consistent with its limited-risk distributor profile.",
-    "tx_001_method_selection": "@library/tp-methods/tnmm-distributor",
-    "tx_001_application_intro": "The TNMM was applied using operating margin as the profit level indicator, with Acme Netherlands B.V. as the tested party.",
-    "tx_001_conclusion": "",
-
-    "tx_002_summary": "Acme Manufacturing Ltd. provides group management services to Acme Netherlands B.V., charged as a fixed annual fee.",
-    "tx_002_contractual_terms_intro": "The intercompany services agreement specifies the scope of management services, the allocation methodology, and the pricing mechanism.",
-    "tx_002_method_selection": "@references/methods/tnmm-overview",
-    "tx_002_conclusion": "",
-
-    "tx_003_summary": "Acme Netherlands B.V. pays a royalty to Acme Manufacturing Ltd. for the use of trademarks and trade names in EU marketing activities.",
-    "tx_003_contractual_terms_intro": "The license agreement grants Acme Netherlands B.V. non-exclusive rights to use certain trademarks in the European market.",
-    "tx_003_method_selection": "@references/methods/cup-overview",
-    "tx_003_conclusion": "",
-
-    "tx_004_summary": "Acme Parent Inc. has extended a EUR 2,000,000 intercompany loan to Acme Netherlands B.V. to fund working capital requirements. The loan carries a fixed interest rate benchmarked against comparable third-party lending arrangements.",
-    "tx_004_contractual_terms_intro": "The loan agreement defines the principal amount, interest rate, maturity, repayment schedule, and subordination provisions.",
-    "tx_004_economic_circumstances_intro": "The credit markets in 2024 were characterised by elevated base rates following central bank tightening cycles, with credit spreads narrowing for investment-grade borrowers.",
-    "tx_004_method_selection": "The CUP method is the most appropriate method for benchmarking the intercompany loan, as comparable third-party lending data is readily available for loans of similar size, tenor, and credit quality.",
-    "tx_004_application_intro": "The arm's length interest rate was determined by reference to comparable third-party loan agreements sourced from commercial databases.",
-    "tx_004_conclusion": "",
-
-    "bm_benchmark_a_search_strategy_intro": "A systematic search was performed using the Orbis database to identify comparable companies engaged in the distribution of consumer electronics in Europe.",
-    "bm_benchmark_a_search_results_intro": "The search yielded a final set of comparable companies after applying quantitative and qualitative screening criteria.",
-    "bm_benchmark_a_adjustments_intro": "No material comparability adjustments were deemed necessary given the similarity of the comparable companies to the tested party.",
-    "bm_benchmark_a_conclusion": "The benchmark analysis supports that the operating margin earned by Acme Netherlands B.V. falls within the interquartile range of the comparable set, confirming compliance with the arm's length principle.",
-
-    "transactions_not_covered_intro": "The following transactions involving Acme Netherlands B.V. are not analyzed in detail in this local file as they are either immaterial or covered in the counterparty's documentation."
+    "preamble_scope": "@references/preamble/scope",
+    "preamble_work_performed": "@references/preamble/work-performed",
+    "preamble_transactions_under_analysis": "@references/preamble/transactions-under-analysis",
+    "preamble_summary_of_results": "@references/preamble/summary-of-results",
+    "group_overview": "@references/business/group-overview",
+    "group_overview_org_structure": "@references/business/org-structure",
+    "group_overview_mgmt_structure": "@references/business/mgmt-structure",
+    "entity_business_description": "@references/business/local-business",
+    "entity_restructurings": "@references/business/restructurings",
+    "entity_intangible_transfers": "@references/business/intangible-transfers",
+    "industry_overview": "@references/industry/overview",
+    "industry_value_drivers": "@references/industry/value-drivers",
+    "industry_key_competitors": "@references/industry/key-competitors"
   },
-  "section_notes": {
-    "group_overview": "Partner requested emphasis on decentralized decision-making structure — relevant for functional analysis",
-    "entity_introduction": "Mention commissionnaire arrangement (restructured 2022) — important for characterization",
-    "executive_summary": "Draft after all other sections are complete",
-    "fp_limited_risk_distributor_functions": "Entity was full-fledged until 2022 restructuring — some residual marketing functions remain",
-    "fp_full_fledged_manufacturer_overview": "Using firm template — IE entity is well-characterized, no customization needed",
-    "tx_001_conclusion": "Pending benchmark update with final FY2024 numbers",
-    "tx_004_summary": "Loan was drawn down in Q2 2024 — confirm exact drawdown date with client",
-    "bm_benchmark_a_conclusion": "Need to update with FY2024 financials once available from Orbis"
-  },
+  "section_notes": {},
   "footnotes": {
     "preamble_objective": [
       "OECD Transfer Pricing Guidelines for Multinational Enterprises and Tax Administrations (2022), Chapter I, para. 1.6.",
       "Wet op de vennootschapsbelasting 1969, Article 8b."
-    ],
-    "industry_analysis_primary": [
-      "European Consumer Electronics Industry Report, 2024 Edition."
     ]
   }
 }

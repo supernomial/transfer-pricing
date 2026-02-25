@@ -4,20 +4,46 @@ This defines the complete set of section keys for a local file blueprint, their 
 
 ## Chapters Architecture (v0.6.0)
 
-As of schema v0.6.0, the blueprint's `chapters[]` array is the authoritative source for report structure and section ordering. Each chapter groups related sections into a named container:
+As of schema v0.6.0, the blueprint's `chapters[]` array defines a 3-level document structure:
+
+1. **Chapter** — top-level heading (e.g., "2. Business Description")
+2. **Section** — second-level heading (e.g., "2.1 Group Overview")
+3. **Subsection** — third-level heading (e.g., "2.1.1 Organizational Structure")
+
+Each level:
 
 ```json
 {
-  "id": "business-description",
-  "title": "Business Description",
-  "sections": ["executive_summary", "group_overview", "entity_introduction"]
+  "chapters": [
+    {
+      "id": "business-description",
+      "title": "Business Description",
+      "sections": [
+        {
+          "id": "group-overview",
+          "title": "Group Overview",
+          "keys": ["group_overview"],
+          "subsections": [
+            {
+              "id": "org-structure",
+              "title": "Organizational Structure",
+              "keys": ["group_overview_org_structure"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
 ```
 
-- Chapters define the top-level headings in all output formats (HTML, LaTeX, PDF)
-- Section order within a chapter is determined by the `sections` array, not by key prefix
-- A section key must appear in exactly one chapter
-- Sections not listed in any chapter are omitted from the report
+- **`keys[]`** — array of content element keys from the blueprint's `sections` object. These are the actual content rendered under this heading.
+- **`subsections[]`** — optional array of subsection objects (same structure as sections, without further nesting).
+- A section with both `keys` and `subsections` renders its own content first, then subsection headings below.
+- Numbering is generated from array positions: Chapter 2 → Section 2.1 → Subsection 2.1.1.
+- **Backward compatible:** If a `sections` array entry is a plain string instead of an object, it's treated as a legacy flat key (same as v0.5.0 behavior).
+
+Chapters define the headings in all output formats (HTML, LaTeX, PDF). A section key must appear in exactly one chapter. Sections not listed in any chapter are omitted from the report.
 
 The section key naming conventions below remain useful for readability and for identifying section purpose, but they no longer drive report structure.
 
@@ -157,7 +183,7 @@ Dynamic — one set per benchmark used by covered transactions.
 
 ## Category Detection (Legacy)
 
-> **Note:** As of v0.6.0, `chapters[]` is the authoritative source for report structure. Prefix-based category detection is retained for backward compatibility with v0.5.0 blueprints that lack a `chapters` array.
+> **Note:** As of v0.6.0, the 3-level `chapters[]` hierarchy (Chapter → Section → Subsection) is the authoritative source for report structure. Prefix-based category detection is retained for backward compatibility with v0.5.0 blueprints that lack a `chapters` array.
 
 The assembly script detects categories from key prefixes:
 

@@ -119,6 +119,59 @@
     display: inline-flex;
   }
 
+  /* --- Save banner --- */
+  .save-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    padding: 12px 24px;
+    background: var(--sn-success);
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    text-align: center;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+  }
+  .save-banner.show { transform: translateY(0); }
+
+  /* --- Copy modal --- */
+  .copy-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: rgba(0,0,0,0.6);
+    align-items: center;
+    justify-content: center;
+  }
+  .copy-modal-overlay.open { display: flex; }
+  .copy-modal {
+    background: var(--sn-surface);
+    border: 1px solid var(--sn-border);
+    border-radius: var(--sn-radius-lg);
+    padding: 24px;
+    max-width: 600px;
+    width: 90%;
+  }
+  .copy-modal-title { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+  .copy-modal-desc { font-size: 12px; color: var(--sn-text-muted); margin-bottom: 12px; }
+  .copy-modal-text {
+    width: 100%;
+    height: 200px;
+    background: var(--sn-bg);
+    border: 1px solid var(--sn-border);
+    border-radius: var(--sn-radius);
+    color: var(--sn-text);
+    font-family: var(--sn-font-mono);
+    font-size: 11px;
+    padding: 12px;
+    resize: vertical;
+  }
+  .copy-modal-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
+
   /* --- Toast notification --- */
   .toast {
     position: fixed;
@@ -592,6 +645,7 @@
     -webkit-mask-image: linear-gradient(to right, black calc(100% - 20px), transparent 100%);
   }
   .nav-sub-item { padding-left: 36px; font-size: 10px; }
+  .nav-subsub-item { padding-left: 50px; font-size: 10px; }
   .nav-divider { height: 1px; background: var(--sn-border); margin: 8px 16px 8px 16px; margin-right: 0; }
 
   /* --- Collapsible sub-nav --- */
@@ -745,6 +799,26 @@
     font-family: var(--sn-font-serif); font-size: 14px; font-weight: 600;
     color: var(--sn-text); margin-bottom: 8px; margin-top: 20px;
   }
+
+  /* Section-level heading (e.g., 2.1 Group Overview) */
+  .section-sec-heading {
+    font-size: 15px; font-weight: 600;
+    color: var(--sn-text); padding: 16px 0 8px 0;
+    border-bottom: 1px solid var(--sn-border); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+    position: relative;
+  }
+
+  /* Subsection-level heading (e.g., 2.1.1 Organizational Structure) */
+  .section-subsec-heading {
+    font-size: 13px; font-weight: 600;
+    color: var(--sn-text-muted); padding: 12px 0 6px 0;
+    display: flex; align-items: center; gap: 8px;
+    position: relative;
+  }
+
+  .section-sec-heading:hover .edit-pen,
+  .section-subsec-heading:hover .edit-pen { opacity: 1; }
 
   /* --- Section body wrapper (holds body + element note side by side) --- */
   .section-body-wrapper {
@@ -1504,14 +1578,15 @@ document.addEventListener('keydown', function(e) {
 // --- Build nav dynamically from headings ---
 (function() {
   var nav = document.getElementById('sidebar-nav');
-  var headings = document.querySelectorAll('.section-heading, .section-subheading');
+  var headings = document.querySelectorAll('.section-heading, .section-sec-heading, .section-subsec-heading, .section-subheading');
   var currentGroup = null;
   var currentSubs = null;
   var topIndex = 0;
   var subIndex = 0;
+  var subsubIndex = 0;
 
   function stripNum(text) {
-    return text.replace(/^\d+(\.\d+)?\s+/, '');
+    return text.replace(/^\d+(\.\d+)*\s+/, '');
   }
 
   headings.forEach(function(h) {
@@ -1521,15 +1596,18 @@ document.addEventListener('keydown', function(e) {
     var label = stripNum(h.textContent.trim());
 
     if (h.classList.contains('section-heading')) {
-      // Top-level item
+      // Top-level item (chapter)
       topIndex++;
       subIndex = 0;
-      var hasSubs = section.querySelector('.section-subheading') !== null;
+      subsubIndex = 0;
+      var hasSubs = section.querySelector('.section-subheading, .section-sec-heading') !== null;
       var headReviewed = h.getAttribute('data-reviewed') === 'true';
       var headSignedOff = h.getAttribute('data-signed-off') === 'true';
-      var item = document.createElement('a');
+      var item = document.createElement('div');
       item.className = 'nav-item';
-      item.href = '#' + id;
+      item.setAttribute('data-target', '#' + id);
+      item.setAttribute('role', 'button');
+      item.setAttribute('tabindex', '0');
       item.onclick = function(e) { scrollToSection(e); };
       item.innerHTML = '<span class="nav-icon">&#9656;</span><span class="nav-label">' + label + '</span>' +
         '<span class="nav-status">' +
@@ -1559,20 +1637,48 @@ document.addEventListener('keydown', function(e) {
         currentSubs = null;
       }
 
+    } else if (h.classList.contains('section-sec-heading') && currentSubs) {
+      // Second-level nav item (section within chapter)
+      subIndex++;
+      subsubIndex = 0;
+      var sub = document.createElement('div');
+      sub.className = 'nav-item nav-sub-item';
+      sub.setAttribute('data-target', '#' + id);
+      sub.setAttribute('role', 'button');
+      sub.setAttribute('tabindex', '0');
+      sub.onclick = function(e) { scrollToSection(e); };
+      sub.innerHTML = '<span class="nav-label">' + topIndex + '.' + subIndex + ' ' + label + '</span>';
+      currentSubs.appendChild(sub);
+
+    } else if (h.classList.contains('section-subsec-heading') && currentSubs) {
+      // Third-level nav item (subsection)
+      subsubIndex++;
+      var subsub = document.createElement('div');
+      subsub.className = 'nav-item nav-subsub-item';
+      subsub.setAttribute('data-target', '#' + id);
+      subsub.setAttribute('role', 'button');
+      subsub.setAttribute('tabindex', '0');
+      subsub.onclick = function(e) { scrollToSection(e); };
+      subsub.innerHTML = '<span class="nav-label">' + topIndex + '.' + subIndex + '.' + subsubIndex + ' ' + label + '</span>';
+      currentSubs.appendChild(subsub);
+
     } else if (h.classList.contains('section-subheading') && currentSubs) {
+      // Legacy second-level (backward compat with old blueprints)
       subIndex++;
       var isReviewed = h.getAttribute('data-reviewed') === 'true';
       var isSignedOff = h.getAttribute('data-signed-off') === 'true';
-      var sub = document.createElement('a');
-      sub.className = 'nav-item nav-sub-item';
-      sub.href = '#' + id;
-      sub.onclick = function(e) { scrollToSection(e); };
-      sub.innerHTML = '<span class="nav-label">' + topIndex + '.' + subIndex + ' ' + label + '</span>' +
+      var sub2 = document.createElement('div');
+      sub2.className = 'nav-item nav-sub-item';
+      sub2.setAttribute('data-target', '#' + id);
+      sub2.setAttribute('role', 'button');
+      sub2.setAttribute('tabindex', '0');
+      sub2.onclick = function(e) { scrollToSection(e); };
+      sub2.innerHTML = '<span class="nav-label">' + topIndex + '.' + subIndex + ' ' + label + '</span>' +
         '<span class="nav-status">' +
         '<button class="nav-status-btn' + (isReviewed ? ' done' : '') + '" title="Reviewed" onclick="toggleNavStatus(event,this)"><svg><use href="#icon-eye"/></svg></button>' +
         '<button class="nav-status-btn' + (isSignedOff ? ' done' : '') + '" title="Signed off" onclick="toggleNavStatus(event,this)"><svg><use href="#icon-signature"/></svg></button>' +
         '</span>';
-      currentSubs.appendChild(sub);
+      currentSubs.appendChild(sub2);
     }
   });
 
@@ -1603,10 +1709,10 @@ document.addEventListener('keydown', function(e) {
 })();
 
 // --- Scroll spy: highlight active nav item based on scroll position ---
-var navItems = document.querySelectorAll('.nav-item[href]');
+var navItems = document.querySelectorAll('.nav-item[data-target]');
 var sections = [];
 navItems.forEach(function(item) {
-  var id = item.getAttribute('href').substring(1);
+  var id = item.getAttribute('data-target').substring(1);
   var el = document.getElementById(id);
   if (el) sections.push({ id: id, el: el, nav: item });
 });
@@ -1642,7 +1748,7 @@ function toggleNavStatus(e, btn) {
   // Sync status to corresponding section-subheading data attributes
   var navItem = btn.closest('.nav-item');
   if (navItem) {
-    var href = navItem.getAttribute('href');
+    var href = navItem.getAttribute('data-target');
     if (href) {
       var heading = document.querySelector(href);
       if (heading && heading.classList.contains('section-subheading')) {
@@ -1727,7 +1833,7 @@ function getElementLabel(wrapper) {
 // --- Nav scroll to section ---
 function scrollToSection(e) {
   e.preventDefault();
-  var href = e.currentTarget.getAttribute('href');
+  var href = e.currentTarget.getAttribute('data-target');
   var target = document.querySelector(href);
   if (target) {
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1880,8 +1986,8 @@ function saveChanges() {
     }
   });
   // Also check nav status buttons for headings without data-section-key
-  document.querySelectorAll('.nav-item[href]').forEach(function(navItem) {
-    var href = navItem.getAttribute('href').substring(1);
+  document.querySelectorAll('.nav-item[data-target]').forEach(function(navItem) {
+    var href = navItem.getAttribute('data-target').substring(1);
     var heading = document.getElementById(href);
     if (!heading) return;
     var key = heading.getAttribute('data-section-key');
@@ -1935,13 +2041,62 @@ function saveChanges() {
 
   // --- Copy to clipboard ---
   var json = JSON.stringify(payload, null, 2);
-  navigator.clipboard.writeText(json).then(function() {
-    showToast('Changes copied \u2014 paste in chat to update your data');
+
+  function onCopySuccess() {
+    // Show prominent banner instead of small toast
+    var banner = document.getElementById('save-banner');
+    if (banner) {
+      banner.textContent = 'Changes saved to clipboard. Paste into your Cowork chat to apply these updates.';
+      banner.classList.add('show');
+      setTimeout(function() { banner.classList.remove('show'); }, 5000);
+    }
     isDirty = false;
     saveBtn.classList.remove('visible');
-  }).catch(function() {
-    showToast('Could not copy \u2014 check clipboard permissions');
-  });
+  }
+
+  function showCopyModal(text) {
+    var modal = document.getElementById('copy-modal');
+    var textarea = document.getElementById('copy-modal-text');
+    if (modal && textarea) {
+      textarea.value = text;
+      modal.classList.add('open');
+    }
+  }
+
+  // Try clipboard API first
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(json).then(onCopySuccess).catch(function() {
+      // Fallback: hidden textarea + execCommand
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = json;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) { onCopySuccess(); } else { showCopyModal(json); }
+      } catch(e) {
+        showCopyModal(json);
+      }
+    });
+  } else {
+    // No clipboard API — try execCommand directly
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = json;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) { onCopySuccess(); } else { showCopyModal(json); }
+    } catch(e) {
+      showCopyModal(json);
+    }
+  }
 }
 
 function showToast(msg) {
@@ -1951,5 +2106,20 @@ function showToast(msg) {
   setTimeout(function() { toast.classList.remove('show'); }, 2500);
 }
 </script>
+
+<div class="save-banner" id="save-banner"></div>
+
+<div class="copy-modal-overlay" id="copy-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="copy-modal">
+    <div class="copy-modal-title">Copy your changes</div>
+    <p class="copy-modal-desc">Automatic copy didn't work. Select all the text below and copy it manually, then paste into your Cowork chat.</p>
+    <textarea class="copy-modal-text" id="copy-modal-text" readonly></textarea>
+    <div class="copy-modal-actions">
+      <button class="btn btn-primary" onclick="document.getElementById('copy-modal-text').select()">Select All</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('copy-modal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

@@ -206,21 +206,21 @@ def classify_source(raw_value, section_key):
         return {
             'layer': 1, 'label': 'Universal',
             'source_path': raw_value, 'scope': 'plugin',
-            'color': '#3b82f6',  # brand.css --sn-layer1
+            'color': '#64748b',  # brand.css --sn-layer1
             'impact': 'Standard content from Supernomial — updates with plugin upgrades'
         }
     elif isinstance(raw_value, str) and raw_value.startswith('@library/'):
         return {
             'layer': 2, 'label': 'Firm Library',
             'source_path': raw_value, 'scope': 'firm',
-            'color': '#a855f7',  # brand.css --sn-layer2
+            'color': '#94a3b8',  # brand.css --sn-layer2
             'impact': 'From your firm library — shared across all clients'
         }
     elif isinstance(raw_value, str) and raw_value.startswith('@group/'):
         return {
             'layer': 3, 'label': 'Group',
             'source_path': raw_value, 'scope': 'group',
-            'color': '#f59e0b',  # brand.css --sn-layer3
+            'color': '#a855f7',  # brand.css --sn-layer3
             'impact': 'Group-wide — editing affects all local files in this group'
         }
     else:
@@ -228,7 +228,7 @@ def classify_source(raw_value, section_key):
         return {
             'layer': 4, 'label': 'Entity',
             'source_path': None, 'scope': 'entity',
-            'color': '#22c55e',  # brand.css --sn-layer4
+            'color': '#3b82f6',  # brand.css --sn-layer4
             'impact': 'Entity-specific — this report only'
         }
 
@@ -649,24 +649,55 @@ def build_report_body_latex(blueprint, resolved_sections, data, entity, transact
     chapters = blueprint.get('chapters', [])
 
     if chapters:
-        # --- New path: iterate chapters array from blueprint ---
+        # --- New path: iterate chapters array from blueprint (3-level) ---
         for chapter in chapters:
             chapter_title = chapter.get('title', '')
             parts.append(f'\\section{{{escape_latex(chapter_title)}}}')
 
-            for key in chapter.get('sections', []):
-                label = humanize_section_key(key)
-                parts.append(f'\\subsection{{{escape_latex(label)}}}')
-                parts.append(render_section_content(key))
-                parts.append('')
+            for section in chapter.get('sections', []):
+                # Legacy flat key format
+                if isinstance(section, str):
+                    key = section
+                    label = humanize_section_key(key)
+                    parts.append(f'\\subsection{{{escape_latex(label)}}}')
+                    parts.append(render_section_content(key))
+                    parts.append('')
+                    if key.endswith('_intro'):
+                        auto_suffix = key[:-len('_intro')]
+                        if auto_suffix != key and is_auto_section(auto_suffix):
+                            parts.append(render_section_content(auto_suffix))
+                            parts.append('')
+                    continue
 
-                # Auto tables that follow _intro keys
-                # e.g., after tx_001_contractual_terms_intro -> auto table tx_001_contractual_terms
-                if key.endswith('_intro'):
-                    auto_suffix = key[:-len('_intro')]
-                    if auto_suffix != key and is_auto_section(auto_suffix):
-                        parts.append(render_section_content(auto_suffix))
+                # New format: section object
+                sec_title = section.get('title', '')
+                sec_keys = section.get('keys', [])
+                subsections = section.get('subsections', [])
+
+                parts.append(f'\\subsection{{{escape_latex(sec_title)}}}')
+
+                for key in sec_keys:
+                    parts.append(render_section_content(key))
+                    parts.append('')
+                    if key.endswith('_intro'):
+                        auto_suffix = key[:-len('_intro')]
+                        if auto_suffix != key and is_auto_section(auto_suffix):
+                            parts.append(render_section_content(auto_suffix))
+                            parts.append('')
+
+                for subsec in subsections:
+                    subsec_title = subsec.get('title', '')
+                    subsec_keys = subsec.get('keys', [])
+                    parts.append(f'\\subsubsection{{{escape_latex(subsec_title)}}}')
+
+                    for key in subsec_keys:
+                        parts.append(render_section_content(key))
                         parts.append('')
+                        if key.endswith('_intro'):
+                            auto_suffix = key[:-len('_intro')]
+                            if auto_suffix != key and is_auto_section(auto_suffix):
+                                parts.append(render_section_content(auto_suffix))
+                                parts.append('')
 
     else:
         # --- Fallback: prefix-based categorization (backward compat) ---
@@ -1490,7 +1521,7 @@ def build_xray_annotation_html(meta, note=''):
     Returns HTML string with the annotation bar, source path, composite badge,
     and section note — all hidden by default, shown when X-ray mode is toggled.
     """
-    color = meta.get('color', '#22c55e')
+    color = meta.get('color', '#3b82f6')
     label = escape_html(meta.get('label', 'Entity'))
     impact = escape_html(meta.get('impact', ''))
 
@@ -2120,7 +2151,7 @@ def build_blueprint_modal_html(blueprints_dir, current_blueprint):
 
 def build_combined_element_html(key, text, meta, note, footnotes, status,
                                 chapter_num, sub_num, data, entity_id,
-                                transactions, blueprint):
+                                transactions, blueprint, show_subheading=True):
     """Generate HTML for one content element in the Expert Mode view."""
     parts = []
     slug = slugify(key)
@@ -2131,15 +2162,16 @@ def build_combined_element_html(key, text, meta, note, footnotes, status,
     label = humanize_section_key(key)
     is_auto = is_auto_section(key)
 
-    # Subheading
-    parts.append(
-        f'<div class="section-subheading" id="{slug}" '
-        f'data-section-key="{escape_html(key)}" '
-        f'data-reviewed="{reviewed}" data-signed-off="{signed_off}">'
-        f'{chapter_num}.{sub_num} {escape_html(label)}'
-        f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span>'
-        f'</div>'
-    )
+    # Subheading (suppressed when parent section/subsection heading already provides structure)
+    if show_subheading:
+        parts.append(
+            f'<div class="section-subheading" id="{slug}" '
+            f'data-section-key="{escape_html(key)}" '
+            f'data-reviewed="{reviewed}" data-signed-off="{signed_off}">'
+            f'{chapter_num}.{sub_num} {escape_html(label)}'
+            f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span>'
+            f'</div>'
+        )
 
     # Insert divider
     parts.append(
@@ -2211,7 +2243,7 @@ def build_combined_element_html(key, text, meta, note, footnotes, status,
 
 def build_combined_sections_html(blueprint, resolved_sections, section_meta,
                                  data, entity_id, transactions):
-    """Build all document sections HTML from blueprint chapters."""
+    """Build all document sections HTML from blueprint chapters (3-level)."""
     parts = []
     local_file = None
     for lf in data.get('local_files', []):
@@ -2226,7 +2258,7 @@ def build_combined_sections_html(blueprint, resolved_sections, section_meta,
     for chapter_num, chapter in enumerate(blueprint.get('chapters', []), 1):
         chapter_id = chapter.get('id', slugify(chapter.get('title', f'chapter-{chapter_num}')))
         chapter_title = chapter.get('title', f'Chapter {chapter_num}')
-        section_keys = chapter.get('sections', [])
+        sections = chapter.get('sections', [])
 
         parts.append(f'<div class="section" id="{escape_html(chapter_id)}">')
         parts.append(
@@ -2234,17 +2266,75 @@ def build_combined_sections_html(blueprint, resolved_sections, section_meta,
             f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span></div>'
         )
 
-        for sub_num, key in enumerate(section_keys, 1):
-            meta = section_meta.get(key, classify_source('', key))
-            text = resolved_sections.get(key, '')
-            note = section_notes.get(key, '')
-            fn = footnotes_all.get(key, [])
-            status = section_status.get(key, {})
+        for sec_num, section in enumerate(sections, 1):
+            # Handle legacy format (string key) for backward compat
+            if isinstance(section, str):
+                key = section
+                meta = section_meta.get(key, classify_source('', key))
+                text = resolved_sections.get(key, '')
+                note = section_notes.get(key, '')
+                fn = footnotes_all.get(key, [])
+                status = section_status.get(key, {})
+                parts.append(build_combined_element_html(
+                    key, text, meta, note, fn, status,
+                    chapter_num, sec_num, data, entity_id, transactions, blueprint
+                ))
+                continue
 
-            parts.append(build_combined_element_html(
-                key, text, meta, note, fn, status,
-                chapter_num, sub_num, data, entity_id, transactions, blueprint
-            ))
+            # New format: section object with id, title, keys[], subsections[]
+            sec_id = section.get('id', '')
+            sec_title = section.get('title', '')
+            sec_keys = section.get('keys', [])
+            subsections = section.get('subsections', [])
+
+            # Section heading (e.g., "2.1 Group Overview")
+            section_slug = f'{chapter_id}-{sec_id}' if sec_id else f'{chapter_id}-sec-{sec_num}'
+            parts.append(
+                f'<div class="section-sec-heading" id="{escape_html(section_slug)}">'
+                f'{chapter_num}.{sec_num} {escape_html(sec_title)}'
+                f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span>'
+                f'</div>'
+            )
+
+            # Render section-level content elements
+            for key in sec_keys:
+                meta = section_meta.get(key, classify_source('', key))
+                text = resolved_sections.get(key, '')
+                note = section_notes.get(key, '')
+                fn = footnotes_all.get(key, [])
+                status = section_status.get(key, {})
+                parts.append(build_combined_element_html(
+                    key, text, meta, note, fn, status,
+                    chapter_num, sec_num, data, entity_id, transactions, blueprint,
+                    show_subheading=False
+                ))
+
+            # Render subsections
+            for subsec_num, subsec in enumerate(subsections, 1):
+                subsec_id = subsec.get('id', '')
+                subsec_title = subsec.get('title', '')
+                subsec_keys = subsec.get('keys', [])
+                subsec_slug = f'{chapter_id}-{sec_id}-{subsec_id}' if subsec_id else f'{chapter_id}-{sec_id}-sub-{subsec_num}'
+
+                # Subsection heading (e.g., "2.1.1 Organizational Structure")
+                parts.append(
+                    f'<div class="section-subsec-heading" id="{escape_html(subsec_slug)}">'
+                    f'{chapter_num}.{sec_num}.{subsec_num} {escape_html(subsec_title)}'
+                    f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span>'
+                    f'</div>'
+                )
+
+                for key in subsec_keys:
+                    meta = section_meta.get(key, classify_source('', key))
+                    text = resolved_sections.get(key, '')
+                    note = section_notes.get(key, '')
+                    fn = footnotes_all.get(key, [])
+                    status = section_status.get(key, {})
+                    parts.append(build_combined_element_html(
+                        key, text, meta, note, fn, status,
+                        chapter_num, sec_num, data, entity_id, transactions, blueprint,
+                        show_subheading=False
+                    ))
 
         parts.append('</div>')  # close section div
 

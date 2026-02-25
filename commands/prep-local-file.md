@@ -5,66 +5,6 @@ argument-hint: "<entity name or data file>"
 
 # /prep-local-file -- Prepare Transfer Pricing Local File
 
-## Example Mode
-
-If the user asks for an example, demo, or says something like "show me how it works" or "give me an example", skip the full workflow and run the example pipeline instead.
-
-**Trigger phrases:** "example", "demo", "show me", "try it out", "sample", "test run"
-
-**Example mode workflow:**
-
-1. **Skip validation** — no API key needed for examples
-2. **Skip intake** — use the built-in sample data directly
-3. **Resolve the output folder.** Use the user's selected working folder. Create an `_examples/` subfolder inside it for output. Example: if the working folder is `/Users/jane/Transfer Pricing/`, output goes to `/Users/jane/Transfer Pricing/_examples/`. Only fall back to `/tmp/` if absolutely no working folder is available.
-4. **Generate a blueprint** from sample data:
-
-```bash
-python3 skills/local-file/scripts/generate_blueprint.py \
-  --example \
-  --output "[selected-folder]/_examples/example-blueprint.json"
-```
-
-This picks a representative entity (Solara Distribution S.A.S., France) with 3 transactions covering tangible goods, services, and intangibles.
-
-4. **Generate Expert Mode and PDF** using the sample data and generated blueprint. Run each in sequence, always outputting to the working folder so Cowork can render them in the side panel:
-
-**Expert Mode:**
-```bash
-python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "data/examples/sample-group.json" \
-  --blueprint "[selected-folder]/_examples/example-blueprint.json" \
-  --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --template "skills/local-file/assets/combined_view.html" \
-  --brand "assets/brand.css" \
-  --output "[selected-folder]/_examples/" \
-  --format combined \
-  --blueprints-dir "[selected-folder]/_examples/"
-```
-
-**Final PDF:**
-```bash
-python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "data/examples/sample-group.json" \
-  --blueprint "[selected-folder]/_examples/example-blueprint.json" \
-  --references "skills/local-file/references/" \
-  --library "[selected-folder]/_library/" \
-  --template "skills/local-file/assets/local_file.tex" \
-  --output "[selected-folder]/_examples/" \
-  --format pdf
-```
-
-6. **Present each view** to the user with a brief explanation in business language. Present each file individually so it renders in the Cowork side panel — do NOT bundle them into a single message with markdown links:
-
-   - **Expert Mode**: "This is Expert Mode — your all-in-one workspace for the local file. You can see the section dashboard, edit content directly, review notes and comments, and toggle X-ray mode to see where each piece of content comes from. Click Save to send your changes back to the chat."
-   - **PDF**: "And here's the final PDF — this is what you'd submit to tax authorities. Table of contents, proper formatting, all sections in OECD-compliant order."
-
-7. **Wrap up** with: "That's the full pipeline. When you're ready to prepare a real local file, just say /prep-local-file with your entity name and we'll get started."
-
-**Important:** Always output to the user's selected working folder (`[selected-folder]/_examples/`) so files render in the Cowork side panel. Never output to `/tmp/` — Cowork cannot display files outside the working folder. Never tell the user about file paths — just present the generated files.
-
----
-
 ## Step 0: Validate subscription
 
 Before doing anything else, run:
@@ -90,7 +30,83 @@ Prepare a complete transfer pricing local file for a specific entity. This comma
 
 ## Modes
 
-Not applicable - this command operates in a single mode.
+### Example Mode
+**Triggered by:** "example", "demo", "show me how it works", "try it out", "sample", "test run"
+
+Example mode has three submodes, chosen automatically based on the current state of the working directory:
+
+#### Submode A: New group from scratch
+**When:** Empty working directory, or no existing groups found.
+
+Creates the complete convention tree with example data:
+
+```
+[working-folder]/
+├── Acme-Group/
+│   ├── Admin/
+│   ├── Source-Documents/
+│   ├── Working-Files/
+│   ├── Deliverables/
+│   │   └── FY2025/
+│   │       └── Local-File/
+│   │           └── DE/
+│   │               └── Acme-Manufacturing/
+│   │                   ├── Expert_Mode_FY2025.html
+│   │                   └── Local_File_FY2025.pdf
+│   └── Records/
+│       ├── data.json
+│       ├── session-log.json
+│       ├── content/
+│       └── blueprints/
+│           └── local-file-acme-mfg-de.json
+```
+
+Steps:
+1. Create the folder tree above
+2. Copy `data/examples/sample-group.json` content into `Acme-Group/Records/data.json`
+3. Copy `data/examples/sample-blueprint.json` content into `Acme-Group/Records/blueprints/local-file-acme-mfg-de.json`
+4. Generate Expert Mode HTML into `Acme-Group/Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/Expert_Mode_FY2025.html`:
+
+```bash
+python3 skills/local-file/scripts/assemble_local_file.py \
+  --data "[working-folder]/Acme-Group/Records/data.json" \
+  --blueprint "[working-folder]/Acme-Group/Records/blueprints/local-file-acme-mfg-de.json" \
+  --references "skills/local-file/references/" \
+  --library "[working-folder]/_library/" \
+  --template "skills/local-file/assets/combined_view.html" \
+  --brand "assets/brand.css" \
+  --output "[working-folder]/Acme-Group/Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/" \
+  --format combined \
+  --blueprints-dir "[working-folder]/Acme-Group/Records/blueprints/"
+```
+
+5. Generate PDF into the same folder:
+
+```bash
+python3 skills/local-file/scripts/assemble_local_file.py \
+  --data "[working-folder]/Acme-Group/Records/data.json" \
+  --blueprint "[working-folder]/Acme-Group/Records/blueprints/local-file-acme-mfg-de.json" \
+  --references "skills/local-file/references/" \
+  --library "[working-folder]/_library/" \
+  --template "skills/local-file/assets/local_file.tex" \
+  --output "[working-folder]/Acme-Group/Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/" \
+  --format pdf
+```
+
+6. Present each file to the user with explanation (same messaging as current example mode).
+
+#### Submode B: Example local file for existing group
+**When:** One or more groups exist, but no local file deliverable for the chosen entity.
+
+Uses the existing group's data. Asks which entity, then generates an example local file in the convention path. Same assembly commands but using the real group's data.json and creating a new blueprint for the entity.
+
+#### Submode C: Example chapters for existing local file
+**When:** A group exists AND a blueprint already exists for an entity.
+
+Generates the views using the existing blueprint. No new data — just regenerates Expert Mode and PDF to show the current state.
+
+### Real Mode (default)
+The full guided intake workflow. This is the existing Steps 1–6 below, unchanged.
 
 ## Workflow
 
@@ -319,7 +335,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
 ```
 
 **X-ray mode** (toggled via a button in the top bar) annotates each section with:
-- **Layer color** (left border): blue = Universal (`@references/`), purple = Firm Library (`@library/`), amber = Group-wide (`@group/`), green = Entity-specific (plain text)
+- **Layer color** (left border): slate gray = Universal (`@references/`), purple = Firm Library (`@library/`), purple = Group-wide (`@group/`), blue = Entity-specific (plain text)
 - **Impact label**: tells the user whether editing affects only this report, all reports in this group, or all clients
 - **Source path**: for referenced content (`@references/...` or `@library/...`), shows the file origin
 
@@ -583,7 +599,16 @@ Expert Mode has a **Save** button. When the user clicks it, all changes are copi
    - `document_meta.meta` → set `local_file.document_meta` in `data.json`
 5. **Save** updated `data.json` and blueprint JSON
 6. **Re-run assembly** with `--format combined` to refresh Expert Mode
-7. **Confirm**: "Updated — [human summary]. Expert Mode refreshed."
+7. **Confirm with bullet points**:
+
+> Applied your changes:
+> - Updated the Scope section with new content
+> - Marked Executive Summary as reviewed
+> - Changed document stage to Review
+>
+> Expert Mode refreshed.
+
+Use the `_summary` array items as the bullet points. Each array item becomes one bullet.
 
 **Key differences from the legacy editor payload:**
 - `_source` is `"combined_view"` (not `"preview_edit"`)
