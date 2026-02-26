@@ -1,59 +1,116 @@
 # Blueprint Section Schema
 
-This defines the complete set of section keys for a local file blueprint, their naming conventions, and how they map to the report structure.
+This defines the blueprint architecture, section key conventions, and how templates and entity blueprints work together.
 
-## Chapters Architecture (v0.6.0)
+## Template vs Entity Blueprint (v0.7.0)
 
-As of schema v0.6.0, the blueprint's `chapters[]` array defines a 3-level document structure:
+As of schema v0.7.0, there are two blueprint types:
 
-1. **Chapter** — top-level heading (e.g., "2. Business Description")
-2. **Section** — second-level heading (e.g., "2.1 Group Overview")
-3. **Subsection** — third-level heading (e.g., "2.1.1 Organizational Structure")
+### Universal Template
 
-Each level:
+Lives in `skills/local-file/references/blueprints/`. Defines the complete OECD Local File structure using a recursive `sections[]` / `children[]` hierarchy. Every node has an `id` (kebab-case) and `title`.
 
 ```json
 {
-  "chapters": [
+  "schema_version": "0.7.0",
+  "template_type": "universal",
+  "document": "OECD Local File",
+  "sections": [
     {
-      "id": "business-description",
-      "title": "Business Description",
-      "sections": [
-        {
-          "id": "group-overview",
-          "title": "Group Overview",
-          "keys": ["group_overview"],
-          "subsections": [
-            {
-              "id": "org-structure",
-              "title": "Organizational Structure",
-              "keys": ["group_overview_org_structure"]
-            }
-          ]
-        }
+      "id": "executive-summary",
+      "title": "Executive Summary",
+      "children": [
+        { "id": "objective", "title": "Objective" },
+        { "id": "scope", "title": "Scope" }
       ]
     }
-  ]
+  ],
+  "dynamic_templates": { ... }
 }
 ```
 
-- **`keys[]`** — array of content element keys from the blueprint's `sections` object. These are the actual content rendered under this heading.
-- **`subsections[]`** — optional array of subsection objects (same structure as sections, without further nesting).
-- A section with both `keys` and `subsections` renders its own content first, then subsection headings below.
-- Numbering is generated from array positions: Chapter 2 → Section 2.1 → Subsection 2.1.1.
-- **Backward compatible:** If a `sections` array entry is a plain string instead of an object, it's treated as a legacy flat key (same as v0.5.0 behavior).
+- **`children[]`** — recursive array of child nodes (N-level depth)
+- **`dynamic: true`** — marks sections that are included/excluded per entity (functional profiles, transaction categories)
+- **`dynamic_templates`** — reusable child structures: `functional-profile` (4 children) and `transaction` (6 children)
 
-Chapters define the headings in all output formats (HTML, LaTeX, PDF). A section key must appear in exactly one chapter. Sections not listed in any chapter are omitted from the report.
+### Entity Blueprint
 
-The section key naming conventions below remain useful for readability and for identifying section purpose, but they no longer drive report structure.
+Lives in `[Group]/.records/blueprints/`. Inherits structure from a template via `based_on`.
 
-### Footnotes
+```json
+{
+  "schema_version": "0.7.0",
+  "based_on": "oecd-local-file",
+  "entity": "solara-dist-fr",
+  "covered_profiles": ["full-fledged-distributor"],
+  "covered_transactions": ["services", "loan-arrangements"],
+  "content": {
+    "executive-summary/objective": ["@references/preamble/objective"],
+    "economic-analysis/functional-analysis/full-fledged-distributor/overview": ["@entity/fp-ffd-overview.md"]
+  }
+}
+```
 
-The `footnotes` object on the blueprint maps section keys to arrays of citation strings:
+- **`based_on`** — template id to inherit from
+- **`covered_profiles`** — which of the 22 functional profiles this entity uses
+- **`covered_transactions`** — which of the 14 transaction categories apply
+- **`content`** — path-style keys mapping to arrays of content layer references
+- **`section_notes`** — editorial reasoning per section (path-style keys)
+- **`footnotes`** — per-section citation arrays (path-style keys)
+
+## Path-Style Keys
+
+Content keys use `/`-separated ids matching the template hierarchy:
+
+| Pattern | Example |
+|---|---|
+| `{chapter}/{section}` | `executive-summary/objective` |
+| `{chapter}/{section}/{subsection}` | `business-description/group-overview/organizational-structure` |
+| `{chapter}/{parent}/{profile}/{child}` | `economic-analysis/functional-analysis/full-fledged-distributor/overview` |
+| `{chapter}/{transaction-cat}/{child}` | `economic-analysis/services/summary` |
+
+The assembly script resolves these paths against the template's `id` tree to determine headings and numbering.
+
+## Content Layers
+
+Content values in the `content` object are arrays. Each element is resolved independently and concatenated:
+
+| Prefix | Layer | Source |
+|---|---|---|
+| `@references/` | 1 — Universal | Plugin `skills/local-file/references/` |
+| `@library/` | 2 — Firm library | Working dir `.library/` |
+| `@group/` | 3 — Group-level | `[Group]/.records/content/` |
+| `@entity/` | 4 — Entity files | `[Group]/.records/content/[entity-id]/` |
+| (plain text) | 5 — Inline | Directly in the blueprint |
+
+Each layer overrides the one above. Arrays enable composite sections from multiple layers.
+
+### Entity Content Files
+
+Entity content files are Markdown files with YAML frontmatter stored in `[Group]/.records/content/[entity-id]/`:
+
+```markdown
+---
+title: Industry Overview — France
+section: industry-analysis/industry-overview
+---
+
+Content text here...
+```
+
+Frontmatter fields:
+- **title** — display title for the content block
+- **section** — path-style key this content maps to
+
+Referenced in blueprints as `@entity/filename.md`.
+
+## Footnotes
+
+The `footnotes` object maps path-style keys to arrays of citation strings:
 
 ```json
 "footnotes": {
-  "preamble_objective": [
+  "executive-summary/objective": [
     "OECD Transfer Pricing Guidelines (2022), Chapter I, para. 1.6.",
     "Wet op de vennootschapsbelasting 1969, Article 8b."
   ]
@@ -62,138 +119,55 @@ The `footnotes` object on the blueprint maps section keys to arrays of citation 
 
 Footnotes are rendered as numbered references at the bottom of the corresponding section.
 
-## Naming Convention
+## Legacy Naming Convention (v0.6.0)
 
-Section keys use prefixes to indicate their category. These prefixes serve as naming conventions for readability and identification.
+> **Note:** As of v0.7.0, path-style keys are the primary format. The underscore-prefix conventions below are retained for backward compatibility with v0.6.0 blueprints.
 
 | Prefix | Category | Example |
 |---|---|---|
 | `preamble_` | Report Preamble | `preamble_objective` |
 | `executive_summary` | Executive Summary | `executive_summary` |
 | `group_overview` | Business Description | `group_overview` |
-| `entity_introduction` | Business Description | `entity_introduction` |
-| `management_` | Business Description | `management_structure` |
-| `business_` | Business Description | `business_description` |
-| `local_` | Business Description | `local_reporting` |
-| `intangible_` | Business Description | `intangible_transfers` |
-| `industry_analysis_` | Industry Analysis | `industry_analysis_primary` |
 | `fp_` | Functional Analysis | `fp_limited_risk_distributor_functions` |
 | `tx_` | Controlled Transactions | `tx_001_summary` |
 | `bm_` | Benchmark Application | `bm_benchmark_a_conclusion` |
 | `transactions_not_covered_` | Closing | `transactions_not_covered_intro` |
 | `appendices` | Closing | `appendices` |
 
-## Report Preamble
-
-| Key | Label | Type | Typical Layer |
-|---|---|---|---|
-| `preamble_objective` | Objective | content | Layer 1 — standard boilerplate |
-| `preamble_scope` | Scope | content | Layer 4 — entity-specific |
-| `preamble_work_performed` | Work Performed | content | Layer 1 or 2 |
-| `preamble_transactions_overview` | Transactions Under Analysis | auto | Script builds from data |
-| `preamble_summary_of_results` | Summary of Results | content | Layer 1 template + data |
-
-## Business Description
-
-| Key | Label | Type | Typical Layer |
-|---|---|---|---|
-| `executive_summary` | Executive Summary | content | Layer 4 |
-| `group_overview` | Group Overview | content | Layer 3 or 4 |
-| `entity_introduction` | Entity Introduction | content | Composite (Layer 3 + 4) |
-| `management_structure` | Management Structure | content | Layer 3 or 4 |
-| `management_org_chart` | Organization Chart | content | Layer 4 |
-| `local_reporting` | Local Reporting | content | Layer 4 |
-| `business_description` | Business Description & Strategy | content | Layer 4 |
-| `business_restructurings` | Business Restructurings | content | Layer 4 |
-| `intangible_transfers` | Intangible Transfers | content | Layer 4 |
-
-## Industry Analysis
-
-Dynamic — depends on blueprint. Up to 3 industry analyses.
-
-| Key pattern | Label | Type | Typical Layer |
-|---|---|---|---|
-| `industry_analysis_primary` | Primary Industry | content | Layer 2 or 3 |
-| `industry_analysis_secondary` | Secondary Industry | content | Layer 2 or 3 |
-| `industry_analysis_tertiary` | Tertiary Industry | content | Layer 2 or 3 |
-
-## Functional Analysis
-
-Dynamic — one set of 4 sections per unique functional profile in the covered transactions.
-
-| Key pattern | Label | Type | Typical Layer |
-|---|---|---|---|
-| `fp_{slug}_overview` | [Profile Name] — Overview | content | Layer 2 or 3 |
-| `fp_{slug}_functions` | [Profile Name] — Functions | content | Layer 2 or 3 |
-| `fp_{slug}_assets` | [Profile Name] — Assets | content | Layer 2 or 3 |
-| `fp_{slug}_risks` | [Profile Name] — Risks | content | Layer 2 or 3 |
-
-Where `{slug}` matches the profile type slug (e.g., `limited_risk_distributor`, `full_fledged_manufacturer`).
-
-## Controlled Transactions
-
-Dynamic — one set per covered transaction. Transaction ID uses underscores (e.g., `tx_001`).
-
-| Key pattern | Label | Type | Typical Layer |
-|---|---|---|---|
-| `tx_{id}_summary` | Transaction Summary | content | Layer 4 |
-| `tx_{id}_contractual_terms_intro` | Contractual Terms — Intro | content | Layer 1 or 4 |
-| `tx_{id}_contractual_terms` | Contractual Terms — Table | auto | Data-driven |
-| `tx_{id}_characteristics_intro` | Characteristics — Intro | content | Layer 1 or 4 |
-| `tx_{id}_characteristics` | Characteristics — Table | auto | Data-driven (conditional) |
-| `tx_{id}_economic_circumstances_intro` | Economic Circumstances — Intro | content | Layer 1 or 4 |
-| `tx_{id}_economic_circumstances` | Economic Circumstances — Table | auto | Data-driven |
-| `tx_{id}_business_strategies` | Business Strategies | content | Layer 4 |
-| `tx_{id}_far_variations` | FAR Variations | content | Layer 4 |
-| `tx_{id}_recognition` | Recognition Analysis | content | Layer 4 |
-| `tx_{id}_recognition_specific` | Type-specific Test | content | Layer 4 (conditional) |
-| `tx_{id}_recognition_conclusion` | Recognition Conclusion | content | Layer 4 |
-| `tx_{id}_method_selection` | Method Selection | content | Layer 2 or 4 |
-| `tx_{id}_application_intro` | Application Introduction | content | Layer 4 |
-| `tx_{id}_conclusion` | Transaction Conclusion | content | Layer 4 |
-
-## Benchmark Application
-
-Dynamic — one set per benchmark used by covered transactions.
-
-| Key pattern | Label | Type | Typical Layer |
-|---|---|---|---|
-| `bm_{id}_allocation_intro` | Allocation — Intro | content | Layer 4 |
-| `bm_{id}_allocation` | Allocation — Table | auto | Data-driven |
-| `bm_{id}_search_strategy_intro` | Search Strategy — Intro | content | Layer 2 or 4 |
-| `bm_{id}_search_strategy` | Search Strategy — Table | auto | Data-driven |
-| `bm_{id}_search_results_intro` | Search Results — Intro | content | Layer 2 or 4 |
-| `bm_{id}_search_results` | Search Results — Table | auto | Data-driven |
-| `bm_{id}_adjustments_intro` | Comparability Adjustments — Intro | content | Layer 4 |
-| `bm_{id}_adjustments` | Comparability Adjustments — Table | auto | Data-driven |
-| `bm_{id}_conclusion` | Benchmark Conclusion | content | Layer 4 |
-
-## Closing
-
-| Key | Label | Type | Typical Layer |
-|---|---|---|---|
-| `transactions_not_covered_intro` | Transactions Not Covered — Intro | content | Layer 1 or 4 |
-| `transactions_not_covered` | Not Covered — Table | auto | Data-driven |
-| `appendices` | Appendices | content | Layer 4 |
-
 ## Section Types
 
-- **content** — Text authored by the user or pulled from content layers. Stored in the blueprint's `sections` object. Editable in the section editor.
+- **content** — Text authored by the user or pulled from content layers. Stored in the blueprint's `content` object. Editable in the section editor.
 - **auto** — Generated by the assembly script from structured data (transactions, benchmarks, contractual terms). NOT stored in the blueprint. Read-only in the section editor.
+
+## Dynamic Sections
+
+Sections marked `dynamic: true` in the template are pruned based on the entity blueprint:
+
+- **Functional profiles** (`functional-analysis` children): Only profiles listed in `covered_profiles` are included
+- **Transaction categories** (`economic-analysis` children after functional-analysis): Only categories listed in `covered_transactions` are included
+
+After pruning, numbering is recalculated from array positions.
+
+The `dynamic_templates` object defines the standard children for each dynamic type:
+
+| Template | Children |
+|---|---|
+| `functional-profile` | overview, functions, assets, risks |
+| `transaction` | summary, commercial-relations, recognition, tp-methods, method-selection, application |
 
 ## Category Detection (Legacy)
 
-> **Note:** As of v0.6.0, the 3-level `chapters[]` hierarchy (Chapter → Section → Subsection) is the authoritative source for report structure. Prefix-based category detection is retained for backward compatibility with v0.5.0 blueprints that lack a `chapters` array.
+> **Note:** As of v0.7.0, the template's `sections[]`/`children[]` hierarchy is the authoritative source for report structure. Prefix-based category detection is retained for backward compatibility with v0.5.0/v0.6.0 blueprints.
 
 The assembly script detects categories from key prefixes:
 
 ```python
-if key.startswith('preamble_'):          → "Report Preamble"
-if key in BUSINESS_KEYS or ...:          → "Business Description"
-if key.startswith('industry_analysis_'): → "Industry Analysis"
-if key.startswith('fp_'):                → "Functional Analysis"
-if key.startswith('tx_'):                → "Controlled Transactions"
-if key.startswith('bm_'):                → "Benchmark Application"
-if key.startswith('transactions_not_'):  → "Closing"
-else:                                    → "Other"
+if key.startswith('preamble_'):          -> "Report Preamble"
+if key in BUSINESS_KEYS or ...:          -> "Business Description"
+if key.startswith('industry_analysis_'): -> "Industry Analysis"
+if key.startswith('fp_'):                -> "Functional Analysis"
+if key.startswith('tx_'):                -> "Controlled Transactions"
+if key.startswith('bm_'):               -> "Benchmark Application"
+if key.startswith('transactions_not_'):  -> "Closing"
+else:                                    -> "Other"
 ```

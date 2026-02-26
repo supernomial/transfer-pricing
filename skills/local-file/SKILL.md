@@ -154,7 +154,7 @@ If a `workflows` entry has multiple steps, the user describes the same multi-ste
 
 ## Pipeline
 
-Intake (+ read memory/notes/session log) → Data + notes (JSON) → Blueprint + section notes → Content resolution → Assembly script → Expert Mode (combined editor/dashboard/report) or individual views → Final PDF → Save memory + session log
+Intake (+ read memory/notes/session log) → Data + notes (JSON) → Blueprint + section notes → Content resolution → Assembly script → Workspace Editor (combined editor/dashboard/report) or individual views → Final PDF → Save memory + session log
 
 ## Efficiency
 
@@ -170,7 +170,7 @@ Intake (+ read memory/notes/session log) → Data + notes (JSON) → Blueprint +
 | Assembly script | `skills/local-file/scripts/assemble_local_file.py` |
 | Design system (brand tokens) | `assets/brand.css` (plugin-wide, shared by all skills) |
 | LaTeX template | `skills/local-file/assets/local_file.tex` |
-| Expert Mode template (combined editor + notes + dashboard) | `skills/local-file/assets/combined_view.html` |
+| Workspace Editor template (combined editor + notes + dashboard) | `skills/local-file/assets/combined_view.html` |
 | Editor template (all sections + entity details) | `skills/local-file/assets/intake_preview.html` |
 | HTML report view template (X-ray) | `skills/local-file/assets/report_view.html` |
 | Markdown preview template | `skills/local-file/assets/intake_preview.md` |
@@ -226,13 +226,14 @@ Intake (+ read memory/notes/session log) → Data + notes (JSON) → Blueprint +
 
    - **Submode C (Existing group + blueprint):** Both exist. Just regenerate views from current data.
 
-4. **Generate Expert Mode** using the assembly script (NOT by creating content from scratch):
+4. **Generate Workspace Editor** using the assembly script (NOT by creating content from scratch):
    ```bash
    python3 skills/local-file/scripts/assemble_local_file.py \
      --data "[working-folder]/[Group]/.records/data.json" \
      --blueprint "[working-folder]/[Group]/.records/blueprints/[blueprint].json" \
      --references "skills/local-file/references/" \
      --library "[working-folder]/.library/" \
+     --entity-content "[working-folder]/[Group]/.records/content/[entity-id]/" \
      --template "skills/local-file/assets/combined_view.html" \
      --brand "assets/brand.css" \
      --output "[working-folder]/[Group]/4. Deliverables/FY[Year]/Local-File/[Country]/[Entity]/" \
@@ -247,13 +248,14 @@ Intake (+ read memory/notes/session log) → Data + notes (JSON) → Blueprint +
      --blueprint "[working-folder]/[Group]/.records/blueprints/[blueprint].json" \
      --references "skills/local-file/references/" \
      --library "[working-folder]/.library/" \
+     --entity-content "[working-folder]/[Group]/.records/content/[entity-id]/" \
      --template "skills/local-file/assets/local_file.tex" \
      --output "[working-folder]/[Group]/4. Deliverables/FY[Year]/Local-File/[Country]/[Entity]/" \
      --format pdf
    ```
 
 6. **Present each file** to the user with a brief explanation:
-   - **Expert Mode**: "This is Expert Mode — your all-in-one workspace for the local file. You can see the section dashboard, edit content directly, review notes and comments, and toggle X-ray mode to see where each piece of content comes from. Click Save to send your changes back to the chat."
+   - **Workspace Editor**: "This is Workspace Editor — your all-in-one workspace for the local file. You can see the section dashboard, edit content directly, review notes and comments, and toggle X-ray mode to see where each piece of content comes from. Click Save to send your changes back to the chat."
    - **PDF**: "And here's the final PDF — this is what you'd submit to tax authorities."
 
 7. **Wrap up**: "That's the full pipeline. When you're ready to prepare a real local file, just say /prep-local-file with your entity name and we'll get started."
@@ -302,7 +304,8 @@ Create or update the blueprint for this entity/deliverable. Each section maps to
 - `@references/...` → plugin folder `skills/local-file/references/` (Layer 1 — read-only)
 - `@library/...` → selected folder `.library/` (Layer 2 — firm-wide)
 - `@group/...` → selected folder `[Group Name]/.records/content/` (Layer 3 — group-specific, shared across entities)
-- Plain text → entity-specific content (Layer 4)
+- `@entity/...` → selected folder `[Group Name]/.records/content/[entity-id]/` (Layer 4 — entity-specific .md files)
+- Plain text → inline entity-specific content (Layer 5)
 - Array → composite section combining multiple layers (each element resolved independently, concatenated in order)
 
 **Capture section notes:** When the user explains why a section should be written a certain way, save it in the blueprint's `section_notes` object. These editorial notes persist across sessions.
@@ -315,7 +318,7 @@ Do NOT assemble the document manually. Once the records and blueprint are ready,
 
 **Same script, different `--format` and `--template` flags:**
 
-**Expert Mode** (primary view — run after data/blueprint updates):
+**Workspace Editor** (primary view — run after data/blueprint updates):
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
   --data "[selected-folder]/[Group Name]/.records/data.json" \
@@ -323,6 +326,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --references "skills/local-file/references/" \
   --library "[selected-folder]/.library/" \
   --group-content "[selected-folder]/[Group Name]/.records/content/" \
+  --entity-content "[selected-folder]/[Group Name]/.records/content/[entity-id]/" \
   --template "skills/local-file/assets/combined_view.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -340,6 +344,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --references "skills/local-file/references/" \
   --library "[selected-folder]/.library/" \
   --group-content "[selected-folder]/[Group Name]/.records/content/" \
+  --entity-content "[selected-folder]/[Group Name]/.records/content/[entity-id]/" \
   --template "skills/local-file/assets/section_dashboard.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -354,6 +359,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --references "skills/local-file/references/" \
   --library "[selected-folder]/.library/" \
   --group-content "[selected-folder]/[Group Name]/.records/content/" \
+  --entity-content "[selected-folder]/[Group Name]/.records/content/[entity-id]/" \
   --template "skills/local-file/assets/intake_preview.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -368,6 +374,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --references "skills/local-file/references/" \
   --library "[selected-folder]/.library/" \
   --group-content "[selected-folder]/[Group Name]/.records/content/" \
+  --entity-content "[selected-folder]/[Group Name]/.records/content/[entity-id]/" \
   --template "skills/local-file/assets/report_view.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -382,6 +389,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --references "skills/local-file/references/" \
   --library "[selected-folder]/.library/" \
   --group-content "[selected-folder]/[Group Name]/.records/content/" \
+  --entity-content "[selected-folder]/[Group Name]/.records/content/[entity-id]/" \
   --template "skills/local-file/assets/local_file.tex" \
   --output "[selected-folder]/[Group Name]/4. Deliverables/FY[Year]/Local-Files/[Country]/[Entity Name]/" \
   --format pdf
@@ -397,19 +405,19 @@ The script reads the inputs, resolves content references, populates the template
 
 ## Views — One Pipeline
 
-**Expert Mode** is the primary view — a single HTML file combining editor, notes panel, dashboard metrics, and document navigation with X-ray layer colors.
+**Workspace Editor** is the primary view — a single HTML file combining editor, notes panel, dashboard metrics, and document navigation with X-ray layer colors.
 
 | View | `--format` | Template | Purpose |
 |---|---|---|---|
-| **Expert Mode** | `combined` | `combined_view.html` | Full editor + notes + dashboard + X-ray in one view. Primary authoring experience. |
+| **Workspace Editor** | `combined` | `combined_view.html` | Full editor + notes + dashboard + X-ray in one view. Primary authoring experience. |
 | **Overview** | `html` | `section_dashboard.html` | Dashboard showing all sections with status badges (legacy) |
 | **Editor** | `html` | `intake_preview.html` | All sections by category with layer badges (legacy) |
 | **Report view** | `report` | `report_view.html` | Full document with X-ray mode (legacy) |
 | **Final PDF** | `pdf` | `local_file.tex` | Submission-ready deliverable |
 
-Expert Mode replaces the Overview, Editor, and Report view for most workflows. The legacy views still work for backward compatibility.
+Workspace Editor replaces the Overview, Editor, and Report view for most workflows. The legacy views still work for backward compatibility.
 
-**Expert Mode features:**
+**Workspace Editor features:**
 - X-ray layer colors on every section (where content comes from)
 - Inline editing with save-to-clipboard flow
 - Section-level review and signoff tracking
@@ -423,9 +431,9 @@ Expert Mode replaces the Overview, Editor, and Report view for most workflows. T
 
 ## Interactive Editing (Save Flow)
 
-**Expert Mode** and the legacy editor both have editable fields. Users edit content inline, then click **Save** to copy changes to clipboard. When pasted in chat, the JSON includes a `_summary` array with business-language descriptions and only the changed data.
+**Workspace Editor** and the legacy editor both have editable fields. Users edit content inline, then click **Save** to copy changes to clipboard. When pasted in chat, the JSON includes a `_summary` array with business-language descriptions and only the changed data.
 
-**Expert Mode** (`_source: "combined_view"`): Collects sections, section_notes, footnotes, section_status, stage, and document_meta. See `commands/prep-local-file.md` for the full handling flow.
+**Workspace Editor** (`_source: "combined_view"`): Collects sections, section_notes, footnotes, section_status, stage, and document_meta. See `commands/prep-local-file.md` for the full handling flow.
 
 **Legacy editor** (`_source: "preview_edit"`): Collects section text and transaction data only.
 

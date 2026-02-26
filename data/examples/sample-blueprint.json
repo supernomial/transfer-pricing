@@ -1,77 +1,55 @@
 {
-  "schema_version": "0.6.0",
-  "blueprint_name": "OECD Standard",
-  "blueprint_type": "builtin",
+  "schema_version": "0.7.0",
+  "based_on": "oecd-local-file",
   "group": "solara-group",
   "entity": "solara-dist-fr",
   "deliverable": "local-file",
   "fiscal_year": "2024",
-  "chapters": [
-    {
-      "id": "executive-summary",
-      "title": "Executive Summary",
-      "sections": [
-        { "id": "objective", "title": "Objective", "keys": ["preamble_objective"] },
-        { "id": "scope", "title": "Scope", "keys": ["preamble_scope"] },
-        { "id": "work-performed", "title": "Work Performed", "keys": ["preamble_work_performed"] },
-        { "id": "transactions-under-analysis", "title": "Transactions under Analysis", "keys": ["preamble_transactions_under_analysis"] },
-        { "id": "summary-of-results", "title": "Summary of Results", "keys": ["preamble_summary_of_results"] }
-      ]
-    },
-    {
-      "id": "business-description",
-      "title": "Business Description",
-      "sections": [
-        {
-          "id": "group-overview",
-          "title": "Group Overview",
-          "keys": ["group_overview"],
-          "subsections": [
-            { "id": "org-structure", "title": "Organizational Structure", "keys": ["group_overview_org_structure"] },
-            { "id": "mgmt-structure", "title": "Management Structure", "keys": ["group_overview_mgmt_structure"] }
-          ]
-        },
-        {
-          "id": "local-business",
-          "title": "Local Business",
-          "keys": [],
-          "subsections": [
-            { "id": "biz-description", "title": "Business Description and Strategy", "keys": ["entity_business_description"] },
-            { "id": "restructurings", "title": "Business Restructurings", "keys": ["entity_restructurings"] },
-            { "id": "intangible-transfers", "title": "Intangible Transfers", "keys": ["entity_intangible_transfers"] }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "industry-analysis",
-      "title": "Industry Analysis",
-      "sections": [
-        { "id": "industry-overview", "title": "Industry Overview", "keys": ["industry_overview"] },
-        { "id": "value-drivers", "title": "Industry Value Drivers", "keys": ["industry_value_drivers"] },
-        { "id": "key-competitors", "title": "Key Competitors", "keys": ["industry_key_competitors"] }
-      ]
-    }
+  "covered_profiles": [
+    "full-fledged-distributor"
   ],
-  "sections": {
-    "preamble_objective": "@references/preamble/objective",
-    "preamble_scope": "@references/preamble/scope",
-    "preamble_work_performed": "@references/preamble/work-performed",
-    "preamble_transactions_under_analysis": "@references/preamble/transactions-under-analysis",
-    "preamble_summary_of_results": "@references/preamble/summary-of-results",
-    "group_overview": "@references/business/group-overview",
-    "group_overview_org_structure": "@references/business/org-structure",
-    "group_overview_mgmt_structure": "@references/business/mgmt-structure",
-    "entity_business_description": "@references/business/local-business",
-    "entity_restructurings": "@references/business/restructurings",
-    "entity_intangible_transfers": "@references/business/intangible-transfers",
-    "industry_overview": "@references/industry/overview",
-    "industry_value_drivers": "@references/industry/value-drivers",
-    "industry_key_competitors": "@references/industry/key-competitors"
+  "covered_transactions": [
+    "services",
+    "loan-arrangements"
+  ],
+  "content": {
+    "executive-summary/objective": ["@references/preamble/objective"],
+    "executive-summary/scope": ["@references/preamble/scope"],
+    "executive-summary/work-performed": ["@references/preamble/work-performed"],
+    "executive-summary/transactions-under-analysis": ["@references/preamble/transactions-under-analysis"],
+    "executive-summary/summary-of-results": ["@references/preamble/summary-of-results"],
+    "business-description/group-overview": ["@references/business/group-overview"],
+    "business-description/group-overview/organizational-structure": ["@references/business/org-structure"],
+    "business-description/group-overview/management-structure": ["@references/business/mgmt-structure"],
+    "business-description/local-business/business-description-and-strategy": ["@entity/local-business-description"],
+    "business-description/local-business/business-restructurings": ["@references/business/restructurings"],
+    "business-description/local-business/intangible-transfers": ["@references/business/intangible-transfers"],
+    "industry-analysis/industry-overview": ["@entity/industry-overview-france"],
+    "industry-analysis/industry-value-drivers": ["@references/industry/value-drivers"],
+    "industry-analysis/key-competitors": ["@references/industry/key-competitors"],
+    "economic-analysis/functional-analysis/fp-full-fledged-distributor/overview": ["@entity/fp-ffd-overview"],
+    "economic-analysis/functional-analysis/fp-full-fledged-distributor/functions": ["@entity/fp-ffd-functions"],
+    "economic-analysis/functional-analysis/fp-full-fledged-distributor/assets": [],
+    "economic-analysis/functional-analysis/fp-full-fledged-distributor/risks": [],
+    "economic-analysis/transaction-analysis/services/summary": [],
+    "economic-analysis/transaction-analysis/services/commercial-relations": [],
+    "economic-analysis/transaction-analysis/services/recognition": [],
+    "economic-analysis/transaction-analysis/services/tp-methods": [],
+    "economic-analysis/transaction-analysis/services/method-selection": [],
+    "economic-analysis/transaction-analysis/services/application": [],
+    "economic-analysis/transaction-analysis/loan-arrangements/summary": [],
+    "economic-analysis/transaction-analysis/loan-arrangements/commercial-relations": [],
+    "economic-analysis/transaction-analysis/loan-arrangements/recognition": [],
+    "economic-analysis/transaction-analysis/loan-arrangements/tp-methods": [],
+    "economic-analysis/transaction-analysis/loan-arrangements/method-selection": [],
+    "economic-analysis/transaction-analysis/loan-arrangements/application": []
+  },
+  "title_overrides": {
+    "economic-analysis/transaction-analysis/services": "Shared Services"
   },
   "section_notes": {},
   "footnotes": {
-    "preamble_objective": [
+    "executive-summary/objective": [
       "OECD Transfer Pricing Guidelines for Multinational Enterprises and Tax Administrations (2022), Chapter I, para. 1.6.",
       "Wet op de vennootschapsbelasting 1969, Article 8b."
     ]

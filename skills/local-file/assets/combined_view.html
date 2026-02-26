@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Expert Mode</title>
+<title>Workspace Editor</title>
 <style>
   /* --- Dark theme (default) --- */
   :root, [data-theme="dark"] {
@@ -122,20 +122,27 @@
   /* --- Save banner --- */
   .save-banner {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
     z-index: 200;
-    padding: 12px 24px;
-    background: var(--sn-success);
+    padding: 14px 32px;
+    background: rgba(10, 106, 252, 0.9);
+    backdrop-filter: blur(12px);
     color: #fff;
     font-weight: 600;
     font-size: 13px;
     text-align: center;
-    transform: translateY(-100%);
-    transition: transform 0.3s ease;
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
   }
-  .save-banner.show { transform: translateY(0); }
+  .save-banner.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+  }
 
   /* --- Copy modal --- */
   .copy-modal-overlay {
@@ -1275,7 +1282,7 @@
   <!-- Top bar -->
   <div class="top-bar">
     <div class="top-bar-left">
-      <span class="top-bar-title">Expert Mode</span>
+      <span class="top-bar-title">Workspace Editor</span>
     </div>
     <div class="top-bar-right">
       <button class="save-btn" id="save-btn" onclick="saveChanges()">Save</button>
@@ -2146,18 +2153,24 @@ function saveChanges() {
   payload._summary = summary;
 
   var json = JSON.stringify(payload, null, 2);
+
+  // Write full JSON payload into hidden DOM element (read by Claude from the HTML file)
+  var payloadDiv = document.getElementById('cowork-payload');
+  if (payloadDiv) payloadDiv.textContent = json;
+
+  // Clipboard gets only the human-readable summary (no JSON, no markers)
   var clipboardText;
   if (summary.length === 1 && summary[0] === 'No changes detected') {
-    clipboardText = 'No changes to apply.\n\n<!-- COWORK_DATA\n' + json + '\nCOWORK_DATA -->';
+    clipboardText = 'No changes to apply.';
   } else {
-    clipboardText = summary.join('\n') + '\n\n<!-- COWORK_DATA\n' + json + '\nCOWORK_DATA -->';
+    clipboardText = summary.join('\n');
   }
 
   function onCopySuccess() {
     // Show prominent banner instead of small toast
     var banner = document.getElementById('save-banner');
     if (banner) {
-      banner.textContent = 'Changes saved to clipboard. Paste into your Cowork chat to apply these updates.';
+      banner.textContent = 'Changes saved. Paste the summary into your Cowork chat to apply these updates.';
       banner.classList.add('show');
       setTimeout(function() { banner.classList.remove('show'); }, 5000);
     }
@@ -2219,11 +2232,12 @@ function showToast(msg) {
 </script>
 
 <div class="save-banner" id="save-banner"></div>
+<div id="cowork-payload" style="display:none"></div>
 
 <div class="copy-modal-overlay" id="copy-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="copy-modal">
     <div class="copy-modal-title">Copy your changes</div>
-    <p class="copy-modal-desc">Automatic copy didn't work. Select all the text below and copy it manually, then paste into your Cowork chat.</p>
+    <p class="copy-modal-desc">Automatic copy didn't work. Select all the text below and copy it manually, then paste the summary into your Cowork chat.</p>
     <textarea class="copy-modal-text" id="copy-modal-text" readonly></textarea>
     <div class="copy-modal-actions">
       <button class="btn btn-primary" onclick="document.getElementById('copy-modal-text').select()">Select All</button>

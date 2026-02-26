@@ -51,7 +51,7 @@ Creates the complete convention tree with example data:
 │   │       └── Local-File/
 │   │           └── DE/
 │   │               └── Acme-Manufacturing/
-│   │                   ├── Expert_Mode_FY2025.html
+│   │                   ├── Workspace_Editor_FY2025.html
 │   │                   └── Local_File_FY2025.pdf
 │   └── .records/
 │       ├── data.json
@@ -65,7 +65,7 @@ Steps:
 1. Create the folder tree above
 2. Copy `data/examples/sample-group.json` content into `Acme-Group/.records/data.json`
 3. Copy `data/examples/sample-blueprint.json` content into `Acme-Group/.records/blueprints/local-file-acme-mfg-de.json`
-4. Generate Expert Mode HTML into `Acme-Group/4. Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/Expert_Mode_FY2025.html`:
+4. Generate Workspace Editor HTML into `Acme-Group/4. Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/Workspace_Editor_FY2025.html`:
 
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
@@ -103,7 +103,7 @@ Uses the existing group's data. Asks which entity, then generates an example loc
 #### Submode C: Example chapters for existing local file
 **When:** A group exists AND a blueprint already exists for an entity.
 
-Generates the views using the existing blueprint. No new data — just regenerates Expert Mode and PDF to show the current state.
+Generates the views using the existing blueprint. No new data — just regenerates Workspace Editor and PDF to show the current state.
 
 ### Real Mode (default)
 The full guided intake workflow. This is the existing Steps 1–6 below, unchanged.
@@ -238,20 +238,20 @@ This means:
 
 ### Views — One Pipeline
 
-The user works primarily in Expert Mode during preparation, with PDF as the final deliverable:
+The user works primarily in the Workspace Editor during preparation, with PDF as the final deliverable:
 
 | View | Format flag | Purpose | When to generate |
 |---|---|---|---|
-| **Expert Mode** | `--format combined` | All-in-one workspace: dashboard, editor, notes, X-ray, review/signoff | Primary view during Steps 3–5, after each data update |
+| **Workspace Editor** | `--format combined` | All-in-one workspace: dashboard, editor, notes, X-ray, review/signoff | Primary view during Steps 3–5, after each data update |
 | **Final PDF** | `--format pdf` | Submission-ready deliverable | Step 5 (generation) |
 
-Expert Mode replaces the separate dashboard, editor, and report views with a single integrated workspace. The user can edit content, manage notes and comments, toggle X-ray mode, review and sign off sections, and save changes — all in one view.
+The Workspace Editor replaces the separate dashboard, editor, and report views with a single integrated workspace. The user can edit content, manage notes and comments, toggle X-ray mode, review and sign off sections, and save changes — all in one view.
 
 Legacy views (overview dashboard, intake preview, report view, section editor) still work via `--format html` and `--format report` for backward compatibility but are no longer the primary workflow.
 
-### Live Preview (Expert Mode)
+### Live Preview (Workspace Editor)
 
-Throughout Steps 3–4, after each meaningful data update (new entity added, transactions entered, section content written), **regenerate Expert Mode** so the user can see the current state in the Cowork side panel:
+Throughout Steps 3–4, after each meaningful data update (new entity added, transactions entered, section content written), **regenerate the Workspace Editor** so the user can see the current state in the Cowork side panel:
 
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
@@ -267,11 +267,11 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --blueprints-dir "[selected-folder]/[Group Name]/.records/blueprints/"
 ```
 
-This is the same assembly script with `--format combined`. It reads the current records and blueprint, populates the Expert Mode template, and writes a single `.html` file. Zero tokens — pure Python string replacement. Cowork renders HTML with full styling in the side panel.
+This is the same assembly script with `--format combined`. It reads the current records and blueprint, populates the Workspace Editor template, and writes a single `.html` file. Zero tokens — pure Python string replacement. Cowork renders HTML with full styling in the side panel.
 
 ### Section Dashboard (Legacy)
 
-Replaced by Expert Mode for new workflows. Shows all sections organized by category (Report Preamble, Business Description, Industry Analysis, Functional Analysis, Controlled Transactions, Benchmark Application, Closing) with completion status badges and content layer indicators:
+Replaced by the Workspace Editor for new workflows. Shows all sections organized by category (Report Preamble, Business Description, Industry Analysis, Functional Analysis, Controlled Transactions, Benchmark Application, Closing) with completion status badges and content layer indicators:
 
 ```bash
 python3 skills/local-file/scripts/assemble_local_file.py \
@@ -452,7 +452,7 @@ The script handles:
 Claude does NOT assemble the document manually. Claude prepares the inputs (records + blueprint), then calls the script.
 
 **Output formats, same script:**
-- `--format combined` → Expert Mode — all-in-one workspace with dashboard, editor, notes, X-ray **← primary view during Steps 3–5**
+- `--format combined` → Workspace Editor — all-in-one workspace with dashboard, editor, notes, X-ray **← primary view during Steps 3–5**
 - `--format pdf` → final deliverable (LaTeX → PDF) **← Step 5 generation**
 - `--format html` → legacy dashboard/editor views (backward compat)
 - `--format report` → legacy annotated report view (backward compat)
@@ -548,48 +548,35 @@ The editor has a **"Send updates"** button. When the user clicks it, only the **
 
 **Do NOT** echo the raw JSON back to the user. Summarize in natural language using the `_summary` field.
 
-### Handling Pasted Updates from Expert Mode
+### Handling Pasted Updates from the Workspace Editor
 
-Expert Mode has a **Save** button. When the user clicks it, changes are copied to their clipboard in a human-readable format with embedded JSON. If the user pastes this into the chat, it looks like:
+The Workspace Editor has a **Save** button. When the user clicks it, a human-readable summary is copied to their clipboard and the full JSON payload is stored in the HTML file. If the user pastes the summary into the chat, it looks like:
 
 ```
 Mark 1. Executive Summary as reviewed
 Updated 2.1 Group Overview with new content
 Change document stage to Review
-
-<!-- COWORK_DATA
-{
-  "_source": "combined_view",
-  "_entity_id": "acme-nl",
-  "_fiscal_year": "2024",
-  "_summary": [
-    "Mark 1. Executive Summary as reviewed",
-    "Updated 2.1 Group Overview with new content",
-    "Change document stage to Review"
-  ],
-  "sections": {
-    "group_overview": "Updated text for the group overview section..."
-  },
-  "section_status": {
-    "executive_summary": { "reviewed": true, "signed_off": false }
-  },
-  "stage": "review"
-}
-COWORK_DATA -->
 ```
-
-**Important:** The payload only contains fields that actually changed — not a full dump of all state. If the user only marked a section as reviewed, the payload will only contain `section_status` for that one section.
 
 **Parsing the paste:**
 
-1. **Check for `<!-- COWORK_DATA` markers first.** Extract the JSON from between `<!-- COWORK_DATA` and `COWORK_DATA -->`. The text above the markers is the human-readable summary (for the user's benefit — you use the JSON).
-2. **Fallback:** If no markers are found, try parsing the entire paste as raw JSON (backward compatibility with older Expert Mode versions).
+1. **Check for `<!-- COWORK_DATA` markers first** (backward compat with older versions). Extract the JSON from between `<!-- COWORK_DATA` and `COWORK_DATA -->`.
+2. **Check for raw JSON** with `"_source": "combined_view"` (backward compat).
+3. **Summary-only paste (current format):** If the paste contains human-readable summary lines (e.g., "Mark X as reviewed", "Updated X with new content", "Change document stage to...") but no JSON:
+   a. Find the Workspace Editor HTML file in the entity's deliverable folder (the `.html` file matching `Workspace_Editor_FY*.html` or `Expert_Mode_FY*.html`)
+   b. Read the HTML file and extract the text content from the `<div id="cowork-payload">` element
+   c. Parse that text as JSON
+   d. Apply the changes from the JSON payload
+
+When the JSON is obtained (from any of the three paths above), proceed with applying changes as described below.
+
+**Important:** The payload only contains fields that actually changed — not a full dump of all state. If the user only marked a section as reviewed, the payload will only contain `section_status` for that one section.
 
 **When you receive this JSON:**
 
 1. **Identify it** by the `"_source": "combined_view"` field
 2. **Read the `_summary`** array to understand what was changed
-3. **Show the summary to the user**: "I see you made these changes in Expert Mode: [summary items]"
+3. **Show the summary to the user**: "I see you made these changes in the Workspace Editor: [summary items]"
 4. **Apply changes to the data files:**
    - `sections` → overwrite matching keys in blueprint `sections` (these are Layer 4 edits — entity-specific text)
    - `section_notes` → overwrite matching keys in blueprint `section_notes`
@@ -600,7 +587,7 @@ COWORK_DATA -->
    - `document_meta.subtitle` → set `local_file.document_subtitle` in `data.json`
    - `document_meta.meta` → set `local_file.document_meta` in `data.json`
 5. **Save** updated `data.json` and blueprint JSON
-6. **Re-run assembly** with `--format combined` to refresh Expert Mode
+6. **Re-run assembly** with `--format combined` to refresh the Workspace Editor
 7. **Confirm with bullet points**:
 
 > Applied your changes:
@@ -608,7 +595,7 @@ COWORK_DATA -->
 > - Marked Executive Summary as reviewed
 > - Changed document stage to Review
 >
-> Expert Mode refreshed.
+> Workspace Editor refreshed.
 
 Use the `_summary` array items as the bullet points. Each array item becomes one bullet.
 
@@ -616,7 +603,7 @@ Use the `_summary` array items as the bullet points. Each array item becomes one
 - `_source` is `"combined_view"` (not `"preview_edit"`)
 - Includes `section_status`, `stage`, `footnotes`, and `document_meta` (not just sections and transactions)
 - `sections` contains Layer 4 text content (entity-specific), not transaction data
-- No `transactions` field — transaction edits happen in the chat, not in Expert Mode
+- No `transactions` field — transaction edits happen in the chat, not in the Workspace Editor
 
 **Do NOT** echo the raw JSON back to the user. Summarize in natural language using the `_summary` field.
 

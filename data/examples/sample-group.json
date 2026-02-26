@@ -8,9 +8,7 @@
     "fiscal_year_end": "December 31",
     "notes": [
       "European industrial group headquartered in Stockholm, Sweden",
-      "Specializes in advanced energy systems, industrial automation, and power electronics",
-      "Group revenue approximately SEK 18.5 billion; ~12,000 employees across 10 jurisdictions",
-      "Second year engagement — prior year documentation prepared by PwC"
+      "Specializes in advanced energy systems, industrial automation, and power electronics"
     ]
   },
   "entities": [
@@ -50,8 +48,7 @@
       "jurisdiction": "France",
       "notes": [
         "Full-fledged distributor for Western European markets (France, Benelux, Iberia)",
-        "Paris headquarters with regional sales offices; ~400 employees",
-        "Maintains own warehouse, holds inventory risk, sets local pricing within group guidelines"
+        "Paris headquarters with regional sales offices; ~400 employees"
       ]
     },
     {
@@ -424,8 +421,7 @@
       "otp_implementation_complexity": "Low Risk",
       "notes": [
         "All-in interest cost for FY2024: EUR 2.1M (EURIBOR averaged 3.60% + 1.80% spread = 5.40% blended)",
-        "Borrower credit rating estimated at BBB equivalent (standalone); BBB+ with implicit group support",
-        "Loan proceeds fully drawn; no undrawn commitment"
+        "Borrower credit rating estimated at BBB equivalent (standalone); BBB+ with implicit group support"
       ]
     },
     {
@@ -1524,11 +1520,10 @@
       "document_subtitle": null,
       "document_meta": null,
       "section_status": {},
-      "covered_transactions": ["tx-001", "tx-003", "tx-005"],
+      "covered_transactions": ["tx-003", "tx-007"],
       "notes": [
-        "France local file covers: goods purchases from Italy, shared services from Singapore, trademark license from Ireland",
-        "Cash pool (tx-008) and factoring (tx-010) involve France but documented in Luxembourg local file — cross-referenced here",
-        "tx-002 (Italy to UAE) does not involve France"
+        "France local file covers: shared services from Singapore, term loan from Luxembourg",
+        "Goods purchases (tx-001) and trademark license (tx-005) involve France but not covered in this local file"
       ]
     },
     {

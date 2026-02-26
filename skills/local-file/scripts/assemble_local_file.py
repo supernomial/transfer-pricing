@@ -15,7 +15,7 @@ Supports five output formats:
     --format pdf      → LaTeX → PDF (final deliverable)
     --format html     → HTML preview (live intake view in Cowork panel)
     --format report   → Annotated report view with X-ray mode (layer annotations)
-    --format combined → Expert Mode (full editor + notes + dashboard in one view)
+    --format combined → Workspace Editor (full editor + notes + dashboard in one view)
     --format md       → Markdown preview (fallback)
 
 Usage:
@@ -59,6 +59,15 @@ from collections import OrderedDict
 # Helpers
 # ---------------------------------------------------------------------------
 
+def strip_frontmatter(text):
+    """Strip YAML frontmatter from markdown content if present."""
+    if text.startswith('---'):
+        parts = text.split('---', 2)
+        if len(parts) >= 3:
+            return parts[2].strip()
+    return text
+
+
 def load_json(path):
     """Load and return a JSON file."""
     if not os.path.exists(path):
@@ -68,13 +77,14 @@ def load_json(path):
         return json.load(f)
 
 
-def resolve_reference(ref, references_dir, library_dir, group_content_dir=None):
-    """Resolve a @references/, @library/, or @group/ content reference to actual text.
+def resolve_reference(ref, references_dir, library_dir, group_content_dir=None, entity_content_dir=None):
+    """Resolve a @references/, @library/, @group/, or @entity/ content reference to actual text.
 
     Resolution order:
         @references/  → plugin references dir (Layer 1 — universal)
         @library/     → firm library dir (Layer 2 — firm-wide)
         @group/       → group content dir (Layer 3 — group-specific)
+        @entity/      → entity content dir (Layer 4 — entity-specific file)
         plain text    → returned as-is (Layer 4 — entity-specific)
     """
     if ref.startswith('@references/'):
@@ -83,7 +93,7 @@ def resolve_reference(ref, references_dir, library_dir, group_content_dir=None):
             full_path = os.path.join(references_dir, rel_path + ext)
             if os.path.exists(full_path):
                 with open(full_path, 'r') as f:
-                    return f.read().strip()
+                    return strip_frontmatter(f.read().strip())
         print(f"Warning: Could not resolve reference: {ref}", file=sys.stderr)
         return f"[UNRESOLVED: {ref}]"
 
@@ -93,7 +103,7 @@ def resolve_reference(ref, references_dir, library_dir, group_content_dir=None):
             full_path = os.path.join(library_dir, rel_path + ext)
             if os.path.exists(full_path):
                 with open(full_path, 'r') as f:
-                    return f.read().strip()
+                    return strip_frontmatter(f.read().strip())
         print(f"Warning: Could not resolve library reference: {ref}", file=sys.stderr)
         return f"[UNRESOLVED: {ref}]"
 
@@ -106,8 +116,21 @@ def resolve_reference(ref, references_dir, library_dir, group_content_dir=None):
             full_path = os.path.join(group_content_dir, rel_path + ext)
             if os.path.exists(full_path):
                 with open(full_path, 'r') as f:
-                    return f.read().strip()
+                    return strip_frontmatter(f.read().strip())
         print(f"Warning: Could not resolve group content reference: {ref}", file=sys.stderr)
+        return f"[UNRESOLVED: {ref}]"
+
+    elif ref.startswith('@entity/'):
+        if not entity_content_dir:
+            print(f"Warning: @entity/ reference used but no --entity-content dir provided: {ref}", file=sys.stderr)
+            return f"[UNRESOLVED: {ref}]"
+        rel_path = ref.replace('@entity/', '')
+        for ext in ['.md', '.json', '.txt', '']:
+            full_path = os.path.join(entity_content_dir, rel_path + ext)
+            if os.path.exists(full_path):
+                with open(full_path, 'r') as f:
+                    return strip_frontmatter(f.read().strip())
+        print(f"Warning: Could not resolve entity content reference: {ref}", file=sys.stderr)
         return f"[UNRESOLVED: {ref}]"
 
     else:
@@ -223,6 +246,13 @@ def classify_source(raw_value, section_key):
             'color': '#a855f7',  # brand.css --sn-layer3
             'impact': 'Group-wide — editing affects all local files in this group'
         }
+    elif isinstance(raw_value, str) and raw_value.startswith('@entity/'):
+        return {
+            'layer': 4, 'label': 'Entity',
+            'source_path': raw_value, 'scope': 'entity',
+            'color': '#3b82f6',  # brand.css --sn-layer4
+            'impact': 'Entity-specific — this report only'
+        }
     else:
         # Plain text is entity-specific (Layer 4)
         return {
@@ -233,7 +263,267 @@ def classify_source(raw_value, section_key):
         }
 
 
-def resolve_blueprint_sections(blueprint, references_dir, library_dir, group_content_dir=None):
+# ---------------------------------------------------------------------------
+# Blueprint inheritance
+# ---------------------------------------------------------------------------
+
+def expand_dynamic_sections(template, blueprint):
+    """Expand dynamic markers in template sections using blueprint data.
+
+    Walks the template's sections tree. When a node has a 'dynamic' field:
+      - "functional-profiles": keep the node as a container, generate children
+        from blueprint's covered_profiles + dynamic_templates
+      - "transactions": keep the node as a container, generate children
+        from blueprint's covered_transactions + dynamic_templates
+
+    The dynamic node is KEPT (preserving its heading) and gets generated
+    children — it does not get replaced.
+
+    Returns expanded sections as a chapters-format array.
+    """
+    import copy
+    sections = copy.deepcopy(template.get('sections', []))
+    dynamic_templates = template.get('dynamic_templates', {})
+
+    def make_title(slug):
+        """Convert kebab-case slug to title case: 'full-fledged-distributor' → 'Full-Fledged Distributor'."""
+        return slug.replace('-', ' ').title()
+
+    def expand_node(node):
+        dynamic = node.get('dynamic')
+        if not dynamic or not isinstance(dynamic, str):
+            # Recurse into children
+            if 'children' in node:
+                expanded_children = []
+                for child in node['children']:
+                    expanded_children.extend(expand_node(child))
+                node['children'] = expanded_children
+            return [node]
+
+        if dynamic == 'functional-profiles':
+            items = blueprint.get('covered_profiles', [])
+            dt = dynamic_templates.get('functional-profiles', {})
+        elif dynamic == 'transactions':
+            items = blueprint.get('covered_transactions', [])
+            dt = dynamic_templates.get('transactions', {})
+        else:
+            return [node]
+
+        id_pattern = dt.get('id_pattern', '{id}')
+        child_templates = dt.get('children', [])
+
+        expanded_children = []
+        for item in items:
+            item_id = item if isinstance(item, str) else item.get('id', '')
+            item_title = item if isinstance(item, str) else item.get('title', item_id)
+            # Use title from item if provided, otherwise derive from slug
+            display_title = item_title if not isinstance(item, str) else make_title(item_id)
+
+            new_child = {
+                'id': id_pattern.replace('{id}', item_id),
+                'title': display_title,
+            }
+
+            if child_templates:
+                children = []
+                for ct in child_templates:
+                    child = copy.deepcopy(ct)
+                    children.append(child)
+                new_child['children'] = children
+
+            expanded_children.append(new_child)
+
+        # Keep the parent node, set generated items as its children
+        node.pop('dynamic', None)
+        node['children'] = expanded_children
+        return [node]
+
+    result = []
+    for section in sections:
+        result.extend(expand_node(section))
+    return result
+
+
+def apply_title_overrides(chapters, title_overrides):
+    """Walk chapters tree and apply title overrides by path.
+
+    Path is built by joining ancestor ids with '/'.
+    E.g., "economic-analysis/functional-analysis/fp-full-fledged-distributor"
+    Mutates chapters in place.
+    """
+    if not title_overrides:
+        return
+
+    def walk(nodes, parent_path=''):
+        for node in nodes:
+            node_id = node.get('id', '')
+            path = f"{parent_path}/{node_id}" if parent_path else node_id
+            if path in title_overrides:
+                node['title'] = title_overrides[path]
+            children = node.get('children', [])
+            if children:
+                walk(children, path)
+
+    walk(chapters)
+
+
+def bridge_to_legacy(blueprint, chapters):
+    """Convert new-format blueprint (content path-keys + chapters tree) to legacy format.
+
+    Produces:
+      - sections{}: flat dict with underscore keys from content path-keys
+      - chapters[]: old-format array with id/title/sections(id/title/keys/subsections)
+      - section_notes{}: empty dict (placeholder)
+      - footnotes{}: empty dict (placeholder)
+
+    Path key conversion: "executive-summary/objective" → "executive_summary_objective"
+    (replace both '-' and '/' with '_')
+    """
+    content = blueprint.get('content', {})
+
+    # Build flat sections dict from content path-keys
+    sections = {}
+    for path_key, value in content.items():
+        flat_key = path_key.replace('-', '_').replace('/', '_')
+        if isinstance(value, list) and len(value) == 1:
+            sections[flat_key] = value[0]
+        else:
+            sections[flat_key] = value
+
+    # Build old-format chapters array from expanded chapters tree
+    def build_keys_for_path(path_prefix, include_descendants=False):
+        """Find content keys matching this section path.
+
+        By default, returns only the exact match (child paths go to child nodes).
+        With include_descendants=True, also returns keys for all descendant paths.
+        Use include_descendants at max depth (subsection level) where the legacy
+        format can't represent deeper nesting.
+        """
+        flat_prefix = path_prefix.replace('-', '_').replace('/', '_')
+        if not include_descendants:
+            if flat_prefix in sections:
+                return [flat_prefix]
+            return []
+        # Collect this key + all descendant keys
+        keys = []
+        for path_key in content:
+            flat = path_key.replace('-', '_').replace('/', '_')
+            if flat == flat_prefix or flat.startswith(flat_prefix + '_'):
+                keys.append(flat)
+        return keys
+
+    def convert_node(node, parent_path='', depth=0):
+        """Convert a chapters-tree node to legacy format."""
+        node_id = node.get('id', '')
+        path = f"{parent_path}/{node_id}" if parent_path else node_id
+        children = node.get('children', [])
+
+        result = {
+            'id': node_id,
+            'title': node.get('title', ''),
+        }
+
+        if depth == 0:
+            # Top-level = chapter → has 'sections'
+            result['sections'] = []
+            if children:
+                for child in children:
+                    result['sections'].append(convert_node(child, path, depth + 1))
+            else:
+                # Leaf chapter — keys directly
+                result['keys'] = build_keys_for_path(path)
+        elif depth == 1:
+            # Level 2 = section → has 'keys' and optionally 'subsections'
+            sub_children = [c for c in children if c.get('children')]
+            leaf_children = [c for c in children if not c.get('children')]
+
+            if sub_children or leaf_children:
+                result['keys'] = build_keys_for_path(path)
+                # Only include keys that are direct (not belonging to subsections)
+                if children:
+                    result['subsections'] = []
+                    for child in children:
+                        result['subsections'].append(convert_node(child, path, depth + 1))
+            else:
+                result['keys'] = build_keys_for_path(path)
+        else:
+            # Level 3+ = subsection → collect keys for this path and all descendants
+            # (legacy format can't represent deeper nesting, so roll up)
+            result['keys'] = build_keys_for_path(path, include_descendants=True)
+
+        return result
+
+    legacy_chapters = []
+    for node in chapters:
+        legacy_chapters.append(convert_node(node, '', 0))
+
+    # Build result: all original fields + generated legacy fields
+    result = dict(blueprint)
+    result['chapters'] = legacy_chapters
+    result['sections'] = sections
+    result.setdefault('section_notes', {})
+    result.setdefault('footnotes', {})
+    # Remove new-format-only fields that downstream doesn't need
+    result.pop('content', None)
+    result.pop('based_on', None)
+    result.pop('covered_profiles', None)
+    result.pop('covered_transactions', None)
+    result.pop('title_overrides', None)
+
+    return result
+
+
+def resolve_blueprint_inheritance(blueprint, references_dir, library_dir, blueprints_dir=None):
+    """Resolve blueprint inheritance via 'based_on' field.
+
+    If blueprint has no 'based_on', returns it unchanged.
+    Otherwise loads the template, expands dynamic sections,
+    applies title overrides, and bridges to legacy format.
+
+    Template search order:
+      1. references_dir/blueprints/{name}.json  (universal)
+      2. library_dir/blueprints/{name}.json     (firm)
+      3. blueprints_dir/template-{name}.json    (group)
+    """
+    based_on = blueprint.get('based_on')
+    if not based_on:
+        return blueprint
+
+    # Load template
+    template = None
+    search_paths = [
+        os.path.join(references_dir, 'blueprints', f'{based_on}.json'),
+        os.path.join(library_dir, 'blueprints', f'{based_on}.json'),
+    ]
+    if blueprints_dir:
+        search_paths.append(os.path.join(blueprints_dir, f'template-{based_on}.json'))
+
+    for path in search_paths:
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                template = json.load(f)
+            print(f"Loaded blueprint template: {path}")
+            break
+
+    if template is None:
+        print(f"Warning: Could not find blueprint template '{based_on}'. Searched:", file=sys.stderr)
+        for p in search_paths:
+            print(f"  {p}", file=sys.stderr)
+        return blueprint
+
+    # Expand dynamic sections
+    chapters = expand_dynamic_sections(template, blueprint)
+
+    # Apply title overrides
+    apply_title_overrides(chapters, blueprint.get('title_overrides', {}))
+
+    # Bridge to legacy format
+    result = bridge_to_legacy(blueprint, chapters)
+
+    return result
+
+
+def resolve_blueprint_sections(blueprint, references_dir, library_dir, group_content_dir=None, entity_content_dir=None):
     """Resolve all content references in a blueprint's sections.
 
     Section values can be:
@@ -247,18 +537,18 @@ def resolve_blueprint_sections(blueprint, references_dir, library_dir, group_con
             parts = []
             for element in value:
                 if isinstance(element, str):
-                    parts.append(resolve_reference(element, references_dir, library_dir, group_content_dir))
+                    parts.append(resolve_reference(element, references_dir, library_dir, group_content_dir, entity_content_dir))
                 else:
                     parts.append(str(element))
             resolved[key] = '\n\n'.join(parts)
         elif isinstance(value, str):
-            resolved[key] = resolve_reference(value, references_dir, library_dir, group_content_dir)
+            resolved[key] = resolve_reference(value, references_dir, library_dir, group_content_dir, entity_content_dir)
         else:
             resolved[key] = value
     return resolved
 
 
-def resolve_blueprint_sections_with_meta(blueprint, references_dir, library_dir, group_content_dir=None):
+def resolve_blueprint_sections_with_meta(blueprint, references_dir, library_dir, group_content_dir=None, entity_content_dir=None):
     """Resolve all content references and track source layer metadata.
 
     Returns two dicts:
@@ -278,7 +568,7 @@ def resolve_blueprint_sections_with_meta(blueprint, references_dir, library_dir,
             part_metas = []
             for element in value:
                 if isinstance(element, str):
-                    parts.append(resolve_reference(element, references_dir, library_dir, group_content_dir))
+                    parts.append(resolve_reference(element, references_dir, library_dir, group_content_dir, entity_content_dir))
                     part_metas.append(classify_source(element, key))
                 else:
                     parts.append(str(element))
@@ -299,7 +589,7 @@ def resolve_blueprint_sections_with_meta(blueprint, references_dir, library_dir,
                 'parts': part_metas
             }
         elif isinstance(value, str):
-            resolved[key] = resolve_reference(value, references_dir, library_dir, group_content_dir)
+            resolved[key] = resolve_reference(value, references_dir, library_dir, group_content_dir, entity_content_dir)
             meta[key] = classify_source(value, key)
         else:
             resolved[key] = value
@@ -2009,7 +2299,7 @@ def compile_pdf(tex_path, output_dir):
 
 
 # ---------------------------------------------------------------------------
-# Combined (Expert Mode) helpers
+# Combined (Workspace Editor) helpers
 # ---------------------------------------------------------------------------
 
 def build_progress_metrics(blueprint, local_file):
@@ -2042,14 +2332,15 @@ def build_jurisdiction_svg(country, references_dir):
     if country not in jurisdictions:
         return ''
 
-    view_box = maps_data.get('viewBox', '0 0 800 700')
-    base_paths = maps_data.get('base_paths', [])
-    highlight = jurisdictions[country]
+    entry = jurisdictions[country]
+    view_box = entry.get('viewBox', '0 0 800 700')
+    paths = entry.get('paths', [])
 
     parts = [f'<svg class="map-svg" viewBox="{escape_html(view_box)}" xmlns="http://www.w3.org/2000/svg">']
-    for bp in base_paths:
-        parts.append(f'  <path class="map-land" d="{bp["d"]}"/>')
-    parts.append(f'  <path class="map-highlight" d="{highlight["d"]}"/>')
+    for p in paths:
+        role = p.get('role', 'context')
+        css_class = 'map-highlight' if role == 'highlight' else 'map-land'
+        parts.append(f'  <path class="{css_class}" d="{p["d"]}"/>')
     parts.append('</svg>')
     return '\n'.join(parts)
 
@@ -2061,7 +2352,7 @@ def build_general_notes_html(data, entity, transactions):
     # Group notes
     group = data.get('group', {})
     if isinstance(group, dict) and group.get('notes'):
-        items = ''.join(f'<li>{escape_html(n)}</li>' for n in group['notes'])
+        items = ''.join(f'<li>{escape_html(n)}</li>' for n in group['notes'][:2])
         groups.append(
             f'<div class="note-group">'
             f'<div class="note-group-title" contenteditable="true">{escape_html(group.get("name", "Group"))}</div>'
@@ -2071,7 +2362,7 @@ def build_general_notes_html(data, entity, transactions):
 
     # Entity notes
     if entity.get('notes'):
-        items = ''.join(f'<li>{escape_html(n)}</li>' for n in entity['notes'])
+        items = ''.join(f'<li>{escape_html(n)}</li>' for n in entity['notes'][:2])
         groups.append(
             f'<div class="note-group">'
             f'<div class="note-group-title" contenteditable="true">{escape_html(entity.get("name", "Entity"))}</div>'
@@ -2082,7 +2373,7 @@ def build_general_notes_html(data, entity, transactions):
     # Transaction notes
     for tx in transactions:
         if tx.get('notes'):
-            items = ''.join(f'<li>{escape_html(n)}</li>' for n in tx['notes'])
+            items = ''.join(f'<li>{escape_html(n)}</li>' for n in tx['notes'][:2])
             groups.append(
                 f'<div class="note-group">'
                 f'<div class="note-group-title" contenteditable="true">{escape_html(tx.get("name", "Transaction"))}</div>'
@@ -2117,8 +2408,8 @@ def build_blueprint_modal_html(blueprints_dir, current_blueprint):
             section_count = len(bp.get('sections', {}))
             is_active = (bp_name == escape_html(current_name) and bp_entity == current_entity)
             active_cls = ' active' if is_active else ''
-            badge_cls = 'builtin' if bp.get('builtin') else 'custom'
-            badge_label = 'Built-in' if bp.get('builtin') else 'Custom'
+            badge_cls = 'builtin' if bp.get('blueprint_type') == 'builtin' else 'custom'
+            badge_label = 'Standard' if bp.get('blueprint_type') == 'builtin' else 'Custom'
 
             # Build miniature preview from chapters
             preview_parts = []
@@ -2146,7 +2437,7 @@ def build_blueprint_modal_html(blueprints_dir, current_blueprint):
 def build_combined_element_html(key, text, meta, note, footnotes, status,
                                 chapter_num, sub_num, data, entity_id,
                                 transactions, blueprint, show_subheading=True):
-    """Generate HTML for one content element in the Expert Mode view."""
+    """Generate HTML for one content element in the Workspace Editor view."""
     parts = []
     slug = slugify(key)
     reviewed = 'true' if status.get('reviewed') else 'false'
@@ -2262,7 +2553,7 @@ def build_combined_sections_html(blueprint, resolved_sections, section_meta,
         parts.append(
             f'  <div class="section-heading" data-section-key="{escape_html(chapter_id)}"'
             f' data-reviewed="{ch_reviewed}" data-signed-off="{ch_signed_off}">'
-            f'{chapter_num}. {escape_html(chapter_title)}'
+            f'{chapter_num} {escape_html(chapter_title)}'
             f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span></div>'
         )
 
@@ -2344,7 +2635,7 @@ def build_combined_sections_html(blueprint, resolved_sections, section_meta,
 def populate_combined_template(template_content, data, blueprint, entity,
                                transactions, resolved_sections, section_meta,
                                blueprints_dir, references_dir=None):
-    """Replace all <<PLACEHOLDER>> markers in the Expert Mode template."""
+    """Replace all <<PLACEHOLDER>> markers in the Workspace Editor template."""
     result = template_content
     entity_id = entity.get('id', '')
     entity_name = entity.get('name', '')
@@ -2449,9 +2740,11 @@ def main():
     parser.add_argument('--brand', default=None,
                         help='Path to brand.css design system (default: assets/brand.css relative to plugin root)')
     parser.add_argument('--format', choices=['pdf', 'html', 'md', 'report', 'combined'], default='pdf',
-                        help='Output format: pdf (LaTeX → PDF), html (intake preview), md (markdown preview), report (annotated report view), combined (Expert Mode)')
+                        help='Output format: pdf (LaTeX → PDF), html (intake preview), md (markdown preview), report (annotated report view), combined (Workspace Editor)')
     parser.add_argument('--blueprints-dir', default=None,
-                        help='Path to blueprints directory (for Expert Mode blueprint modal)')
+                        help='Path to blueprints directory (for Workspace Editor blueprint modal)')
+    parser.add_argument('--entity-content', default=None,
+                        help='Path to entity content directory for @entity/ references')
     parser.add_argument('--section', default=None,
                         help='Render a single section in the editor (requires --format html). '
                              'Omit for dashboard overview. Example: --section group_overview')
@@ -2463,6 +2756,13 @@ def main():
 
     print(f"Loading blueprint: {args.blueprint}")
     blueprint = load_json(args.blueprint)
+
+    # --- Resolve blueprint inheritance ---
+    if blueprint.get('based_on'):
+        blueprint = resolve_blueprint_inheritance(
+            blueprint, args.references, args.library,
+            getattr(args, 'blueprints_dir', None)
+        )
 
     print(f"Loading template: {args.template}")
     if not os.path.exists(args.template):
@@ -2493,8 +2793,9 @@ def main():
 
     # --- Resolve content references ---
     group_content = getattr(args, 'group_content', None)
+    entity_content = getattr(args, 'entity_content', None)
     print("Resolving content references...")
-    resolved_sections = resolve_blueprint_sections(blueprint, args.references, args.library, group_content)
+    resolved_sections = resolve_blueprint_sections(blueprint, args.references, args.library, group_content, entity_content)
 
     # --- Determine output filename ---
     entity_name = entity.get('name', 'entity')
@@ -2508,7 +2809,7 @@ def main():
         # --- Annotated report view (X-ray mode) ---
         print("Resolving with layer metadata for report view...")
         resolved_sections_meta, section_meta = resolve_blueprint_sections_with_meta(
-            blueprint, args.references, args.library, group_content
+            blueprint, args.references, args.library, group_content, entity_content
         )
         print("Populating report view template...")
         report_base = slugify(f"{entity_name}_Report_View_FY{fiscal_year}") if fiscal_year else slugify(f"{entity_name}_Report_View")
@@ -2541,7 +2842,7 @@ def main():
             # --- Section editor mode: render one section ---
             print(f"Resolving with layer metadata for section: {args.section}")
             resolved_sections_meta, section_meta = resolve_blueprint_sections_with_meta(
-                blueprint, args.references, args.library, group_content
+                blueprint, args.references, args.library, group_content, entity_content
             )
             if args.section not in resolved_sections_meta and not args.section.startswith('_auto_'):
                 print(f"Warning: Section '{args.section}' not found in blueprint sections.", file=sys.stderr)
@@ -2562,7 +2863,7 @@ def main():
             # --- Dashboard mode: overview of all sections ---
             print("Resolving with layer metadata for dashboard...")
             resolved_sections_meta, section_meta = resolve_blueprint_sections_with_meta(
-                blueprint, args.references, args.library, group_content
+                blueprint, args.references, args.library, group_content, entity_content
             )
             print("Populating section dashboard...")
             populated_html = populate_dashboard_template(
@@ -2579,7 +2880,7 @@ def main():
             # --- Editor view (dynamic sections with layer info) ---
             print("Resolving with layer metadata for editor...")
             resolved_sections_meta, section_meta = resolve_blueprint_sections_with_meta(
-                blueprint, args.references, args.library, group_content
+                blueprint, args.references, args.library, group_content, entity_content
             )
             print("Populating editor view...")
             populated_html = populate_html_template(
@@ -2592,26 +2893,26 @@ def main():
             print(f"\nDone! Editor: {html_path}")
 
     elif args.format == 'combined':
-        # --- Expert Mode (combined view) ---
-        print("Resolving with layer metadata for Expert Mode...")
+        # --- Workspace Editor (combined view) ---
+        print("Resolving with layer metadata for Workspace Editor...")
         resolved_sections_meta, section_meta = resolve_blueprint_sections_with_meta(
-            blueprint, args.references, args.library, group_content
+            blueprint, args.references, args.library, group_content, entity_content
         )
 
         blueprints_dir = getattr(args, 'blueprints_dir', None)
 
-        print("Populating Expert Mode template...")
+        print("Populating Workspace Editor template...")
         populated = populate_combined_template(
             template_content, data, blueprint, entity, transactions,
             resolved_sections_meta, section_meta, blueprints_dir,
             references_dir=args.references
         )
 
-        expert_base = slugify(f"{entity_name}_Expert_Mode_FY{fiscal_year}") if fiscal_year else slugify(f"{entity_name}_Expert_Mode")
+        expert_base = slugify(f"{entity_name}_Workspace_Editor_FY{fiscal_year}") if fiscal_year else slugify(f"{entity_name}_Workspace_Editor")
         html_path = os.path.join(args.output, f'{expert_base}.html')
         with open(html_path, 'w') as f:
             f.write(populated)
-        print(f"\nDone! Expert Mode: {html_path}")
+        print(f"\nDone! Workspace Editor: {html_path}")
 
     else:
         # --- PDF (default) ---
