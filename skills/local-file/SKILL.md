@@ -182,89 +182,11 @@ Intake (+ read memory/notes/session log) → Data + notes (JSON) → Blueprint +
 | Section editor template (backward compat) | `skills/local-file/assets/section_editor.html` |
 | Sample data | `data/examples/sample-group.json` |
 | Sample blueprint | `data/examples/sample-blueprint.json` |
+| Sample firm blueprint | `data/examples/sample-firm-blueprint.json` |
 | Sample session log | `data/examples/sample-session-log.json` |
 | Sample group memory | `data/examples/sample-group-memory.json` |
 | Sample personal memory | `data/examples/sample-personal-memory.json` |
 | Sample firm memory | `data/examples/sample-firm-memory.json` |
-
-## Example Mode (MUST CHECK FIRST)
-
-**Before doing anything else**, check whether the user is asking for an example, demo, or sample. Trigger phrases: "example", "demo", "show me", "try it out", "sample", "test run", "how it works", "what does it look like".
-
-**If example mode is detected, follow the example workflow below instead of the normal Steps 1–6.** Do NOT proceed with intake, do NOT ask questions about group/entity/year, do NOT create fictional data from scratch. Use the built-in sample data and assembly script.
-
-### Example Mode Workflow
-
-1. **Validate subscription** — run `python3 auth/gateway.py validate --working-dir .` first. If it fails, show a business-friendly error.
-
-2. **Resolve working directory** — check the user has a folder selected. If not, stop and tell them to select one.
-
-3. **Determine submode automatically:**
-
-   - **Submode A (New group from scratch):** Empty working directory or no existing groups. Create the full convention tree:
-     ```
-     [working-folder]/
-     ├── Acme-Group/
-     │   ├── 1. Admin/
-     │   ├── 2. Source Files/
-     │   ├── 3. Working Papers/
-     │   ├── 4. Deliverables/
-     │   │   └── FY2025/
-     │   │       └── Local-File/
-     │   │           └── DE/
-     │   │               └── Acme-Manufacturing/
-     │   └── .records/
-     │       ├── data.json
-     │       ├── session-log.json
-     │       ├── content/
-     │       └── blueprints/
-     │           └── local-file-acme-mfg-de.json
-     ```
-     Copy sample data into `.records/data.json` and sample blueprint into `.records/blueprints/`.
-
-   - **Submode B (Existing group, no local file):** Groups exist but no deliverable for the entity. Use existing group data, create a blueprint, generate views.
-
-   - **Submode C (Existing group + blueprint):** Both exist. Just regenerate views from current data.
-
-4. **Generate Workspace Editor** using the assembly script (NOT by creating content from scratch):
-   ```bash
-   python3 skills/local-file/scripts/assemble_local_file.py \
-     --data "[working-folder]/[Group]/.records/data.json" \
-     --blueprint "[working-folder]/[Group]/.records/blueprints/[blueprint].json" \
-     --references "skills/local-file/references/" \
-     --library "[working-folder]/.library/" \
-     --entity-content "[working-folder]/[Group]/.records/content/[entity-id]/" \
-     --template "skills/local-file/assets/combined_view.html" \
-     --brand "assets/brand.css" \
-     --output "[working-folder]/[Group]/4. Deliverables/FY[Year]/Local-File/[Country]/[Entity]/" \
-     --format combined \
-     --blueprints-dir "[working-folder]/[Group]/.records/blueprints/"
-   ```
-
-5. **Generate PDF** into the same deliverable folder:
-   ```bash
-   python3 skills/local-file/scripts/assemble_local_file.py \
-     --data "[working-folder]/[Group]/.records/data.json" \
-     --blueprint "[working-folder]/[Group]/.records/blueprints/[blueprint].json" \
-     --references "skills/local-file/references/" \
-     --library "[working-folder]/.library/" \
-     --entity-content "[working-folder]/[Group]/.records/content/[entity-id]/" \
-     --template "skills/local-file/assets/local_file.tex" \
-     --output "[working-folder]/[Group]/4. Deliverables/FY[Year]/Local-File/[Country]/[Entity]/" \
-     --format pdf
-   ```
-
-6. **Present each file** to the user with a brief explanation:
-   - **Workspace Editor**: "This is Workspace Editor — your all-in-one workspace for the local file. You can see the section dashboard, edit content directly, review notes and comments, and toggle X-ray mode to see where each piece of content comes from. Click Save to send your changes back to the chat."
-   - **PDF**: "And here's the final PDF — this is what you'd submit to tax authorities."
-
-7. **Wrap up**: "That's the full pipeline. When you're ready to prepare a real local file, just say /prep-local-file with your entity name and we'll get started."
-
-**Critical rules for example mode:**
-- Do NOT ask the user questions about what kind of example, jurisdiction, or transaction type. Just use the sample data.
-- Do NOT generate fictional data from scratch — always use the assembly script with sample data.
-- Do NOT narrate internal processes. Just generate and present.
-- Output to the convention folder structure, NOT to `_examples/` or `/tmp/`.
 
 ---
 

@@ -1616,7 +1616,7 @@ document.addEventListener('keydown', function(e) {
       item.setAttribute('role', 'button');
       item.setAttribute('tabindex', '0');
       item.onclick = function(e) { scrollToSection(e); };
-      item.innerHTML = '<span class="nav-icon">&#9656;</span><span class="nav-label">' + label + '</span>' +
+      item.innerHTML = '<span class="nav-icon">&#9656;</span><span class="nav-label">' + topIndex + ' ' + label + '</span>' +
         '<span class="nav-status">' +
         '<button class="nav-status-btn' + (headReviewed ? ' done' : '') + '" title="Reviewed" onclick="toggleNavStatus(event,this)"><svg><use href="#icon-eye"/></svg></button>' +
         '<button class="nav-status-btn' + (headSignedOff ? ' done' : '') + '" title="Signed off" onclick="toggleNavStatus(event,this)"><svg><use href="#icon-signature"/></svg></button>' +

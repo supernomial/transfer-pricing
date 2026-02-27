@@ -33,6 +33,44 @@ Lives in `skills/local-file/references/blueprints/`. Defines the complete OECD L
 - **`dynamic: true`** — marks sections that are included/excluded per entity (functional profiles, transaction categories)
 - **`dynamic_templates`** — reusable child structures: `functional-profile` (4 children) and `transaction` (6 children)
 
+### Firm Blueprint
+
+Lives in `[working-folder]/.library/blueprints/`. Saves reusable firm-level report structures that pre-populate new entity blueprints.
+
+```json
+{
+  "schema_version": "0.7.0",
+  "template_type": "firm",
+  "template_name": "Deloitte Standard Local File",
+  "based_on": "oecd-local-file",
+  "created": "2026-02-27",
+  "default_covered_profiles": ["full-fledged-distributor", "limited-risk-distributor"],
+  "default_covered_transactions": ["services", "goods"],
+  "content": {
+    "executive-summary/objective": ["@references/preamble/objective", "@library/preamble/firm-addendum"],
+    "executive-summary/scope": ["@references/preamble/scope"],
+    "business-description/group-overview": ["@library/business/group-overview"],
+    "industry-analysis/industry-overview": []
+  },
+  "title_overrides": {},
+  "section_notes": {
+    "business-description/group-overview": "Always lead with global footprint."
+  }
+}
+```
+
+- **`template_type`** — `"firm"` distinguishes from universal templates and entity blueprints
+- **`template_name`** — human-readable name shown in the blueprint picker
+- **`based_on`** — always `"oecd-local-file"` (inherits universal structure)
+- **`created`** — ISO date when the firm blueprint was saved
+- **`default_covered_profiles`** — advisory list of profiles the firm commonly documents (suggested during intake, not enforced)
+- **`default_covered_transactions`** — advisory list of transaction categories (same)
+- **`content`** — path-style keys with only `@references/` and `@library/` content. Sections stripped of group/entity/inline content become `[]` (empty)
+- **`title_overrides`** — firm-wide section title customizations
+- **`section_notes`** — editorial guidance per section
+
+Firm blueprints are created by stripping an entity blueprint (see `commands/prep-local-file.md` Notes section for stripping rules). Content is copied into entity blueprints at creation time — the assembly script never resolves firm blueprints directly.
+
 ### Entity Blueprint
 
 Lives in `[Group]/.records/blueprints/`. Inherits structure from a template via `based_on`.
@@ -57,6 +95,7 @@ Lives in `[Group]/.records/blueprints/`. Inherits structure from a template via 
 - **`content`** — path-style keys mapping to arrays of content layer references
 - **`section_notes`** — editorial reasoning per section (path-style keys)
 - **`footnotes`** — per-section citation arrays (path-style keys)
+- **`firm_blueprint`** — (optional) slug of the firm blueprint used as starting point (informational, script ignores it)
 
 ## Path-Style Keys
 

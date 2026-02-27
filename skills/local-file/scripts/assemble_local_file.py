@@ -424,14 +424,15 @@ def bridge_to_legacy(blueprint, chapters):
         }
 
         if depth == 0:
-            # Top-level = chapter → has 'sections'
+            # Top-level = chapter → has 'sections', plus optional direct keys
+            result['keys'] = build_keys_for_path(path)
             result['sections'] = []
             if children:
                 for child in children:
                     result['sections'].append(convert_node(child, path, depth + 1))
-            else:
-                # Leaf chapter — keys directly
-                result['keys'] = build_keys_for_path(path)
+            elif not result['keys']:
+                # Leaf chapter with no direct content — try descendants
+                result['keys'] = build_keys_for_path(path, include_descendants=True)
         elif depth == 1:
             # Level 2 = section → has 'keys' and optionally 'subsections'
             sub_children = [c for c in children if c.get('children')]
@@ -2556,6 +2557,20 @@ def build_combined_sections_html(blueprint, resolved_sections, section_meta,
             f'{chapter_num} {escape_html(chapter_title)}'
             f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span></div>'
         )
+
+        # Render chapter-level content (directly under the chapter heading, before sections)
+        chapter_keys = chapter.get('keys', [])
+        for key in chapter_keys:
+            meta = section_meta.get(key, classify_source('', key))
+            text = resolved_sections.get(key, '')
+            note = section_notes.get(key, '')
+            fn = footnotes_all.get(key, [])
+            status = section_status.get(key, {})
+            parts.append(build_combined_element_html(
+                key, text, meta, note, fn, status,
+                chapter_num, 0, data, entity_id, transactions, blueprint,
+                show_subheading=False
+            ))
 
         for sec_num, section in enumerate(sections, 1):
             # Handle legacy format (string key) for backward compat

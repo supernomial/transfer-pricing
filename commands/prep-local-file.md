@@ -28,86 +28,6 @@ Prepare a complete transfer pricing local file for a specific entity. This comma
 /prep-local-file <entity name or data file>
 ```
 
-## Modes
-
-### Example Mode
-**Triggered by:** "example", "demo", "show me how it works", "try it out", "sample", "test run"
-
-Example mode has three submodes, chosen automatically based on the current state of the working directory:
-
-#### Submode A: New group from scratch
-**When:** Empty working directory, or no existing groups found.
-
-Creates the complete convention tree with example data:
-
-```
-[working-folder]/
-├── Acme-Group/
-│   ├── 1. Admin/
-│   ├── 2. Source Files/
-│   ├── 3. Working Papers/
-│   ├── 4. Deliverables/
-│   │   └── FY2025/
-│   │       └── Local-File/
-│   │           └── DE/
-│   │               └── Acme-Manufacturing/
-│   │                   ├── Workspace_Editor_FY2025.html
-│   │                   └── Local_File_FY2025.pdf
-│   └── .records/
-│       ├── data.json
-│       ├── session-log.json
-│       ├── content/
-│       └── blueprints/
-│           └── local-file-acme-mfg-de.json
-```
-
-Steps:
-1. Create the folder tree above
-2. Copy `data/examples/sample-group.json` content into `Acme-Group/.records/data.json`
-3. Copy `data/examples/sample-blueprint.json` content into `Acme-Group/.records/blueprints/local-file-acme-mfg-de.json`
-4. Generate Workspace Editor HTML into `Acme-Group/4. Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/Workspace_Editor_FY2025.html`:
-
-```bash
-python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[working-folder]/Acme-Group/.records/data.json" \
-  --blueprint "[working-folder]/Acme-Group/.records/blueprints/local-file-acme-mfg-de.json" \
-  --references "skills/local-file/references/" \
-  --library "[working-folder]/.library/" \
-  --template "skills/local-file/assets/combined_view.html" \
-  --brand "assets/brand.css" \
-  --output "[working-folder]/Acme-Group/4. Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/" \
-  --format combined \
-  --blueprints-dir "[working-folder]/Acme-Group/.records/blueprints/"
-```
-
-5. Generate PDF into the same folder:
-
-```bash
-python3 skills/local-file/scripts/assemble_local_file.py \
-  --data "[working-folder]/Acme-Group/.records/data.json" \
-  --blueprint "[working-folder]/Acme-Group/.records/blueprints/local-file-acme-mfg-de.json" \
-  --references "skills/local-file/references/" \
-  --library "[working-folder]/.library/" \
-  --template "skills/local-file/assets/local_file.tex" \
-  --output "[working-folder]/Acme-Group/4. Deliverables/FY2025/Local-File/DE/Acme-Manufacturing/" \
-  --format pdf
-```
-
-6. Present each file to the user with explanation (same messaging as current example mode).
-
-#### Submode B: Example local file for existing group
-**When:** One or more groups exist, but no local file deliverable for the chosen entity.
-
-Uses the existing group's data. Asks which entity, then generates an example local file in the convention path. Same assembly commands but using the real group's data.json and creating a new blueprint for the entity.
-
-#### Submode C: Example chapters for existing local file
-**When:** A group exists AND a blueprint already exists for an entity.
-
-Generates the views using the existing blueprint. No new data — just regenerates Workspace Editor and PDF to show the current state.
-
-### Real Mode (default)
-The full guided intake workflow. This is the existing Steps 1–6 below, unchanged.
-
 ## Workflow
 
 **Efficiency rules — follow these throughout the entire workflow:**
@@ -201,6 +121,19 @@ If the user uploaded files or pasted text:
 - Classify the material: Is it a prior year local file? Client-provided data? Instructions from the partner?
 - Important: reference materials inform the work, but structured data still gets entered into the records properly.
 
+#### 2g. Check for firm blueprints
+
+Check `[working-folder]/.library/blueprints/` for `.json` files with `"template_type": "firm"`.
+
+- **No firm blueprints found:** Skip. The entity will use `based_on: "oecd-local-file"` (universal template only).
+- **One firm blueprint found:** Auto-select it. Mention in the intake summary:
+  > **Starting point**: Your firm's standard report structure ("[template_name]") — common sections pre-filled.
+- **Multiple firm blueprints found:** Ask which starting point to use, listing options:
+  > Which report structure should we start from?
+  > - **OECD Standard** — Start fresh with universal content only
+  > - **[template_name 1]** — [brief description based on content density]
+  > - **[template_name 2]** — [brief description]
+
 #### 2f. Present intake summary and confirm
 
 Before doing any work, present a clear summary:
@@ -260,6 +193,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --references "skills/local-file/references/" \
   --library "[selected-folder]/.library/" \
   --group-content "[selected-folder]/[Group Name]/.records/content/" \
+  --entity-content "[selected-folder]/[Group Name]/.records/content/[entity-id]/" \
   --template "skills/local-file/assets/combined_view.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -280,6 +214,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --references "skills/local-file/references/" \
   --library "[selected-folder]/.library/" \
   --group-content "[selected-folder]/[Group Name]/.records/content/" \
+  --entity-content "[selected-folder]/[Group Name]/.records/content/[entity-id]/" \
   --template "skills/local-file/assets/section_dashboard.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -299,6 +234,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --references "skills/local-file/references/" \
   --library "[selected-folder]/.library/" \
   --group-content "[selected-folder]/[Group Name]/.records/content/" \
+  --entity-content "[selected-folder]/[Group Name]/.records/content/[entity-id]/" \
   --template "skills/local-file/assets/section_editor.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -328,6 +264,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --references "skills/local-file/references/" \
   --library "[selected-folder]/.library/" \
   --group-content "[selected-folder]/[Group Name]/.records/content/" \
+  --entity-content "[selected-folder]/[Group Name]/.records/content/[entity-id]/" \
   --template "skills/local-file/assets/report_view.html" \
   --brand "assets/brand.css" \
   --output "[selected-folder]/[Group Name]/" \
@@ -335,7 +272,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
 ```
 
 **X-ray mode** (toggled via a button in the top bar) annotates each section with:
-- **Layer color** (left border): slate gray = Universal (`@references/`), purple = Firm Library (`@library/`), purple = Group-wide (`@group/`), blue = Entity-specific (plain text)
+- **Layer color** (left border): slate gray = Universal (`@references/`), purple = Firm Library (`@library/`), purple = Group-wide (`@group/`), blue = Entity-specific (`@entity/` files or plain text)
 - **Impact label**: tells the user whether editing affects only this report, all reports in this group, or all clients
 - **Source path**: for referenced content (`@references/...` or `@library/...`), shows the file origin
 
@@ -399,10 +336,10 @@ For each transaction, the entity's functional profile needs content for the repo
 
 4. **Collect in batches, not one-by-one.** Cover Functions, Assets, and Risks together in one exchange. If the user gives partial info, fill in reasonable defaults from the reference checklist and note what's assumed.
 
-5. **Store as content blocks.** Save each paragraph as a single content file:
+5. **Store as content blocks.** Save each paragraph as a content file:
    - Firm-reusable profiles → `.library/functional-profiles/[slug]/functions.md` (Layer 2)
    - Group-customized profiles → `[Group]/.records/content/functional-profiles/[slug]/functions.md` (Layer 3)
-   - Entity-specific → plain text in the blueprint (Layer 4)
+   - Entity-specific → `[Group]/.records/content/[entity-id]/fp-[slug]-functions.md` (Layer 4, referenced as `@entity/fp-[slug]-functions`)
 
 6. **Don't over-ask.** The 22 × 4 = 88 content blocks are the maximum across ALL profile types. Most entities use 1-2 profile types. Most of the content should be drafted by Claude and reviewed by the user — not dictated field by field.
 
@@ -412,18 +349,44 @@ For each transaction, the entity's functional profile needs content for the repo
 
 Create or update the blueprint for this entity and deliverable. The blueprint defines the **sections and their order** — this is the source of truth for the report structure.
 
+**If a firm blueprint was selected in Step 2g**, use it as the starting point:
+1. Read the firm blueprint from `.library/blueprints/{slug}.json`
+2. Copy its `content` object as the initial content for the entity blueprint
+3. Copy `title_overrides` and `section_notes`
+4. Use `default_covered_profiles` / `default_covered_transactions` as suggestions ("Your firm typically documents these profiles — do they apply here?")
+5. Pre-populated sections (those with `@references/` or `@library/` content) are **not re-asked** — skip them in the walkthrough
+6. Empty sections (`[]`) are walked through normally with the user
+7. Add `"firm_blueprint": "{slug}"` as metadata on the entity blueprint
+8. The entity blueprint always keeps `based_on: "oecd-local-file"` — firm content is copied at creation time, not resolved at assembly time
+
+**Otherwise (no firm blueprint, or OECD Standard chosen):**
+
 1. Determine which sections the local file needs (follow the standard blueprint section order)
 2. Walk through sections in order with the user, resolving each content source:
    - `@references/...` for universal OECD content (Layer 1)
    - `@library/...` for firm library content (Layer 2)
    - `@group/...` for group-customized content shared across entities (Layer 3)
-   - Plain text for entity-specific content (Layer 4)
-   - Array for composite sections — combine content from multiple layers in one section (e.g., `["@group/entity-introductions/distribution-hub", "Entity-specific additions..."]`). Each element is resolved independently.
-   - **Cascade rule:** If the user wants to customize firm library content for this group, copy it to `@group/` and edit there. If they want to further customize for one entity, convert to plain text. For sections needing both shared and specific content, use composite arrays.
+   - `@entity/...` for entity-specific content files (Layer 4) — stored in `[Group]/.records/content/[entity-id]/`
+   - Plain text for inline entity-specific content (Layer 5)
+   - Array for composite sections — combine content from multiple layers in one section (e.g., `["@references/preamble/objective", "@entity/objective-addendum"]`). Each element is resolved independently.
+   - **Cascade rule:** If the user wants to customize firm library content for this group, copy it to `@group/` and edit there. If they want to further customize for one entity, save as `@entity/` file. For sections needing both shared and specific content, use composite arrays.
 3. If rollforward: start from prior year's blueprint, update section by section in order
 4. Confirm the complete blueprint with the user before proceeding to generation
 
 **Capture section notes:** If the user explains *why* a section should be written a certain way (e.g., "the partner wants emphasis on decentralized decision-making"), save it in the blueprint's `section_notes` object. These editorial notes persist across sessions so future work on this blueprint has full context.
+
+**Save as firm blueprint (optional):** After the blueprint is confirmed, if no firm blueprints exist yet in `.library/blueprints/`, suggest:
+
+> "Would you like to save this report structure as a reusable starting point? Next time you start a new client, I'll pre-fill the common sections. Takes one second."
+
+Also triggered by the user saying "save this as a template" at any point.
+
+**To create the firm blueprint:**
+1. Read the entity blueprint
+2. Strip per the firm blueprint stripping rules (see Notes section below)
+3. Ask for a name → derive slug (kebab-case)
+4. Write to `[working-folder]/.library/blueprints/{slug}.json`
+5. Confirm: "Saved as '[name]'. I'll offer this whenever you start a new local file."
 
 ### Step 5: Assemble and Generate (Script)
 
@@ -437,6 +400,7 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --references "skills/local-file/references/" \
   --library "[selected-folder]/.library/" \
   --group-content "[selected-folder]/[Group Name]/.records/content/" \
+  --entity-content "[selected-folder]/[Group Name]/.records/content/[entity-id]/" \
   --template "skills/local-file/assets/local_file.tex" \
   --output "[selected-folder]/[Group Name]/4. Deliverables/FY[Year]/Local-Files/[Country]/[Entity Name]/" \
   --format pdf
@@ -535,7 +499,7 @@ The editor has a **"Send updates"** button. When the user clicks it, only the **
 
 1. **Identify it** by the `"_source": "preview_edit"` field
 2. **Read the `_summary`** — this tells you exactly what changed in plain language
-3. **Apply section changes** (if `sections` key exists): update the blueprint with new text
+3. **Apply section changes** (if `sections` key exists): update the blueprint's `content` object. Keys may be path-style (`executive-summary/objective`) or legacy underscore-style (`executive_summary_objective`) — handle both
 4. **Apply transaction changes** (if `transactions` key exists):
    - Match by transaction name
    - Update amounts if changed
@@ -578,7 +542,7 @@ When the JSON is obtained (from any of the three paths above), proceed with appl
 2. **Read the `_summary`** array to understand what was changed
 3. **Show the summary to the user**: "I see you made these changes in the Workspace Editor: [summary items]"
 4. **Apply changes to the data files:**
-   - `sections` → overwrite matching keys in blueprint `sections` (these are Layer 4 edits — entity-specific text)
+   - `sections` → overwrite matching keys in blueprint `content` (these are Layer 4/5 edits — entity-specific text). Keys may be path-style (`executive-summary/objective`) or legacy underscore-style
    - `section_notes` → overwrite matching keys in blueprint `section_notes`
    - `footnotes` → overwrite matching keys in blueprint `footnotes`
    - `section_status` → merge into the `local_file` object's `section_status` in `data.json` (find the local_file matching `_entity_id`)
@@ -619,3 +583,19 @@ Use the `_summary` array items as the bullet points. Each array item becomes one
 - **Session log is append-only** — never modify past entries, only add new ones
 - **Notes travel with data** — if records are shared or copied to another system, context follows automatically
 - **Memory files persist across sessions** — personal, group, and firm context is automatically captured and used for continuity
+
+### Firm Blueprint Stripping Rules
+
+When saving an entity blueprint as a firm blueprint, apply these rules to extract only reusable firm-level content:
+
+| Keep | Strip |
+|---|---|
+| `@references/` content references | `@group/` references |
+| `@library/` content references | `@entity/` references |
+| `title_overrides` (firm-wide) | Plain text (inline content) |
+| `section_notes` (editorial) | `group`, `entity`, `fiscal_year`, `deliverable` fields |
+| `default_covered_profiles` / `default_covered_transactions` (advisory, from entity's `covered_*`) | `covered_profiles` / `covered_transactions` (entity-specific) |
+
+Sections that had only group/entity/inline content become `[]` (empty array) — they show up as empty boxes in the Workspace Editor, signaling "content expected here."
+
+The resulting firm blueprint uses `template_type: "firm"` and `based_on: "oecd-local-file"`. See `skills/local-file/references/section-schema.md` for the full schema.

@@ -13,6 +13,10 @@
     "loan-arrangements"
   ],
   "content": {
+    "executive-summary": [],
+    "business-description": [],
+    "industry-analysis": [],
+    "economic-analysis": [],
     "executive-summary/objective": ["@references/preamble/objective"],
     "executive-summary/scope": ["@references/preamble/scope"],
     "executive-summary/work-performed": ["@references/preamble/work-performed"],
