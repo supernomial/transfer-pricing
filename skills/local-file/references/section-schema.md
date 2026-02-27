@@ -92,7 +92,7 @@ Lives in `[Group]/.records/blueprints/`. Inherits structure from a template via 
 - **`based_on`** — template id to inherit from
 - **`covered_profiles`** — which of the 22 functional profiles this entity uses
 - **`covered_transactions`** — which of the 14 transaction categories apply
-- **`content`** — path-style keys mapping to arrays of content layer references
+- **`content`** — path-style keys mapping to arrays of content layer references. **Convention:** Always include chapter-level keys (e.g., `"executive-summary"`, `"business-description"`) pointing to their intro reference files. These render between the chapter heading and the first subsection.
 - **`section_notes`** — editorial reasoning per section (path-style keys)
 - **`footnotes`** — per-section citation arrays (path-style keys)
 - **`firm_blueprint`** — (optional) slug of the firm blueprint used as starting point (informational, script ignores it)
@@ -123,6 +123,8 @@ Content values in the `content` object are arrays. Each element is resolved inde
 | (plain text) | 5 — Inline | Directly in the blueprint |
 
 Each layer overrides the one above. Arrays enable composite sections from multiple layers.
+
+**All content paths must resolve to individual `.md` files, never directories.** For example, use `@references/recognition/commercial-rationality`, not `@references/recognition`.
 
 ### Entity Content Files
 

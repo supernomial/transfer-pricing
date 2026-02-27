@@ -82,6 +82,37 @@ Check the working directory for existing groups:
 - **One group exists**: Assume it, confirm briefly ("I see Acme Group in your working directory. Is this the right client?")
 - **Multiple groups exist**: Ask which one, listing what's available.
 
+#### 2b-quick. Quick-start (new users only)
+
+When the working directory has **NO existing groups**, offer two paths:
+
+> This looks like a fresh start. Would you like to:
+>
+> **A. Quick-start** (recommended) — I'll ask one set of questions and get you to a working draft fast.
+>
+> **B. Guided walkthrough** — We'll go step by step through each part of the report setup.
+
+**If the user picks Quick-start:**
+
+1. Ask ONE compound question:
+   > To get started, I need a few things:
+   > - Client/group name
+   > - Entity name and country of incorporation
+   > - Fiscal year
+   > - What types of intercompany transactions does this entity have? (e.g., purchase of goods, management fees, royalties, IP license)
+   > - What's the entity's role? (e.g., limited-risk distributor, full-fledged manufacturer, contract R&D provider)
+
+2. From the answers, create:
+   - Group folder + `.records/` structure
+   - `data.json` with group, entity, and transactions (placeholder amounts)
+   - Entity blueprint with universal `@references/` content for all standard sections + chapter-level intro keys
+
+3. Generate and present the **Workspace Editor** immediately (`--format combined`).
+
+4. Tell the user: "Here's your draft — everything marked as standard content. You can start refining from here. Click into any section to customize it, or tell me what to update."
+
+**If the user picks Guided walkthrough:** Continue with Step 2c below.
+
 #### 2c. Identify year and entity
 
 - Ask for fiscal year if not already provided
@@ -310,6 +341,11 @@ For transaction data, gather:
 
 Allow the user to add multiple transactions iteratively.
 
+**Field names in data.json — use these exactly:**
+- Transactions: `from_entity`, `to_entity`, `from_entity_profile`, `to_entity_profile`
+- Local files: `entity` (not `entity_id`)
+- All IDs are kebab-case slugs matching the object's `id` field
+
 **Capture notes as you go:** During this step, if the user explains context, reasoning, or mentions pending items (e.g., "this amount is preliminary" or "the CFO wants conservative language"), save these as `notes` on the relevant object in `data.json`. Don't ask permission — just capture naturally. Notes are optional arrays of strings on any object (group, entity, transaction).
 
 ### Step 3b: Collect Functional Profile Content
@@ -373,11 +409,23 @@ Create or update the blueprint for this entity and deliverable. The blueprint de
 3. If rollforward: start from prior year's blueprint, update section by section in order
 4. Confirm the complete blueprint with the user before proceeding to generation
 
+**Reference paths must point to files, not directories.** Use `@references/recognition/commercial-rationality` — not `@references/recognition`.
+
+**Always include chapter-level keys.** Every top-level chapter (`executive-summary`, `business-description`, `industry-analysis`, `economic-analysis`) must have a key in `content`. Reference the standard chapter intro files:
+```
+"executive-summary": ["@references/preamble/executive-summary"],
+"business-description": ["@references/business/business-description"],
+"industry-analysis": ["@references/industry/industry-analysis"],
+"economic-analysis": ["@references/economic-analysis/economic-analysis"]
+```
+
 **Capture section notes:** If the user explains *why* a section should be written a certain way (e.g., "the partner wants emphasis on decentralized decision-making"), save it in the blueprint's `section_notes` object. These editorial notes persist across sessions so future work on this blueprint has full context.
 
-**Save as firm blueprint (optional):** After the blueprint is confirmed, if no firm blueprints exist yet in `.library/blueprints/`, suggest:
-
-> "Would you like to save this report structure as a reusable starting point? Next time you start a new client, I'll pre-fill the common sections. Takes one second."
+**CHECKPOINT — Firm blueprint offer (do NOT skip):**
+After the blueprint is confirmed, before Step 5, check `.library/blueprints/`.
+- **No firm blueprints exist**: MUST ask the save question:
+  > "Would you like to save this report structure as a reusable starting point? Next time you start a new client, I'll pre-fill the common sections. Takes one second."
+- **Firm blueprints already exist**: Skip.
 
 Also triggered by the user saying "save this as a template" at any point.
 
