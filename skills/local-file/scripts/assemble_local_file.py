@@ -273,11 +273,8 @@ def expand_dynamic_sections(template, blueprint):
     Walks the template's sections tree. When a node has a 'dynamic' field:
       - "functional-profiles": keep the node as a container, generate children
         from blueprint's covered_profiles + dynamic_templates
-      - "transactions": keep the node as a container, generate children
-        from blueprint's covered_transactions + dynamic_templates
-
-    The dynamic node is KEPT (preserving its heading) and gets generated
-    children — it does not get replaced.
+      - "transactions": REPLACE the placeholder with expanded children directly
+        (each transaction category becomes a sibling of functional-analysis)
 
     Returns expanded sections as a chapters-format array.
     """
@@ -333,7 +330,12 @@ def expand_dynamic_sections(template, blueprint):
 
             expanded_children.append(new_child)
 
-        # Keep the parent node, set generated items as its children
+        # Transactions: replace the placeholder with expanded children directly
+        # (each transaction category becomes a sibling of functional-analysis)
+        if dynamic == 'transactions':
+            return expanded_children
+
+        # Functional-profiles: keep the parent node, nest children under it
         node.pop('dynamic', None)
         node['children'] = expanded_children
         return [node]
@@ -2492,13 +2494,6 @@ def build_combined_element_html(key, text, meta, note, footnotes, status,
                 p_color = part.get('color', '#64748b')
                 p_text = part.get('text', '')
                 p_escaped = escape_html(p_text) if p_text else ''
-                # Layer header
-                parts.append(
-                    f'<div class="layer-block-header">'
-                    f'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:{p_color};"></span>'
-                    f'{escape_html(p_label)}'
-                    f'</div>'
-                )
                 # Layers 1-3: read-only, no edit controls, no data-section-key
                 if p_layer <= 3:
                     parts.append(

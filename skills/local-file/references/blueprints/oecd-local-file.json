@@ -57,8 +57,6 @@
           "dynamic": "functional-profiles"
         },
         {
-          "id": "transaction-analysis",
-          "title": "Transaction Analysis",
           "dynamic": "transactions"
         }
       ]

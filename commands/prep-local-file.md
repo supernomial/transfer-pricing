@@ -105,7 +105,13 @@ When the working directory has **NO existing groups**, offer two paths:
 2. From the answers, create:
    - Group folder + `.records/` structure
    - `data.json` with group, entity, and transactions (placeholder amounts)
-   - Entity blueprint with universal `@references/` content for all standard sections + chapter-level intro keys
+   - Entity blueprint with ONLY universal `@references/` content for all sections + chapter-level intro keys
+
+   **CRITICAL: Do NOT create entity content files, firm library files, or group content files during quick-start.**
+   Do NOT write any `.md` files to `.records/content/`, `.library/`, or `@group/` paths.
+   Do NOT generate or draft section text — every content value must be a `@references/...` array.
+   The user adds firm, group, and entity content later by explicitly requesting it.
+   The only files created are `data.json` and the entity blueprint JSON.
 
 3. Generate and present the **Workspace Editor** immediately (`--format combined`).
 
@@ -384,6 +390,8 @@ For each transaction, the entity's functional profile needs content for the repo
 ### Step 4: Build/Update the Blueprint
 
 Create or update the blueprint for this entity and deliverable. The blueprint defines the **sections and their order** — this is the source of truth for the report structure.
+
+**Quick-start blueprints:** When coming from the quick-start path (Step 2b-quick), the blueprint must contain ONLY `@references/...` content arrays. Do NOT pre-populate sections with `@entity/` references or draft content. Empty sections use `[]`. The user decides when to add content beyond the universal layer.
 
 **If a firm blueprint was selected in Step 2g**, use it as the starting point:
 1. Read the firm blueprint from `.library/blueprints/{slug}.json`

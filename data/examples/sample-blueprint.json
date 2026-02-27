@@ -35,21 +35,21 @@
     "economic-analysis/functional-analysis/fp-full-fledged-distributor/functions": ["@entity/fp-ffd-functions"],
     "economic-analysis/functional-analysis/fp-full-fledged-distributor/assets": [],
     "economic-analysis/functional-analysis/fp-full-fledged-distributor/risks": [],
-    "economic-analysis/transaction-analysis/services/summary": [],
-    "economic-analysis/transaction-analysis/services/commercial-relations": [],
-    "economic-analysis/transaction-analysis/services/recognition": [],
-    "economic-analysis/transaction-analysis/services/tp-methods": [],
-    "economic-analysis/transaction-analysis/services/method-selection": [],
-    "economic-analysis/transaction-analysis/services/application": [],
-    "economic-analysis/transaction-analysis/loan-arrangements/summary": [],
-    "economic-analysis/transaction-analysis/loan-arrangements/commercial-relations": [],
-    "economic-analysis/transaction-analysis/loan-arrangements/recognition": [],
-    "economic-analysis/transaction-analysis/loan-arrangements/tp-methods": [],
-    "economic-analysis/transaction-analysis/loan-arrangements/method-selection": [],
-    "economic-analysis/transaction-analysis/loan-arrangements/application": []
+    "economic-analysis/services/summary": [],
+    "economic-analysis/services/commercial-relations": [],
+    "economic-analysis/services/recognition": [],
+    "economic-analysis/services/tp-methods": [],
+    "economic-analysis/services/method-selection": [],
+    "economic-analysis/services/application": [],
+    "economic-analysis/loan-arrangements/summary": [],
+    "economic-analysis/loan-arrangements/commercial-relations": [],
+    "economic-analysis/loan-arrangements/recognition": [],
+    "economic-analysis/loan-arrangements/tp-methods": [],
+    "economic-analysis/loan-arrangements/method-selection": [],
+    "economic-analysis/loan-arrangements/application": []
   },
   "title_overrides": {
-    "economic-analysis/transaction-analysis/services": "Shared Services"
+    "economic-analysis/services": "Shared Services"
   },
   "section_notes": {},
   "footnotes": {
