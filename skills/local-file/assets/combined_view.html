@@ -1263,7 +1263,7 @@
     .narrow-hint { display: block; }
   }
 </style>
-<script id="view-data" type="application/json">/* VIEW_DATA_PLACEHOLDER */</script>
+<script id="view-data-path" type="text/plain">/* VIEW_DATA_PATH */</script>
 <!-- BRAND_CSS_INJECT -->
 </head>
 <body data-theme="dark" data-notes-tab="notes">
@@ -1708,11 +1708,7 @@ function renderBlueprintModal(vd) {
 // ============================================================
 // Boot: parse JSON and render
 // ============================================================
-document.addEventListener('DOMContentLoaded', function() {
-  var dataEl = document.getElementById('view-data');
-  if (!dataEl || !dataEl.textContent || dataEl.textContent.indexOf('VIEW_DATA_PLACEHOLDER') !== -1) return;
-  var viewData = JSON.parse(dataEl.textContent);
-
+function boot(viewData) {
   renderDocument(viewData);
   renderCards(viewData);
   renderJurisdiction(viewData);
@@ -1722,6 +1718,16 @@ document.addEventListener('DOMContentLoaded', function() {
   buildNav();
   snapshotInitialState();
   initExpandCollapse();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var pathEl = document.getElementById('view-data-path');
+  if (!pathEl || !pathEl.textContent || pathEl.textContent.indexOf('VIEW_DATA_PATH') !== -1) return;
+  var jsonPath = pathEl.textContent.trim();
+  fetch(jsonPath)
+    .then(function(r) { return r.json(); })
+    .then(boot)
+    .catch(function(err) { console.error('Failed to load view data:', err); });
 });
 
 // ============================================================

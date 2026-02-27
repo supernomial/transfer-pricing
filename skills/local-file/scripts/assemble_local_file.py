@@ -3023,8 +3023,9 @@ def main():
             vj_fy = view_json.get('document', {}).get('fiscal_year', '')
             expert_base = slugify(f"{vj_entity}_Workspace_Editor_FY{vj_fy}") if vj_fy else slugify(f"{vj_entity}_Workspace_Editor")
 
-            print("Injecting JSON into Workspace Editor template...")
-            populated = template_content.replace('/* VIEW_DATA_PLACEHOLDER */', json_str)
+            print("Linking Workspace Editor to JSON view state...")
+            rel_json_path = os.path.relpath(args.view_json, args.output)
+            populated = template_content.replace('/* VIEW_DATA_PATH */', rel_json_path)
 
             html_path = os.path.join(args.output, f'{expert_base}.html')
             with open(html_path, 'w') as f:
@@ -3058,9 +3059,10 @@ def main():
                 f.write(json_str)
             print(f"  JSON view state: {json_path}")
 
-            # 3. Inject JSON into the static renderer template
-            print("Injecting JSON into Workspace Editor template...")
-            populated = template_content.replace('/* VIEW_DATA_PLACEHOLDER */', json_str)
+            # 3. Inject relative path to JSON into the static renderer template
+            print("Linking Workspace Editor to JSON view state...")
+            rel_json_path = os.path.relpath(json_path, args.output)
+            populated = template_content.replace('/* VIEW_DATA_PATH */', rel_json_path)
 
             # 4. Write the HTML
             expert_base = slugify(f"{entity_name}_Workspace_Editor_FY{fiscal_year}") if fiscal_year else slugify(f"{entity_name}_Workspace_Editor")
