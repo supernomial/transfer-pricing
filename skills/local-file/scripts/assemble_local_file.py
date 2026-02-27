@@ -587,7 +587,7 @@ def resolve_blueprint_sections_with_meta(blueprint, references_dir, library_dir,
                 'impact': primary['impact'],
                 'composite': True,
                 'composite_labels': layer_labels,
-                'parts': part_metas
+                'parts': [{**pm, 'text': pt} for pm, pt in zip(part_metas, parts)]
             }
         elif isinstance(value, str):
             resolved[key] = resolve_reference(value, references_dir, library_dir, group_content_dir, entity_content_dir)
@@ -2481,18 +2481,56 @@ def build_combined_element_html(key, text, meta, note, footnotes, status,
             f'</div>'
         )
     else:
-        escaped_text = escape_html(text) if text else ''
-        # data-original stores the original text for dirty tracking
-        attr_original = escape_html(text).replace('"', '&quot;') if text else ''
-        parts.append(
-            f'<div class="section-body-wrapper">'
-            f'<div class="section-body {layer_cls} collapsed" contenteditable="true" '
-            f'data-section-key="{escape_html(key)}" data-original="{attr_original}">'
-            f'<button class="chat-btn" title="AI edit" onclick="chatEdit(this)"><svg><use href="#icon-chat"/></svg></button>'
-            f'{escaped_text}'
-            f'<button class="expand-btn" onclick="toggleExpand(this)"><span class="expand-icon">&#9662;</span></button>'
-            f'</div>'
-        )
+        # Composite sections with multiple content layers: render each as its own box
+        composite_parts = meta.get('parts', []) if meta.get('composite') else []
+        if len(composite_parts) > 1:
+            parts.append('<div class="section-body-wrapper">')
+            for p_idx, part in enumerate(composite_parts):
+                p_layer = part.get('layer', 4)
+                p_cls = f'xray-layer{p_layer}'
+                p_label = part.get('label', '')
+                p_color = part.get('color', '#64748b')
+                p_text = part.get('text', '')
+                p_escaped = escape_html(p_text) if p_text else ''
+                # Layer header
+                parts.append(
+                    f'<div class="layer-block-header">'
+                    f'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:{p_color};"></span>'
+                    f'{escape_html(p_label)}'
+                    f'</div>'
+                )
+                # Layers 1-3: read-only, no edit controls, no data-section-key
+                if p_layer <= 3:
+                    parts.append(
+                        f'<div class="section-body {p_cls} collapsed" contenteditable="false">'
+                        f'{p_escaped}'
+                        f'<button class="expand-btn" onclick="toggleExpand(this)"><span class="expand-icon">&#9662;</span></button>'
+                        f'</div>'
+                    )
+                else:
+                    # Layers 4-5: editable with data-section-key
+                    p_attr_original = escape_html(p_text).replace('"', '&quot;') if p_text else ''
+                    parts.append(
+                        f'<div class="section-body {p_cls} collapsed" contenteditable="true" '
+                        f'data-section-key="{escape_html(key)}" data-original="{p_attr_original}">'
+                        f'<button class="chat-btn" title="AI edit" onclick="chatEdit(this)"><svg><use href="#icon-chat"/></svg></button>'
+                        f'{p_escaped}'
+                        f'<button class="expand-btn" onclick="toggleExpand(this)"><span class="expand-icon">&#9662;</span></button>'
+                        f'</div>'
+                    )
+        else:
+            # Single-element or non-composite: existing behavior
+            escaped_text = escape_html(text) if text else ''
+            attr_original = escape_html(text).replace('"', '&quot;') if text else ''
+            parts.append(
+                f'<div class="section-body-wrapper">'
+                f'<div class="section-body {layer_cls} collapsed" contenteditable="true" '
+                f'data-section-key="{escape_html(key)}" data-original="{attr_original}">'
+                f'<button class="chat-btn" title="AI edit" onclick="chatEdit(this)"><svg><use href="#icon-chat"/></svg></button>'
+                f'{escaped_text}'
+                f'<button class="expand-btn" onclick="toggleExpand(this)"><span class="expand-icon">&#9662;</span></button>'
+                f'</div>'
+            )
 
         # Element note
         note_items = ''

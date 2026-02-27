@@ -1,1 +1,1 @@
-This chapter describes the multinational group and the tested party's position within it. It covers the group's organisational and management structure, the entity's principal business activities, and any business restructurings or intangible property transfers that occurred during the period. In accordance with the OECD Transfer Pricing Guidelines, an accurate delineation of the controlled transaction begins with a thorough understanding of the business context in which it takes place.
+[Business Description]

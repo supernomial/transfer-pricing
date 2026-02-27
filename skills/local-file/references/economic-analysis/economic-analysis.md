@@ -1,1 +1,1 @@
-This chapter presents the economic analysis of the controlled transactions identified in the preceding sections. It begins with a functional analysis of the tested party — the functions performed, assets employed, and risks assumed — followed by a transaction-by-transaction assessment of the transfer pricing methods selected and applied. The analysis is conducted in accordance with the arm's length principle as articulated in the OECD Transfer Pricing Guidelines, Chapter I.
+[Economic Analysis]

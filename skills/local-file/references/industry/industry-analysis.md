@@ -1,1 +1,1 @@
-This chapter examines the industry and market environment in which the tested party operates. Understanding the economic conditions of the relevant market — including competitive dynamics, key value drivers, and regulatory factors — is essential for selecting and applying an appropriate transfer pricing method and for evaluating the arm's length nature of the controlled transactions under review.
+[Industry Analysis]
