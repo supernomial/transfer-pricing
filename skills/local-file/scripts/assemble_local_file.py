@@ -2437,338 +2437,382 @@ def build_blueprint_modal_html(blueprints_dir, current_blueprint):
     return '\n'.join(cards)
 
 
-def build_combined_element_html(key, text, meta, note, footnotes, status,
-                                chapter_num, sub_num, data, entity_id,
-                                transactions, blueprint, show_subheading=True):
-    """Generate HTML for one content element in the Workspace Editor view."""
-    parts = []
-    slug = slugify(key)
-    reviewed = 'true' if status.get('reviewed') else 'false'
-    signed_off = 'true' if status.get('signed_off') else 'false'
-    layer = meta.get('layer', 4)
-    layer_cls = f'xray-layer{layer}'
-    label = humanize_section_key(key)
-    is_auto = is_auto_section(key)
+# ---------------------------------------------------------------------------
+# JSON view-state builders (Workspace Editor — structured output)
+# ---------------------------------------------------------------------------
 
-    # Subheading (suppressed when parent section/subsection heading already provides structure)
-    if show_subheading:
-        parts.append(
-            f'<div class="section-subheading" id="{slug}" '
-            f'data-section-key="{escape_html(key)}" '
-            f'data-reviewed="{reviewed}" data-signed-off="{signed_off}">'
-            f'{chapter_num}.{sub_num} {escape_html(label)}'
-            f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span>'
-            f'</div>'
-        )
+def build_auto_table_data(key, data, entity_id, transactions, blueprint):
+    """Generate structured table data for auto-type sections.
 
-    # Insert divider
-    parts.append(
-        '<div class="insert-divider">'
-        '<div class="insert-divider-hit" onclick="insertElement(this.parentNode.querySelector(\'.insert-divider-btn\'))"></div>'
-        '<button class="insert-divider-btn" onclick="insertElement(this)" title="Add element here"><svg><use href="#icon-chat"/></svg></button>'
-        '<div class="insert-divider-line"></div>'
-        '</div>'
-    )
+    Mirrors build_auto_table_html() but returns a dict instead of HTML string.
+    Returns: {"type": str, "columns": [...], "rows": [[...], ...]} or None.
+    """
 
-    # Content body
-    if is_auto:
-        auto_html = build_auto_table_html(key, data, entity_id, transactions, blueprint)
-        parts.append(
-            f'<div class="section-body-wrapper">'
-            f'<div class="section-body {layer_cls} collapsed" contenteditable="false" '
-            f'data-section-key="{escape_html(key)}">'
-            f'{auto_html}'
-            f'<button class="expand-btn" onclick="toggleExpand(this)"><span class="expand-icon">&#9662;</span></button>'
-            f'</div>'
-            f'</div>'
-        )
-    else:
-        # Composite sections with multiple content layers: render each as its own box
-        composite_parts = meta.get('parts', []) if meta.get('composite') else []
-        if len(composite_parts) > 1:
-            parts.append('<div class="section-body-wrapper">')
-            for p_idx, part in enumerate(composite_parts):
-                p_layer = part.get('layer', 4)
-                p_cls = f'xray-layer{p_layer}'
-                p_label = part.get('label', '')
-                p_color = part.get('color', '#64748b')
-                p_text = part.get('text', '')
-                p_escaped = escape_html(p_text) if p_text else ''
-                # Layers 1-3: read-only, no edit controls, no data-section-key
-                if p_layer <= 3:
-                    parts.append(
-                        f'<div class="section-body {p_cls} collapsed" contenteditable="false">'
-                        f'{p_escaped}'
-                        f'<button class="expand-btn" onclick="toggleExpand(this)"><span class="expand-icon">&#9662;</span></button>'
-                        f'</div>'
-                    )
-                else:
-                    # Layers 4-5: editable with data-section-key
-                    p_attr_original = escape_html(p_text).replace('"', '&quot;') if p_text else ''
-                    parts.append(
-                        f'<div class="section-body {p_cls} collapsed" contenteditable="true" '
-                        f'data-section-key="{escape_html(key)}" data-original="{p_attr_original}">'
-                        f'<button class="chat-btn" title="AI edit" onclick="chatEdit(this)"><svg><use href="#icon-chat"/></svg></button>'
-                        f'{p_escaped}'
-                        f'<button class="expand-btn" onclick="toggleExpand(this)"><span class="expand-icon">&#9662;</span></button>'
-                        f'</div>'
-                    )
-        else:
-            # Single-element or non-composite: existing behavior
-            escaped_text = escape_html(text) if text else ''
-            attr_original = escape_html(text).replace('"', '&quot;') if text else ''
-            parts.append(
-                f'<div class="section-body-wrapper">'
-                f'<div class="section-body {layer_cls} collapsed" contenteditable="true" '
-                f'data-section-key="{escape_html(key)}" data-original="{attr_original}">'
-                f'<button class="chat-btn" title="AI edit" onclick="chatEdit(this)"><svg><use href="#icon-chat"/></svg></button>'
-                f'{escaped_text}'
-                f'<button class="expand-btn" onclick="toggleExpand(this)"><span class="expand-icon">&#9662;</span></button>'
-                f'</div>'
-            )
+    # --- Preamble: transactions overview ---
+    if key == 'preamble_transactions_overview':
+        covered_ids = []
+        for lf in data.get('local_files', []):
+            if lf.get('entity') == entity_id:
+                covered_ids = lf.get('covered_transactions', [])
+                break
+        covered_txs = [tx for tx in data.get('transactions', []) if tx['id'] in covered_ids]
+        if not covered_txs:
+            covered_txs = transactions
 
-        # Element note
-        note_items = ''
-        if isinstance(note, list):
-            note_items = ''.join(f'<li>{escape_html(n)}</li>' for n in note)
-        elif isinstance(note, str) and note:
-            note_items = f'<li>{escape_html(note)}</li>'
-        parts.append(
-            f'<div class="element-note">'
-            f'<div class="element-note-header">'
-            f'<div class="element-note-label">{escape_html(label)} notes</div>'
-            f'<button class="note-chat-btn" title="AI edit notes" onclick="chatEditNote(this)"><svg><use href="#icon-chat"/></svg></button>'
-            f'</div>'
-            f'<ul class="note-list" contenteditable="true">{note_items}</ul>'
-            f'</div>'
-        )
+        rows = []
+        for tx in covered_txs:
+            desc = tx.get('name', '')
+            from_name = tx.get('from_entity', '')
+            to_name = tx.get('to_entity', '')
+            for e in data.get('entities', []):
+                if e['id'] == tx.get('from_entity'):
+                    from_name = e.get('name', from_name)
+                if e['id'] == tx.get('to_entity'):
+                    to_name = e.get('name', to_name)
+            currency = tx.get('currency', '')
+            amount = format_amount(tx.get('amount', 0))
+            rows.append([desc, from_name, to_name, currency, amount])
 
-        # Footnotes
-        if footnotes:
-            fn_entries = ''
-            for i, ft in enumerate(footnotes, 1):
-                fn_entries += (
-                    f'<div class="footnote-entry">'
-                    f'<span class="footnote-num">{i}</span>'
-                    f'<span class="footnote-text">{escape_html(ft)}</span>'
-                    f'</div>'
-                )
-            parts.append(f'<div class="element-footnote">{fn_entries}</div>')
+        return {
+            'type': 'transactions_overview',
+            'columns': ['Description', 'From', 'To', 'Currency', 'Amount'],
+            'rows': rows,
+        }
 
-        parts.append('</div>')  # close section-body-wrapper
+    # --- Transaction-level auto tables ---
+    tx_match = re.match(r'^tx_(\d+)_(.+)$', key)
+    if tx_match:
+        tx_num = tx_match.group(1)
+        sub_key = tx_match.group(2)
+        tx_id_hyphen = f'tx-{tx_num}'
+        tx = None
+        for t in data.get('transactions', []):
+            if t['id'] == tx_id_hyphen:
+                tx = t
+                break
+        if not tx:
+            return None
 
-    return '\n'.join(parts)
+        tx_type = tx.get('transaction_type', '')
+        is_financial = tx_type in FINANCIAL_TYPES
+
+        if sub_key == 'contractual_terms':
+            ct = tx.get('contractual_terms', {})
+            if not ct:
+                return None
+            if is_financial:
+                # Transposed: columns = term keys, single row of values
+                columns = [k.replace('_', ' ').title() for k in ct]
+                rows = [[str(v) for v in ct.values()]]
+            else:
+                columns = ['Term', 'Detail']
+                rows = [[k.replace('_', ' ').title(), str(v)] for k, v in ct.items()]
+            return {
+                'type': 'contractual_terms',
+                'columns': columns,
+                'rows': rows,
+            }
+
+        if sub_key == 'characteristics':
+            if is_financial:
+                return None
+            chars = tx.get('characteristics', {})
+            if not chars:
+                return None
+            return {
+                'type': 'characteristics',
+                'columns': ['Characteristic', 'Description'],
+                'rows': [[k.replace('_', ' ').title(), str(v)] for k, v in chars.items()],
+            }
+
+        if sub_key == 'economic_circumstances':
+            ec = tx.get('economic_circumstances', {})
+            if not ec:
+                return None
+            return {
+                'type': 'economic_circumstances',
+                'columns': ['Factor', 'Analysis'],
+                'rows': [[k.replace('_', ' ').title(), str(v)] for k, v in ec.items()],
+            }
+
+    # --- Benchmark auto tables ---
+    bm_match = re.match(r'^bm_(.+?)_(allocation|search_strategy|search_results|adjustments)$', key)
+    if bm_match:
+        bm_slug = bm_match.group(1)
+        table_id = bm_match.group(2)
+        bm_id_hyphen = bm_slug.replace('_', '-')
+        bm = None
+        for b in data.get('benchmarks', []):
+            if b['id'] == bm_id_hyphen:
+                bm = b
+                break
+        if not bm:
+            return None
+        for table_obj in bm.get('tables', []):
+            if table_obj.get('id') == table_id:
+                columns = table_obj.get('columns', [])
+                raw_rows = table_obj.get('rows', {})
+                rows = []
+                for tx_id, vals in raw_rows.items():
+                    rows.append([str(v) for v in vals])
+                return {
+                    'type': table_id,
+                    'columns': columns,
+                    'rows': rows,
+                }
+        return None
+
+    # --- Transactions not covered ---
+    if key == 'transactions_not_covered':
+        covered_ids = set()
+        for lf in data.get('local_files', []):
+            if lf.get('entity') == entity_id:
+                covered_ids = set(lf.get('covered_transactions', []))
+                break
+        if not covered_ids:
+            covered_ids = {tx['id'] for tx in transactions}
+
+        all_entity_txs = get_entity_transactions(data, entity_id)
+        not_covered = [tx for tx in all_entity_txs if tx['id'] not in covered_ids]
+
+        rows = []
+        for tx in not_covered:
+            name = tx.get('name', '')
+            cp_id = tx.get('to_entity') if tx.get('from_entity') == entity_id else tx.get('from_entity')
+            cp_name = cp_id
+            for e in data.get('entities', []):
+                if e['id'] == cp_id:
+                    cp_name = e.get('name', cp_id)
+                    break
+            tx_type = humanize_transaction_type(tx.get('transaction_type', ''))
+            amount = format_amount(tx.get('amount', 0))
+            rows.append([name, cp_name, tx_type, amount])
+
+        return {
+            'type': 'transactions_not_covered',
+            'columns': ['Transaction', 'Counterparty', 'Type', 'Amount'],
+            'rows': rows,
+        }
+
+    return None
 
 
-def build_combined_sections_html(blueprint, resolved_sections, section_meta,
-                                 data, entity_id, transactions):
-    """Build all document sections HTML from blueprint chapters (3-level)."""
-    parts = []
-    local_file = None
-    for lf in data.get('local_files', []):
-        if lf.get('entity') == entity_id:
-            local_file = lf
-            break
+def build_general_notes_data(data, entity, transactions):
+    """Build structured note groups for the general notes panel.
 
-    section_notes = blueprint.get('section_notes', {})
-    section_status = local_file.get('section_status', {}) if local_file else {}
-    footnotes_all = blueprint.get('footnotes', {})
+    Mirrors build_general_notes_html() but returns a list of dicts.
+    Returns: [{"scope": str, "title": str, "items": [str, ...]}, ...]
+    """
+    groups = []
 
-    for chapter_num, chapter in enumerate(blueprint.get('chapters', []), 1):
-        chapter_id = chapter.get('id', slugify(chapter.get('title', f'chapter-{chapter_num}')))
-        chapter_title = chapter.get('title', f'Chapter {chapter_num}')
-        sections = chapter.get('sections', [])
+    # Group notes
+    group = data.get('group', {})
+    if isinstance(group, dict) and group.get('notes'):
+        groups.append({
+            'scope': 'group',
+            'title': group.get('name', 'Group'),
+            'items': group['notes'][:2],
+        })
 
-        chapter_status = section_status.get(chapter_id, {})
-        ch_reviewed = 'true' if chapter_status.get('reviewed') else 'false'
-        ch_signed_off = 'true' if chapter_status.get('signed_off') else 'false'
+    # Entity notes
+    if entity.get('notes'):
+        groups.append({
+            'scope': 'entity',
+            'title': entity.get('name', 'Entity'),
+            'items': entity['notes'][:2],
+        })
 
-        parts.append(f'<div class="section" id="{escape_html(chapter_id)}">')
-        parts.append(
-            f'  <div class="section-heading" data-section-key="{escape_html(chapter_id)}"'
-            f' data-reviewed="{ch_reviewed}" data-signed-off="{ch_signed_off}">'
-            f'{chapter_num} {escape_html(chapter_title)}'
-            f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span></div>'
-        )
+    # Transaction notes
+    for tx in transactions:
+        if tx.get('notes'):
+            groups.append({
+                'scope': 'transaction',
+                'title': tx.get('name', 'Transaction'),
+                'items': tx['notes'][:2],
+            })
 
-        # Render chapter-level content (directly under the chapter heading, before sections)
-        chapter_keys = chapter.get('keys', [])
-        for key in chapter_keys:
-            meta = section_meta.get(key, classify_source('', key))
-            text = resolved_sections.get(key, '')
-            note = section_notes.get(key, '')
-            fn = footnotes_all.get(key, [])
-            status = section_status.get(key, {})
-            parts.append(build_combined_element_html(
-                key, text, meta, note, fn, status,
-                chapter_num, 0, data, entity_id, transactions, blueprint,
-                show_subheading=False
-            ))
+    return groups
 
-        for sec_num, section in enumerate(sections, 1):
-            # Handle legacy format (string key) for backward compat
-            if isinstance(section, str):
-                key = section
-                meta = section_meta.get(key, classify_source('', key))
-                text = resolved_sections.get(key, '')
-                note = section_notes.get(key, '')
-                fn = footnotes_all.get(key, [])
-                status = section_status.get(key, {})
-                parts.append(build_combined_element_html(
-                    key, text, meta, note, fn, status,
-                    chapter_num, sec_num, data, entity_id, transactions, blueprint
-                ))
+
+def build_blueprints_data(blueprints_dir, current_blueprint):
+    """Build structured blueprint list for the blueprint modal.
+
+    Mirrors build_blueprint_modal_html() but returns a list of dicts.
+    Returns: [{"name": str, "entity": str, "fiscal_year": str, "type": str,
+               "section_count": int, "is_active": bool, "badge": str,
+               "preview_chapters": [str, ...]}, ...]
+    """
+    results = []
+    current_name = current_blueprint.get('name', '')
+    current_entity = current_blueprint.get('entity', '')
+
+    if blueprints_dir and os.path.isdir(blueprints_dir):
+        for fname in sorted(os.listdir(blueprints_dir)):
+            if not fname.endswith('.json'):
+                continue
+            fpath = os.path.join(blueprints_dir, fname)
+            try:
+                with open(fpath, 'r') as f:
+                    bp = json.load(f)
+            except (json.JSONDecodeError, IOError):
                 continue
 
-            # New format: section object with id, title, keys[], subsections[]
-            sec_id = section.get('id', '')
-            sec_title = section.get('title', '')
-            sec_keys = section.get('keys', [])
-            subsections = section.get('subsections', [])
+            bp_name = bp.get('name', 'OECD Blueprint')
+            bp_entity = bp.get('entity', '')
+            bp_fy = str(bp.get('fiscal_year', ''))
+            bp_type = bp.get('type', 'local-file')
+            section_count = len(bp.get('sections', {}))
+            is_active = (bp_name == current_name and bp_entity == current_entity)
+            badge = 'builtin' if bp.get('blueprint_type') == 'builtin' else 'custom'
 
-            # Section heading (e.g., "2.1 Group Overview")
-            section_slug = f'{chapter_id}-{sec_id}' if sec_id else f'{chapter_id}-sec-{sec_num}'
-            parts.append(
-                f'<div class="section-sec-heading" id="{escape_html(section_slug)}">'
-                f'{chapter_num}.{sec_num} {escape_html(sec_title)}'
-                f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span>'
-                f'</div>'
-            )
+            preview_chapters = [ch.get('title', '') for ch in bp.get('chapters', [])]
 
-            # Render section-level content elements
-            for key in sec_keys:
-                meta = section_meta.get(key, classify_source('', key))
-                text = resolved_sections.get(key, '')
-                note = section_notes.get(key, '')
-                fn = footnotes_all.get(key, [])
-                status = section_status.get(key, {})
-                parts.append(build_combined_element_html(
-                    key, text, meta, note, fn, status,
-                    chapter_num, sec_num, data, entity_id, transactions, blueprint,
-                    show_subheading=False
-                ))
+            results.append({
+                'name': bp_name,
+                'entity': bp_entity,
+                'fiscal_year': bp_fy,
+                'type': bp_type,
+                'section_count': section_count,
+                'is_active': is_active,
+                'badge': badge,
+                'preview_chapters': preview_chapters,
+            })
 
-            # Render subsections
-            for subsec_num, subsec in enumerate(subsections, 1):
-                subsec_id = subsec.get('id', '')
-                subsec_title = subsec.get('title', '')
-                subsec_keys = subsec.get('keys', [])
-                subsec_slug = f'{chapter_id}-{sec_id}-{subsec_id}' if subsec_id else f'{chapter_id}-{sec_id}-sub-{subsec_num}'
-
-                # Subsection heading (e.g., "2.1.1 Organizational Structure")
-                parts.append(
-                    f'<div class="section-subsec-heading" id="{escape_html(subsec_slug)}">'
-                    f'{chapter_num}.{sec_num}.{subsec_num} {escape_html(subsec_title)}'
-                    f'<span class="edit-pen"><svg><use href="#icon-pencil"/></svg></span>'
-                    f'</div>'
-                )
-
-                for key in subsec_keys:
-                    meta = section_meta.get(key, classify_source('', key))
-                    text = resolved_sections.get(key, '')
-                    note = section_notes.get(key, '')
-                    fn = footnotes_all.get(key, [])
-                    status = section_status.get(key, {})
-                    parts.append(build_combined_element_html(
-                        key, text, meta, note, fn, status,
-                        chapter_num, sec_num, data, entity_id, transactions, blueprint,
-                        show_subheading=False
-                    ))
-
-        parts.append('</div>')  # close section div
-
-    return '\n'.join(parts)
+    return results
 
 
-def populate_combined_template(template_content, data, blueprint, entity,
-                               transactions, resolved_sections, section_meta,
-                               blueprints_dir, references_dir=None):
-    """Replace all <<PLACEHOLDER>> markers in the Workspace Editor template."""
-    result = template_content
+def build_view_json(data, blueprint, entity, transactions, resolved_sections,
+                    section_meta, blueprints_dir, references_dir):
+    """Build the complete JSON view state for the Workspace Editor."""
+    import datetime
+
     entity_id = entity.get('id', '')
     entity_name = entity.get('name', '')
     fiscal_year = str(blueprint.get('fiscal_year', entity.get('fiscal_year', '')))
     country = entity.get('jurisdiction', entity.get('country', ''))
     blueprint_name = blueprint.get('name', 'OECD Blueprint')
 
-    # Find local_file object for this entity
+    # Find local_file object
     local_file = None
     for lf in data.get('local_files', []):
         if lf.get('entity') == entity_id:
             local_file = lf
             break
 
-    # Group name
     group = data.get('group', {})
     group_name = group.get('name', '') if isinstance(group, dict) else ''
 
     # Document meta
-    doc_title = 'Local File'
-    doc_subtitle = entity_name
+    doc_title = local_file.get('title', 'Local File') if local_file else 'Local File'
+    doc_subtitle = local_file.get('subtitle', entity_name) if local_file else entity_name
     doc_meta_parts = ['Transfer Pricing Documentation']
     if fiscal_year:
-        doc_meta_parts.append(f'Fiscal Year {fiscal_year}')
-    doc_meta = ' &middot; '.join(doc_meta_parts)
-    if local_file:
-        doc_title = local_file.get('title', doc_title)
-        doc_subtitle = local_file.get('subtitle', doc_subtitle)
-        if local_file.get('meta'):
-            doc_meta = escape_html(local_file['meta'])
-
-    # Simple string replacements
-    result = result.replace('<<GROUP_NAME>>', escape_html(group_name))
-    result = result.replace('<<ENTITY_NAME>>', escape_html(entity_name))
-    result = result.replace('<<ENTITY_ID>>', escape_html(entity_id))
-    result = result.replace('<<FISCAL_YEAR>>', escape_html(fiscal_year))
-    result = result.replace('<<COUNTRY>>', escape_html(country))
-    result = result.replace('<<BLUEPRINT_NAME>>', escape_html(blueprint_name))
-    result = result.replace('<<DOCUMENT_TITLE>>', escape_html(doc_title))
-    result = result.replace('<<DOCUMENT_SUBTITLE>>', escape_html(doc_subtitle))
-    result = result.replace('<<DOCUMENT_META>>', doc_meta)
+        doc_meta_parts.append(f'FY {fiscal_year}')
+    doc_meta = local_file.get('meta', ' · '.join(doc_meta_parts)) if local_file else ' · '.join(doc_meta_parts)
 
     # Stage
     stage = local_file.get('status', 'draft') if local_file else 'draft'
-    stage_map = {'draft': 0, 'review': 1, 'final': 2}
-    stage_idx = stage_map.get(stage, 0)
-    result = result.replace('<<STAGE_DRAFT_CLASS>>', 'active' if stage_idx == 0 else '')
-    result = result.replace('<<STAGE_REVIEW_CLASS>>', 'active' if stage_idx == 1 else '')
-    result = result.replace('<<STAGE_FINAL_CLASS>>', 'active' if stage_idx == 2 else '')
-    result = result.replace('<<STAGE_FILL_1>>', '100%' if stage_idx >= 1 else '0%')
-    result = result.replace('<<STAGE_FILL_2>>', '100%' if stage_idx >= 2 else '0%')
 
     # Progress
     metrics = build_progress_metrics(blueprint, local_file)
-    result = result.replace('<<TOTAL_SECTIONS>>', str(metrics['total']))
-    result = result.replace('<<REVIEWED_COUNT>>', str(metrics['reviewed']))
-    result = result.replace('<<SIGNOFF_COUNT>>', str(metrics['signoff']))
-    result = result.replace('<<REVIEW_PCT>>', f'{metrics["review_pct"]}%')
-    result = result.replace('<<SIGNOFF_PCT>>', f'{metrics["signoff_pct"]}%')
+
+    # Section status and notes/footnotes
+    section_status = local_file.get('section_status', {}) if local_file else {}
+    section_notes = blueprint.get('section_notes', {})
+    footnotes_all = blueprint.get('footnotes', {})
+
+    # Build elements dict
+    elements = {}
+    for key in resolved_sections:
+        text = resolved_sections.get(key, '')
+        meta = section_meta.get(key, classify_source('', key))
+        note_val = section_notes.get(key, '')
+        fn = footnotes_all.get(key, [])
+        status = section_status.get(key, {})
+        auto = is_auto_section(key)
+        composite = meta.get('composite', False)
+
+        element = {
+            'text': text if not auto else '',
+            'meta': {
+                'layer': meta.get('layer', 4),
+                'label': meta.get('label', 'Entity'),
+                'source_path': meta.get('source_path'),
+                'scope': meta.get('scope', 'entity'),
+                'color': meta.get('color', '#3b82f6'),
+                'impact': meta.get('impact', ''),
+            },
+            'notes': note_val if isinstance(note_val, list) else ([note_val] if note_val else []),
+            'footnotes': fn if isinstance(fn, list) else [],
+            'status': {
+                'reviewed': bool(status.get('reviewed')),
+                'signed_off': bool(status.get('signed_off')),
+            },
+            'is_auto': auto,
+            'editable': not auto and meta.get('layer', 4) >= 4,
+            'composite': composite,
+        }
+
+        # Auto table data
+        if auto:
+            auto_data = build_auto_table_data(key, data, entity_id, transactions, blueprint)
+            if auto_data:
+                element['auto_table'] = auto_data
+
+        # Composite parts
+        if composite and meta.get('parts'):
+            element['parts'] = []
+            for part in meta['parts']:
+                element['parts'].append({
+                    'text': part.get('text', ''),
+                    'layer': part.get('layer', 4),
+                    'label': part.get('label', 'Entity'),
+                    'color': part.get('color', '#3b82f6'),
+                    'editable': part.get('layer', 4) >= 4,
+                })
+
+        elements[key] = element
 
     # Jurisdiction SVG
-    if not references_dir:
-        references_dir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            'references'
-        )
     svg_html = build_jurisdiction_svg(country, references_dir)
-    result = result.replace('<<JURISDICTION_SVG>>', svg_html)
 
-    # Document sections
-    sections_html = build_combined_sections_html(
-        blueprint, resolved_sections, section_meta,
-        data, entity.get('id', ''), transactions
-    )
-    result = result.replace('<<DOCUMENT_SECTIONS>>', sections_html)
+    # Chapters (from blueprint, already in legacy format)
+    chapters = blueprint.get('chapters', [])
 
     # General notes
-    notes_html = build_general_notes_html(data, entity, transactions)
-    result = result.replace('<<GENERAL_NOTES>>', notes_html)
+    general_notes = build_general_notes_data(data, entity, transactions)
 
-    # Blueprint modal
-    bp_html = build_blueprint_modal_html(blueprints_dir, blueprint)
-    result = result.replace('<<BLUEPRINT_CARDS>>', bp_html)
+    # Blueprints
+    blueprints = build_blueprints_data(blueprints_dir, blueprint)
 
-    return result
+    return {
+        'schema_version': '1.0.0',
+        'generated_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'document': {
+            'title': doc_title,
+            'subtitle': doc_subtitle,
+            'meta': doc_meta,
+            'entity_id': entity_id,
+            'entity_name': entity_name,
+            'group_name': group_name,
+            'fiscal_year': fiscal_year,
+            'country': country,
+            'blueprint_name': blueprint_name,
+        },
+        'progress': {
+            'stage': stage,
+            'total_sections': metrics['total'],
+            'reviewed_count': metrics['reviewed'],
+            'signoff_count': metrics['signoff'],
+            'review_pct': metrics['review_pct'],
+            'signoff_pct': metrics['signoff_pct'],
+        },
+        'chapters': chapters,
+        'elements': elements,
+        'general_notes': general_notes,
+        'blueprints': blueprints,
+        'jurisdiction_svg': svg_html,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -2787,8 +2831,8 @@ def main():
                         help='Path to group content directory for @group/ references (e.g., [Group]/.records/content/)')
     parser.add_argument('--brand', default=None,
                         help='Path to brand.css design system (default: assets/brand.css relative to plugin root)')
-    parser.add_argument('--format', choices=['pdf', 'html', 'md', 'report', 'combined'], default='pdf',
-                        help='Output format: pdf (LaTeX → PDF), html (intake preview), md (markdown preview), report (annotated report view), combined (Workspace Editor)')
+    parser.add_argument('--format', choices=['pdf', 'html', 'md', 'report', 'combined', 'combined-json'], default='pdf',
+                        help='Output format: pdf (LaTeX → PDF), html (intake preview), md (markdown preview), report (annotated report view), combined (Workspace Editor), combined-json (JSON view state)')
     parser.add_argument('--blueprints-dir', default=None,
                         help='Path to blueprints directory (for Workspace Editor blueprint modal)')
     parser.add_argument('--entity-content', default=None,
@@ -2796,6 +2840,9 @@ def main():
     parser.add_argument('--section', default=None,
                         help='Render a single section in the editor (requires --format html). '
                              'Omit for dashboard overview. Example: --section group_overview')
+    parser.add_argument('--view-json', default=None,
+                        help='Path to existing view JSON file. When provided with --format combined, '
+                             'skips full assembly and re-injects the JSON into the template (fast path).')
     args = parser.parse_args()
 
     # --- Load inputs ---
@@ -2940,27 +2987,87 @@ def main():
                 f.write(populated_html)
             print(f"\nDone! Editor: {html_path}")
 
-    elif args.format == 'combined':
-        # --- Workspace Editor (combined view) ---
-        print("Resolving with layer metadata for Workspace Editor...")
+    elif args.format == 'combined-json':
+        # --- JSON view state for Workspace Editor ---
+        print("Resolving with layer metadata for JSON view state...")
         resolved_sections_meta, section_meta = resolve_blueprint_sections_with_meta(
             blueprint, args.references, args.library, group_content, entity_content
         )
-
         blueprints_dir = getattr(args, 'blueprints_dir', None)
 
-        print("Populating Workspace Editor template...")
-        populated = populate_combined_template(
-            template_content, data, blueprint, entity, transactions,
-            resolved_sections_meta, section_meta, blueprints_dir,
-            references_dir=args.references
+        print("Building JSON view state...")
+        view_json = build_view_json(
+            data, blueprint, entity, transactions,
+            resolved_sections_meta, section_meta,
+            blueprints_dir, args.references
         )
 
-        expert_base = slugify(f"{entity_name}_Workspace_Editor_FY{fiscal_year}") if fiscal_year else slugify(f"{entity_name}_Workspace_Editor")
-        html_path = os.path.join(args.output, f'{expert_base}.html')
-        with open(html_path, 'w') as f:
-            f.write(populated)
-        print(f"\nDone! Workspace Editor: {html_path}")
+        json_base = slugify(f"{entity_name}_workspace_FY{fiscal_year}") if fiscal_year else slugify(f"{entity_name}_workspace")
+        json_path = os.path.join(args.output, f'{json_base}.json')
+        with open(json_path, 'w') as f:
+            json.dump(view_json, f, indent=2)
+        print(f"\nDone! JSON view state: {json_path}")
+
+    elif args.format == 'combined':
+        # --- Workspace Editor (JSON-driven) ---
+
+        if args.view_json:
+            # --- Fast path: re-inject existing JSON into template ---
+            print(f"Fast path: reading view JSON from {args.view_json}")
+            with open(args.view_json, 'r') as f:
+                json_str = f.read()
+            view_json = json.loads(json_str)
+
+            # Derive output filename from JSON metadata
+            vj_entity = view_json.get('document', {}).get('entity_name', 'entity')
+            vj_fy = view_json.get('document', {}).get('fiscal_year', '')
+            expert_base = slugify(f"{vj_entity}_Workspace_Editor_FY{vj_fy}") if vj_fy else slugify(f"{vj_entity}_Workspace_Editor")
+
+            print("Injecting JSON into Workspace Editor template...")
+            populated = template_content.replace('/* VIEW_DATA_PLACEHOLDER */', json_str)
+
+            html_path = os.path.join(args.output, f'{expert_base}.html')
+            with open(html_path, 'w') as f:
+                f.write(populated)
+            print(f"\nDone! Workspace Editor (fast path): {html_path}")
+
+        else:
+            # --- Full assembly path ---
+            print("Resolving with layer metadata for Workspace Editor...")
+            resolved_sections_meta, section_meta = resolve_blueprint_sections_with_meta(
+                blueprint, args.references, args.library, group_content, entity_content
+            )
+
+            blueprints_dir = getattr(args, 'blueprints_dir', None)
+
+            # 1. Build JSON view state
+            print("Building JSON view state...")
+            view_json = build_view_json(
+                data, blueprint, entity, transactions,
+                resolved_sections_meta, section_meta,
+                blueprints_dir, args.references
+            )
+
+            # 2. Write standalone JSON (for Claude to read/update directly)
+            views_dir = os.path.join(args.output, '.records', 'views')
+            os.makedirs(views_dir, exist_ok=True)
+            json_base = slugify(f"workspace_{entity_id}_FY{fiscal_year}") if fiscal_year else slugify(f"workspace_{entity_id}")
+            json_path = os.path.join(views_dir, f'{json_base}.json')
+            json_str = json.dumps(view_json, indent=2)
+            with open(json_path, 'w') as f:
+                f.write(json_str)
+            print(f"  JSON view state: {json_path}")
+
+            # 3. Inject JSON into the static renderer template
+            print("Injecting JSON into Workspace Editor template...")
+            populated = template_content.replace('/* VIEW_DATA_PLACEHOLDER */', json_str)
+
+            # 4. Write the HTML
+            expert_base = slugify(f"{entity_name}_Workspace_Editor_FY{fiscal_year}") if fiscal_year else slugify(f"{entity_name}_Workspace_Editor")
+            html_path = os.path.join(args.output, f'{expert_base}.html')
+            with open(html_path, 'w') as f:
+                f.write(populated)
+            print(f"\nDone! Workspace Editor: {html_path}")
 
     else:
         # --- PDF (default) ---

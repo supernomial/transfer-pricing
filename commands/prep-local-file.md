@@ -238,7 +238,9 @@ python3 skills/local-file/scripts/assemble_local_file.py \
   --blueprints-dir "[selected-folder]/[Group Name]/.records/blueprints/"
 ```
 
-This is the same assembly script with `--format combined`. It reads the current records and blueprint, populates the Workspace Editor template, and writes a single `.html` file. Zero tokens — pure Python string replacement. Cowork renders HTML with full styling in the side panel.
+This is the same assembly script with `--format combined`. It builds a JSON view state from the current records and blueprint, writes a standalone `.json` to `[Group]/.records/views/`, then injects the JSON into the static Workspace Editor template and writes the `.html` file. Zero tokens — client-side JS renders the JSON. Cowork renders the HTML with full styling in the side panel.
+
+For fast-path updates (status changes, minor content edits), pass `--view-json` with the path to an existing view JSON file. This skips full assembly and just re-injects the JSON into the template.
 
 ### Section Dashboard (Legacy)
 
