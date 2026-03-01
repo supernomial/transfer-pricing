@@ -69,35 +69,35 @@ Gather or confirm context before assisting user.
 
 ### Step 5: Load Style Guide
 
-1. **Load style guide.** Read `skills/prep-local-file/references/style-guide.md` -- apply Part 1 (conversation tone) always. Check `.library/style-guide.md` for report writing style override.
+1. **Load style guide.** Read `skills/blueprint-local-file/references/style-guide.md` -- apply Part 1 (conversation tone) always. Check `.library/style-guide.md` for report writing style override.
 
 
 
 ## Step 6: Prepare the Local File
 
-Read `skills/prep-local-file/SKILL.md` for reference context. Then:
+Read `skills/blueprint-local-file/SKILL.md` for reference context. Then:
 
 1. **Consider context** gathered in Steps 1–5.
 2. **Select playbook.** Check if the entity's local file record in `data.json` has a saved `playbook` preference (path to the `.md` file). If yes and the file exists, reuse it silently. If the saved path doesn't exist, fall back to scanning and inform the user. If no preference saved:
-   - Scan for `.md` files at each level: entity (`[Group]/.records/playbooks/[entity-id]/`) → group (`[Group]/.records/playbooks/`) → firm (`.library/playbooks/`) → universal (`skills/prep-local-file/references/playbooks/`)
+   - Scan for `.md` files at each level: entity (`[Group]/.records/playbooks/[entity-id]/`) → group (`[Group]/.records/playbooks/`) → firm (`.library/playbooks/`) → universal (`skills/blueprint-local-file/references/playbooks/`)
    - If only the standard OECD playbook exists, use it and confirm briefly.
    - If multiple playbooks exist at any level, list them and let the user choose.
    - If the user wants something custom, guide them to create one with a `name` in the frontmatter (e.g., `name: Deloitte NL`) and save at the correct level.
    - Save the selected playbook path on the entity's local file record in `data.json` as `playbook` so it's reused next time.
-3. **Populate view JSON** based on playbook instructions. Read the playbook's frontmatter `name` and set `document.playbook_name` in the view JSON (standard playbook = "Standard"). For each section: extract the relative path from the content source, check for overrides at higher layers (entity → group → firm → universal), read the `.md` file at the highest match, use as element text. Substitute `[Entity Name]`, `[Group Name]`, `[Fiscal Year]`, `[Country]` placeholders. Follow `skills/prep-local-file/references/view-json-schema.md`.
+3. **Populate view JSON** based on playbook instructions. Read the playbook's frontmatter `name` and set `document.playbook_name` in the view JSON (standard playbook = "Standard"). For each section: extract the relative path from the content source, check for overrides at higher layers (entity → group → firm → universal), read the `.md` file at the highest match, use as element text. Substitute `[Entity Name]`, `[Group Name]`, `[Fiscal Year]`, `[Country]` placeholders. Follow `skills/blueprint-local-file/references/view-json-schema.md`.
 4. **Generate Workspace Editor.**
    ```bash
-   python3 skills/prep-local-file/scripts/generate_workspace.py \
+   python3 skills/blueprint-local-file/scripts/generate_workspace.py \
      --view-json "[Group]/.records/views/[entity-id]_workspace_FY[year].json" \
-     --template skills/prep-local-file/assets/combined_view.html \
+     --template skills/blueprint-local-file/assets/combined_view.html \
      --brand assets/brand.css \
      --output "[Group]/4. Deliverables/FY[Year]/Local File/[Country]/[Entity]/[Entity]_Workspace_Editor_FY[Year].html"
    ```
 5. **Generate PDF.**
    ```bash
-   python3 skills/prep-local-file/scripts/generate_pdf.py \
+   python3 skills/blueprint-local-file/scripts/generate_pdf.py \
      --view-json "[Group]/.records/views/[entity-id]_workspace_FY[year].json" \
-     --template skills/prep-local-file/assets/local_file.tex \
+     --template skills/blueprint-local-file/assets/local_file.tex \
      --output "[Group]/4. Deliverables/FY[Year]/Local File/[Country]/[Entity]/[Entity]_Local_File_FY[Year].pdf"
    ```
 6. **Review.** Check that output aligns with user intent and playbook. Correct if needed.

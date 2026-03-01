@@ -246,7 +246,7 @@ def main():
     validate_cmd.add_argument("--working-dir", help="Working directory (for API key config)")
 
     fetch_cmd = sub.add_parser("fetch", help="Fetch content by path")
-    fetch_cmd.add_argument("path", help="Content path (e.g. skills/prep-local-file/SKILL.md)")
+    fetch_cmd.add_argument("path", help="Content path (e.g. skills/blueprint-local-file/SKILL.md)")
     fetch_cmd.add_argument("--plugin-root", help="Plugin root directory for fallback")
     fetch_cmd.add_argument("--working-dir", help="Working directory (for API key config)")
 

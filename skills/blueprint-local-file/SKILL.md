@@ -1,5 +1,5 @@
 ---
-name: prep-local-file
+name: blueprint-local-file
 description: Prepare OECD-compliant transfer pricing local file documentation. Use when the user asks to "prepare a local file", "create transfer pricing documentation", "draft a local file report", or "prepare documentation" for an entity.
 metadata:
   author: Supernomial
@@ -25,7 +25,7 @@ A playbook is an `.md` file defining the recipe for a deliverable — which sect
 
 | Level | Location | When to use |
 |---|---|---|
-| 1. Universal | `skills/prep-local-file/references/playbooks/` | Ships with plugin. Standard OECD structure. |
+| 1. Universal | `skills/blueprint-local-file/references/playbooks/` | Ships with plugin. Standard OECD structure. |
 | 2. Firm | `.library/playbooks/` | Firm-wide customization. Overrides universal. |
 | 3. Group | `[Group]/.records/playbooks/` | Client-specific structure. Overrides firm. |
 | 4. Entity | `[Group]/.records/playbooks/[entity-id]/` | Entity-specific structure. Overrides all. |
@@ -50,7 +50,7 @@ Claude reads from 4 layers when building the view JSON. Each layer overrides the
 
 | Layer | Prefix | Resolves to |
 |---|---|---|
-| 1. Universal | `@references/` | `skills/prep-local-file/references/` |
+| 1. Universal | `@references/` | `skills/blueprint-local-file/references/` |
 | 2. Firm | `@library/` | `.library/` in working dir |
 | 3. Group | `@group/` | `[Group]/.records/content/` |
 | 4. Entity | `@entity/` | `[Group]/.records/content/[entity-id]/` |
@@ -65,7 +65,7 @@ For each section in the playbook, Claude resolves the actual text as follows:
    - `[Group]/.records/content/[entity-id]/preamble/objective.md` → Layer 4
    - `[Group]/.records/content/preamble/objective.md` → Layer 3
    - `.library/preamble/objective.md` → Layer 2
-   - `skills/prep-local-file/references/preamble/objective.md` → Layer 1 (fallback)
+   - `skills/blueprint-local-file/references/preamble/objective.md` → Layer 1 (fallback)
 4. Read the `.md` file at the highest-layer match
 5. Use the file contents as the element's `text` field in the view JSON
 6. Set `meta.layer`, `meta.label`, `meta.color` based on which layer the content came from

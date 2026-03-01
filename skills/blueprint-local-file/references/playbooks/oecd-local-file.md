@@ -36,7 +36,7 @@ When building the view JSON, Claude resolves content for each section as follows
    - `[Group]/.records/content/[entity-id]/preamble/objective.md` → Layer 4 (entity)
    - `[Group]/.records/content/preamble/objective.md` → Layer 3 (group)
    - `.library/preamble/objective.md` → Layer 2 (firm)
-   - `skills/prep-local-file/references/preamble/objective.md` → Layer 1 (universal fallback)
+   - `skills/blueprint-local-file/references/preamble/objective.md` → Layer 1 (universal fallback)
 4. Use the highest-layer match as the element's `text` field
 5. If `(auto)`, build an `auto_table` from structured data instead
 
@@ -48,7 +48,7 @@ Playbooks can exist at four levels. Highest level wins (entity → group → fir
 
 | Level | Location | Overrides |
 |---|---|---|
-| 1. Universal | `skills/prep-local-file/references/playbooks/` (this file) | — |
+| 1. Universal | `skills/blueprint-local-file/references/playbooks/` (this file) | — |
 | 2. Firm | `.library/playbooks/` | Universal |
 | 3. Group | `[Group]/.records/playbooks/` | Firm + Universal |
 | 4. Entity | `[Group]/.records/playbooks/[entity-id]/` | All above |
