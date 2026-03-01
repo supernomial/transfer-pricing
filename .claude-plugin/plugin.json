@@ -1,7 +1,7 @@
 {
   "name": "transfer-pricing",
-  "version": "0.4.1",
-  "description": "Speed up transfer pricing workflows for consulting and in-house teams. Draft deliverables and manage institutional knowledge.",
+  "version": "0.4.0",
+  "description": "Speed up transfer pricing workflows for consulting and in-house teams. Draft master and local files, review compliance requirements, and manage institutional knowledge.",
   "author": {
     "name": "Supernomial"
   }

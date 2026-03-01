@@ -1,1 +1,0 @@
-This chapter examines the industry in which [Entity Name] operates, including market size and trends, value drivers, and the competitive landscape. The industry analysis provides context for the comparability analysis and supports the assessment of the economic circumstances surrounding the controlled transactions, in accordance with OECD TPG Chapter I, Section D.1.2.4.

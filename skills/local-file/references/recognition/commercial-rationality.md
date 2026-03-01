@@ -1,9 +1,0 @@
-In accordance with OECD TPG Chapter I, Section D.2 (paras. 1.122-1.128), the controlled transactions entered into by [Entity Name] have been assessed for commercial rationality. A controlled transaction should be recognized for transfer pricing purposes provided it possesses the commercial rationality that would be expected of arrangements between independent parties in comparable circumstances.
-
-The commercial rationality of the controlled transactions is supported by the following considerations:
-
-- **Business purpose.** The transactions serve identifiable business objectives within the [Group Name] group's operating model. [Entity Name] performs [functions, e.g., distribution activities] that are necessary for the group to access the [Country/region] market. The arrangement reflects a rational allocation of functions, assets, and risks across the group.
-- **Arm's length consistency.** Independent enterprises in comparable circumstances would be expected to enter into similar arrangements. The terms and conditions of the controlled transactions — including pricing, payment terms, and risk allocation — are consistent with arrangements observed between unrelated parties in the [industry name] industry.
-- **Availability of realistic alternatives.** The arrangement represents a commercially rational choice for [Entity Name] relative to realistically available alternatives. An independent party in the position of [Entity Name] would find the terms of the controlled transactions preferable to, or at minimum comparable with, the alternatives available in the market.
-
-Non-recognition of a controlled transaction is warranted only where the arrangement, as accurately delineated, lacks the commercial rationality that would be found in arrangements between independent parties. Based on the analysis above, no such circumstances have been identified with respect to the controlled transactions of [Entity Name] during fiscal year [Fiscal Year].

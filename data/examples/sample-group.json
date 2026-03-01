@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0.0",
+  "group": {
+    "id": "solara-group",
+    "name": "Solara Dynamics SE",
+    "fiscal_year_end": "December 31"
+  },
+  "entities": [
+    {
+      "id": "solara-hq",
+      "name": "Solara Dynamics SE",
+      "jurisdiction": "Sweden"
+    },
+    {
+      "id": "solara-mfg-it",
+      "name": "Solara Manufacturing S.p.A.",
+      "jurisdiction": "Italy"
+    },
+    {
+      "id": "solara-dist-fr",
+      "name": "Solara Distribution S.A.S.",
+      "jurisdiction": "France"
+    },
+    {
+      "id": "solara-ssc-sg",
+      "name": "Solara Shared Services Pte Ltd",
+      "jurisdiction": "Singapore"
+    },
+    {
+      "id": "solara-fin-lu",
+      "name": "Solara Finance S.à r.l.",
+      "jurisdiction": "Luxembourg"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx-001",
+      "name": "Sale of finished goods (Italy to France)",
+      "from_entity": "solara-mfg-it",
+      "to_entity": "solara-dist-fr",
+      "currency": "EUR",
+      "amount": 245000000
+    },
+    {
+      "id": "tx-003",
+      "name": "Shared services (Singapore to France)",
+      "from_entity": "solara-ssc-sg",
+      "to_entity": "solara-dist-fr",
+      "currency": "EUR",
+      "amount": 3200000
+    },
+    {
+      "id": "tx-007",
+      "name": "Term loan (Luxembourg to France)",
+      "from_entity": "solara-fin-lu",
+      "to_entity": "solara-dist-fr",
+      "currency": "EUR",
+      "amount": 25000000
+    }
+  ],
+  "local_files": [
+    {
+      "id": "lf-solara-dist-fr-2024",
+      "entity": "solara-dist-fr",
+      "fiscal_year": "2024",
+      "status": "draft",
+      "playbook": null,
+      "covered_transactions": ["tx-003", "tx-007"]
+    }
+  ]
+}

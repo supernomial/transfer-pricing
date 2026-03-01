@@ -1,3 +1,0 @@
-Based on the analysis performed, the controlled transactions entered into by [Entity Name] during fiscal year [Fiscal Year] are recognized for transfer pricing purposes. Each transaction possesses the commercial rationality that independent parties would expect in comparable circumstances, serves an identifiable business purpose within the [Group Name] group's operating model, and has been structured on terms consistent with the arm's length principle.
-
-Accordingly, the controlled transactions have been delineated and analyzed as presented in this documentation, without adjustment or non-recognition under OECD TPG Chapter I, Section D.2.

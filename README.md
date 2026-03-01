@@ -23,9 +23,7 @@ Speed up transfer pricing workflows for consulting and in-house teams. Draft mas
 | Command | Description |
 |---|---|
 | `/setup` | Connect your Supernomial API key |
-| `/prep-local-file` | Full workflow: intake → data → blueprint → HTML previews → PDF |
-| `/review-local-file` | Review an existing local file against OECD guidelines |
-| `/remember` | Save a preference or piece of context that persists across sessions |
+| `/prep-local-file` | Prepare OECD-compliant transfer pricing local file documentation |
 
 ## License
 

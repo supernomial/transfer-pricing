@@ -1,7 +1,0 @@
-Strategic decisions within the [Group Name] group are made at the parent entity level by the group's executive management team and board of directors. Key decisions regarding product strategy, pricing policy, capital allocation, intellectual property management, and market entry are determined centrally and implemented by local entities in accordance with group policies.
-
-The management of [Entity Name] reports to [Regional/Divisional Head] and operates within the parameters set by the group's central management. The local management team of [Entity Name] consists of [number] individuals, including a local managing director, a finance manager, and operational managers responsible for [relevant functions, e.g., sales, logistics, and customer service].
-
-Decision-making authority at the entity level is limited to operational matters within the scope defined by the group. Material decisions — including pricing of controlled transactions, capital expenditure above defined thresholds, hiring of senior personnel, and entry into significant contracts — require approval from [Group Name] regional or central management.
-
-This management structure is consistent with the functional characterization of [Entity Name] as a [functional profile, e.g., limited-risk distributor], as the entity does not exercise independent strategic control over the key value-driving activities of the business.
