@@ -84,8 +84,14 @@ Read `skills/blueprint-local-file/SKILL.md` for reference context. Then:
    - If multiple playbooks exist at any level, list them and let the user choose.
    - If the user wants something custom, guide them to create one with a `name` in the frontmatter (e.g., `name: Deloitte NL`) and save at the correct level.
    - Save the selected playbook path on the entity's local file record in `data.json` as `playbook` so it's reused next time.
-3. **Populate view JSON** based on playbook instructions. Read the playbook's frontmatter `name` and set `document.playbook_name` in the view JSON (standard playbook = "Standard"). For each section: extract the relative path from the content source, check for overrides at higher layers (entity → group → firm → universal), read the `.md` file at the highest match, use as element text. Substitute `[Entity Name]`, `[Group Name]`, `[Fiscal Year]`, `[Country]` placeholders. Follow `skills/blueprint-local-file/references/view-json-schema.md`.
-4. **Generate Workspace Editor.**
+3. **Populate view JSON** based on playbook instructions. Read the playbook's frontmatter `name` and set `document.playbook_name` in the view JSON (standard playbook = "Standard"). For each section in the playbook:
+   - Extract the relative path from the content source (e.g., `preamble/objective`)
+   - Check for overrides at higher layers (entity → group → firm → universal)
+   - **Read the `.md` file** at the highest-layer match and use its **literal file contents** as the element's `text` field. Do NOT rewrite, summarize, or generate your own text — copy the file contents exactly as-is.
+   - Only substitute these placeholders: `[Entity Name]`, `[Group Name]`, `[Fiscal Year]`, `[Country]`
+   - For `(auto)` sections, build `auto_table` from data.json instead
+   - Follow `skills/blueprint-local-file/references/view-json-schema.md`
+4. **Generate Workspace Editor.** This step is mandatory — always run this script.
    ```bash
    python3 skills/blueprint-local-file/scripts/generate_workspace.py \
      --view-json "[Group]/.records/views/[entity-id]_workspace_FY[year].json" \
@@ -93,7 +99,7 @@ Read `skills/blueprint-local-file/SKILL.md` for reference context. Then:
      --brand assets/brand.css \
      --output "[Group]/4. Deliverables/FY[Year]/Local File/[Country]/[Entity]/[Entity]_Workspace_Editor_FY[Year].html"
    ```
-5. **Generate PDF.**
+5. **Generate PDF.** This step is mandatory — always run this script immediately after the Workspace Editor.
    ```bash
    python3 skills/blueprint-local-file/scripts/generate_pdf.py \
      --view-json "[Group]/.records/views/[entity-id]_workspace_FY[year].json" \

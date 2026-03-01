@@ -67,7 +67,7 @@ For each section in the playbook, Claude resolves the actual text as follows:
    - `.library/preamble/objective.md` → Layer 2
    - `skills/blueprint-local-file/references/preamble/objective.md` → Layer 1 (fallback)
 4. Read the `.md` file at the highest-layer match
-5. Use the file contents as the element's `text` field in the view JSON
+5. Use the **literal file contents** as the element's `text` field in the view JSON. Do NOT rewrite, summarize, or generate your own text — copy the file contents exactly as they are. Only substitute these placeholders: `[Entity Name]`, `[Group Name]`, `[Fiscal Year]`, `[Country]`.
 6. Set `meta.layer`, `meta.label`, `meta.color` based on which layer the content came from
 
 **Note:** Content paths in the playbook may differ from section IDs. Override files must use the same relative path as the content source (e.g., `preamble/objective`), not the section ID hierarchy (e.g., `executive-summary/objective`).
