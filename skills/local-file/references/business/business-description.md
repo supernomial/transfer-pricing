@@ -1,1 +1,1 @@
-[Business Description]
+This chapter describes the [Group Name] group and the business activities of [Entity Name]. It covers the group's organizational and management structure, the entity's role within the group, and any business restructurings or intangible transfers that occurred during fiscal year [Fiscal Year]. This information provides the context necessary for the functional analysis and the delineation of the controlled transactions analyzed in this local file.

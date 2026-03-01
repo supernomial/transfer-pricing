@@ -1,1 +1,10 @@
-[Industry Value Drivers]
+Value creation in the [industry name] industry is driven by several key factors that are relevant to the functional analysis and the identification of the most significant value-contributing activities within the [Group Name] group.
+
+The principal value drivers in this industry include:
+
+- **[Value driver 1, e.g., Research and development].** [Description, e.g., Investment in proprietary technology and product innovation differentiates market leaders and supports premium pricing. R&D expenditure in the industry typically represents [X]% to [Y]% of revenues].
+- **[Value driver 2, e.g., Brand and customer relationships].** [Description, e.g., Established brand recognition and long-standing customer relationships create barriers to entry and sustain market share. Customer acquisition costs are significant, and switching costs for end-users are [high/moderate]].
+- **[Value driver 3, e.g., Supply chain and manufacturing efficiency].** [Description, e.g., Operational efficiency in manufacturing and supply chain management directly impacts margins. Scale advantages and production know-how are critical competitive differentiators].
+- **[Value driver 4, e.g., Regulatory expertise].** [Description, e.g., Compliance with industry-specific regulations requires specialized knowledge and certifications that constitute a barrier to entry].
+
+Within the [Group Name] group, [description of which entities perform the key value-driving activities, e.g., R&D is centralized at [R&D entity], while brand management and strategic marketing are directed by [parent/principal entity]]. [Entity Name], as a [functional profile], performs [routine/limited] activities and does not control the key value drivers identified above. This characterization supports the selection of [Entity Name] as the tested party in the transfer pricing analysis.

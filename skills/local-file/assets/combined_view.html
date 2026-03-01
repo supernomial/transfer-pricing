@@ -1264,6 +1264,7 @@
   }
 </style>
 <script id="view-data-path" type="text/plain">/* VIEW_DATA_PATH */</script>
+<script id="view-data-inline" type="application/json">/* VIEW_DATA_INLINE */</script>
 <!-- BRAND_CSS_INJECT -->
 </head>
 <body data-theme="dark" data-notes-tab="notes">
@@ -1721,6 +1722,16 @@ function boot(viewData) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  // Try inline embedded JSON first (works on file://)
+  var inlineEl = document.getElementById('view-data-inline');
+  if (inlineEl && inlineEl.textContent && inlineEl.textContent.indexOf('VIEW_DATA_INLINE') === -1) {
+    try {
+      var data = JSON.parse(inlineEl.textContent);
+      boot(data);
+      return;
+    } catch(e) { console.error('Failed to parse inline view data:', e); }
+  }
+  // Fall back to fetch (works on http://)
   var pathEl = document.getElementById('view-data-path');
   if (!pathEl || !pathEl.textContent || pathEl.textContent.indexOf('VIEW_DATA_PATH') !== -1) return;
   var jsonPath = pathEl.textContent.trim();
