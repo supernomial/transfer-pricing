@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a Workspace Editor HTML file from a view JSON and template.
+"""Generate a Preview HTML file from a view JSON and template.
 
 Injects brand.css (with base64-embedded fonts) into the HTML template and
 sets the path to the view JSON file so the client-side JS can fetch it.
@@ -70,7 +70,7 @@ def inject_brand_css(template_content, brand_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Generate Workspace Editor HTML')
+    parser = argparse.ArgumentParser(description='Generate Preview HTML')
     parser.add_argument('--view-json', required=True, help='Path to view JSON file')
     parser.add_argument('--template', required=True, help='Path to combined_view.html template')
     parser.add_argument('--brand', required=True, help='Path to brand.css')
@@ -111,7 +111,7 @@ def main():
     with open(args.output, 'w') as f:
         f.write(html)
 
-    print(f"Workspace Editor written to {args.output}")
+    print(f"Preview written to {args.output}")
 
 
 if __name__ == '__main__':

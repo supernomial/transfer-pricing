@@ -87,27 +87,38 @@ Read `skills/blueprint-local-file/SKILL.md` for reference context. Then:
 3. **Populate view JSON** based on playbook instructions. Read the playbook's frontmatter `name` and set `document.playbook_name` in the view JSON (standard playbook = "Standard"). For each section in the playbook:
    - Extract the relative path from the content source (e.g., `preamble/objective`)
    - Check for overrides at higher layers (entity → group → firm → universal)
-   - **Read the `.md` file** at the highest-layer match and use its **literal file contents** as the element's `text` field. Do NOT rewrite, summarize, or generate your own text — copy the file contents exactly as-is.
+   - **CRITICAL: Use `cat` to read each `.md` file** at the highest-layer match. Paste the exact file output as the element's `text` field. Do NOT paraphrase, summarize, or generate your own version — the file contents ARE the content.
    - Only substitute these placeholders: `[Entity Name]`, `[Group Name]`, `[Fiscal Year]`, `[Country]`
    - For `(auto)` sections, build `auto_table` from data.json instead
    - Follow `skills/blueprint-local-file/references/view-json-schema.md`
-4. **Generate Workspace Editor.** This step is mandatory — always run this script.
+   - **Verify content fidelity.** After populating the view JSON, spot-check at least 3 text elements against their source `.md` files. If any element text doesn't match the file contents verbatim (after placeholder substitution), fix it before proceeding.
+4. **Verify the output path before running scripts.** The deliverable folder structure is **mandatory** — every file must land in the correct subfolder:
+   ```
+   [Group]/4. Deliverables/FY[Year]/Local File/[Country]/[Entity Name]/
+   ```
+   **Example:** For entity "Acme Netherlands B.V." in group "Acme Corp", country NL, FY 2024:
+   ```
+   Acme Corp/4. Deliverables/FY2024/Local File/NL/Acme Netherlands B.V./
+   ```
+   Confirm this folder path is correct before generating files. Create the folder if it doesn't exist.
+
+5. **Generate Preview.** This step is mandatory — always run this script.
    ```bash
-   python3 skills/blueprint-local-file/scripts/generate_workspace.py \
+   python3 skills/blueprint-local-file/scripts/generate_preview.py \
      --view-json "[Group]/.records/views/[entity-id]_workspace_FY[year].json" \
      --template skills/blueprint-local-file/assets/combined_view.html \
      --brand assets/brand.css \
-     --output "[Group]/4. Deliverables/FY[Year]/Local File/[Country]/[Entity]/[Entity]_Workspace_Editor_FY[Year].html"
+     --output "[Group]/4. Deliverables/FY[Year]/Local File/[Country]/[Entity]/[Entity]_Preview_FY[Year].html"
    ```
-5. **Generate PDF.** This step is mandatory — always run this script immediately after the Workspace Editor.
+6. **Generate PDF.** This step is mandatory — always run this script immediately after the Preview.
    ```bash
    python3 skills/blueprint-local-file/scripts/generate_pdf.py \
      --view-json "[Group]/.records/views/[entity-id]_workspace_FY[year].json" \
      --template skills/blueprint-local-file/assets/local_file.tex \
      --output "[Group]/4. Deliverables/FY[Year]/Local File/[Country]/[Entity]/[Entity]_Local_File_FY[Year].pdf"
    ```
-6. **Review.** Check that output aligns with user intent and playbook. Correct if needed.
-7. **Present to user.** Show the Workspace Editor and PDF. Do NOT read generated files back.
+7. **Review.** Check that output aligns with user intent and playbook. Correct if needed.
+8. **Present to user.** Show the Preview and PDF. Do NOT read generated files back.
 
 
 

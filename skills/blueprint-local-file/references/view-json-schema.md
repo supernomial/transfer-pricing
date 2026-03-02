@@ -1,6 +1,6 @@
 # View JSON Schema
 
-Reference for producing view JSON consumed by the Workspace Editor (`combined_view.html`).
+Reference for producing view JSON consumed by the Preview (`combined_view.html`).
 
 ## Top-Level Structure
 
@@ -35,7 +35,7 @@ Reference for producing view JSON consumed by the Workspace Editor (`combined_vi
 ```
 
 - `title` / `subtitle` / `meta` can be overridden in the `local_files[]` object in data.json. Defaults: title = "Local File", subtitle = entity name, meta = "Transfer Pricing Documentation · FY {year}".
-- `playbook_name`: read from the playbook's frontmatter `name` field. "Standard" for the built-in OECD playbook, custom name for user playbooks. Displayed in the Workspace Editor top bar.
+- `playbook_name`: read from the playbook's frontmatter `name` field. "Standard" for the built-in OECD playbook, custom name for user playbooks. Displayed in the Preview top bar.
 
 ## progress
 
@@ -262,7 +262,7 @@ Source: `benchmarks[].tables[]` in data.json. Each table has `id`, `columns`, `r
 
 ## general_notes
 
-Optional array of note groups. Currently not rendered by the Workspace Editor but reserved for future use.
+Optional array of note groups. Currently not rendered by the Preview but reserved for future use.
 
 ```json
 [

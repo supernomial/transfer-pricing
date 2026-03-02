@@ -4,12 +4,18 @@
 Reads the view JSON (which has all content already resolved), renders it into
 LaTeX sections using the chapters/elements structure, populates the template,
 and compiles to PDF via pdflatex.
+
+If pdflatex is not installed, automatically installs TinyTeX to
+[working_dir]/.supernomial/latex/ for a portable LaTeX environment.
 """
 
 import argparse
+import glob
 import json
 import os
+import platform
 import re
+import shutil
 import subprocess
 import sys
 
@@ -140,29 +146,159 @@ def build_report_body(view_json):
 
 
 # ---------------------------------------------------------------------------
+# TinyTeX auto-install
+# ---------------------------------------------------------------------------
+
+TINYTEX_PACKAGES = [
+    'booktabs', 'tabularx', 'longtable', 'fancyhdr', 'hyperref',
+    'parskip', 'geometry', 'lmodern', 'titlesec', 'xcolor',
+    'tools', 'etoolbox', 'url',
+]
+
+
+def _find_working_dir(output_path):
+    """Derive the user's working directory from the output path.
+
+    The output path is inside the user's group folder, e.g.:
+    /Users/joe/Transfer Pricing/Acme/4. Deliverables/FY2024/.../report.pdf
+    The working dir is the root that contains .supernomial/ — walk up until found,
+    or fall back to two levels above the output file.
+    """
+    d = os.path.dirname(os.path.abspath(output_path))
+    while d != os.path.dirname(d):  # stop at filesystem root
+        if os.path.isdir(os.path.join(d, '.supernomial')):
+            return d
+        d = os.path.dirname(d)
+    # Fallback: go up from output dir until we find a reasonable root
+    return os.path.dirname(os.path.dirname(os.path.abspath(output_path)))
+
+
+def _local_pdflatex(working_dir):
+    """Return path to locally installed pdflatex, or None."""
+    base = os.path.join(working_dir, '.supernomial', 'latex')
+    # TinyTeX puts binaries in bin/<platform>/
+    candidates = glob.glob(os.path.join(base, 'bin', '*', 'pdflatex'))
+    if candidates:
+        return candidates[0]
+    # Also check direct bin/
+    direct = os.path.join(base, 'bin', 'pdflatex')
+    if os.path.isfile(direct):
+        return direct
+    return None
+
+
+def _install_tinytex(working_dir):
+    """Download and install TinyTeX to .supernomial/latex/."""
+    latex_dir = os.path.join(working_dir, '.supernomial', 'latex')
+    os.makedirs(latex_dir, exist_ok=True)
+
+    system = platform.system()
+    print("Installing LaTeX (TinyTeX) for PDF generation... this may take a minute.")
+
+    try:
+        if system == 'Darwin' or system == 'Linux':
+            env = os.environ.copy()
+            env['TINYTEX_DIR'] = latex_dir
+            result = subprocess.run(
+                ['sh', '-c', 'curl -sL https://yihui.org/tinytex/install-unx.sh | sh'],
+                env=env, capture_output=True, timeout=300
+            )
+            if result.returncode != 0:
+                stderr = result.stderr.decode('utf-8', errors='replace')
+                print(f"TinyTeX installation failed:\n{stderr}", file=sys.stderr)
+                return None
+        else:
+            print("Automatic LaTeX installation is not supported on this platform.",
+                  file=sys.stderr)
+            print("Please install a LaTeX distribution (e.g., MiKTeX) manually.",
+                  file=sys.stderr)
+            return None
+
+        # Find the installed pdflatex
+        pdflatex = _local_pdflatex(working_dir)
+        if not pdflatex:
+            print("TinyTeX installed but pdflatex binary not found.", file=sys.stderr)
+            return None
+
+        # Install required packages
+        tlmgr = os.path.join(os.path.dirname(pdflatex), 'tlmgr')
+        if os.path.isfile(tlmgr):
+            print("Installing required LaTeX packages...")
+            subprocess.run(
+                [tlmgr, 'install'] + TINYTEX_PACKAGES,
+                capture_output=True, timeout=120
+            )
+
+        print("LaTeX installation complete.")
+        return pdflatex
+
+    except subprocess.TimeoutExpired:
+        print("LaTeX installation timed out. Please try again.", file=sys.stderr)
+        return None
+    except Exception as e:
+        print(f"LaTeX installation failed: {e}", file=sys.stderr)
+        return None
+
+
+def ensure_pdflatex(output_path):
+    """Return a path to pdflatex, installing TinyTeX if necessary."""
+    # 1. Check system PATH
+    system_pdflatex = shutil.which('pdflatex')
+    if system_pdflatex:
+        return system_pdflatex
+
+    # 2. Check local install
+    working_dir = _find_working_dir(output_path)
+    local = _local_pdflatex(working_dir)
+    if local:
+        return local
+
+    # 3. Install TinyTeX
+    installed = _install_tinytex(working_dir)
+    if installed:
+        return installed
+
+    print("Could not find or install pdflatex.", file=sys.stderr)
+    print("To install manually:", file=sys.stderr)
+    print("  macOS:   brew install --cask basictex", file=sys.stderr)
+    print("  Ubuntu:  sudo apt-get install texlive-latex-base", file=sys.stderr)
+    sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
 # PDF compilation
 # ---------------------------------------------------------------------------
 
-def compile_pdf(tex_path, output_dir):
+def compile_pdf(pdflatex_path, tex_path, output_dir):
     """Compile a .tex file to PDF using pdflatex (two passes for TOC)."""
-    try:
-        for pass_num in range(1, 3):
-            print(f"  pdflatex pass {pass_num}/2...")
-            result = subprocess.run(
-                ['pdflatex', '-interaction=nonstopmode',
-                 '-output-directory', output_dir, tex_path],
-                capture_output=True
-            )
-            if result.returncode != 0:
-                log_text = result.stdout.decode('utf-8', errors='replace')
-                print(f"Error compiling PDF. LaTeX log:\n{log_text}", file=sys.stderr)
-                sys.exit(1)
-        print("PDF compiled successfully")
-    except FileNotFoundError:
-        print("Error: pdflatex not found on PATH.", file=sys.stderr)
-        print("  If on macOS: brew install --cask basictex && eval \"$(/usr/libexec/path_helper)\"",
-              file=sys.stderr)
-        sys.exit(1)
+    for pass_num in range(1, 3):
+        print(f"  pdflatex pass {pass_num}/2...")
+        result = subprocess.run(
+            [pdflatex_path, '-interaction=nonstopmode',
+             '-output-directory', output_dir, tex_path],
+            capture_output=True
+        )
+        if result.returncode != 0:
+            log_text = result.stdout.decode('utf-8', errors='replace')
+            # Extract the most useful error lines
+            error_lines = [l for l in log_text.split('\n') if l.startswith('!')]
+            if error_lines:
+                print("PDF compilation failed:", file=sys.stderr)
+                for line in error_lines[:5]:
+                    print(f"  {line}", file=sys.stderr)
+            else:
+                print(f"PDF compilation failed. See .log file for details.", file=sys.stderr)
+            sys.exit(1)
+    print("PDF compiled successfully")
+
+
+def cleanup_temp_files(tex_path):
+    """Remove temporary LaTeX build files, keeping .tex for debugging."""
+    base = os.path.splitext(tex_path)[0]
+    for ext in ['.aux', '.log', '.out', '.toc']:
+        temp = base + ext
+        if os.path.isfile(temp):
+            os.remove(temp)
 
 
 # ---------------------------------------------------------------------------
@@ -198,13 +334,23 @@ def main():
     # Derive paths from output file path
     output_dir = os.path.dirname(args.output) or '.'
     os.makedirs(output_dir, exist_ok=True)
-    tex_path = args.output.replace('.pdf', '.tex')
+
+    # Use os.path.splitext for robust extension handling
+    base, _ = os.path.splitext(args.output)
+    tex_path = base + '.tex'
+
     with open(tex_path, 'w') as f:
         f.write(latex)
     print(f"LaTeX written to {tex_path}")
 
+    # Find or install pdflatex
+    pdflatex_path = ensure_pdflatex(args.output)
+
     # Compile to PDF
-    compile_pdf(tex_path, output_dir)
+    compile_pdf(pdflatex_path, tex_path, output_dir)
+
+    # Clean up temp files
+    cleanup_temp_files(tex_path)
 
     print(f"PDF written to {args.output}")
 

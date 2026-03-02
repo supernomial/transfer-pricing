@@ -37,7 +37,7 @@ A playbook is an `.md` file defining the recipe for a deliverable — which sect
 4. Save the selected playbook path on the entity's local file record in `data.json` so subsequent runs reuse it without re-asking. User can change at any time.
 5. If a saved playbook path no longer exists, fall back to scanning and inform the user.
 
-Every playbook has a `name` in its frontmatter (e.g., `name: Standard`). Claude reads this and sets `document.playbook_name` in the view JSON. The Workspace Editor displays it in the top bar.
+Every playbook has a `name` in its frontmatter (e.g., `name: Standard`). Claude reads this and sets `document.playbook_name` in the view JSON. The Preview displays it in the top bar.
 
 When a user wants a custom playbook, guide them to create one with a `name` in the frontmatter (e.g., `name: Deloitte NL`) and save it at the right level:
 - Custom for this entity only → entity level
@@ -112,7 +112,7 @@ When a new group is created, ensure this structure exists:
 ## References
 
 Content and schemas in `references/`:
-- `view-json-schema.md` -- view JSON schema for the Workspace Editor
+- `view-json-schema.md` -- view JSON schema for the Preview
 - `playbooks/` -- standard playbook definitions
 - `style-guide.md` -- conversation tone and report writing style
 - `preamble/` -- Executive Summary section content
