@@ -19,7 +19,14 @@ The plugin folder is **read-only**. All work goes in the user's selected folder.
 
 ## Playbooks
 
-A playbook is an `.md` file defining the recipe for a deliverable — which sections, what order, which content sources.
+A playbook is an `.md` file defining the recipe for a deliverable — which sections exist, their order, and instructions for Claude.
+
+**Playbook format:** Uses markdown headings for structure:
+- `### Section: Title` — top-level chapter
+- `#### Subsection: Title` — child section
+- `Instruction:` — guidance for Claude on how to produce that section
+
+Claude derives section IDs from titles by converting to kebab-case (e.g., "Executive Summary" → `executive-summary`, "Executive Summary / Objective" → `executive-summary/objective`).
 
 **Override hierarchy** (highest wins):
 
@@ -57,27 +64,29 @@ Claude reads from 4 layers when building the view JSON. Each layer overrides the
 
 ## Content Resolution
 
-For each section in the playbook, Claude resolves the actual text as follows:
+For each section in the playbook, Claude resolves content using the section's content path. The content path is derived from the section hierarchy by converting titles to kebab-case:
 
-1. Read the content source from the playbook (e.g., `@references/preamble/objective`)
-2. Extract the relative path: `preamble/objective`
-3. Check for overrides at higher layers using the same relative path (highest wins):
-   - `[Group]/.records/content/[entity-id]/preamble/objective.md` → Layer 4
-   - `[Group]/.records/content/preamble/objective.md` → Layer 3
-   - `.library/preamble/objective.md` → Layer 2
-   - `skills/blueprint-local-file/references/preamble/objective.md` → Layer 1 (fallback)
-4. Read the `.md` file at the highest-layer match
-5. Use the **literal file contents** as the element's `text` field in the view JSON. Do NOT rewrite, summarize, or generate your own text — copy the file contents exactly as they are. Only substitute these placeholders: `[Entity Name]`, `[Group Name]`, `[Fiscal Year]`, `[Country]`.
+- Section "Executive Summary" → content path `executive-summary/`
+- Subsection "Objective" under "Executive Summary" → content path `executive-summary/objective`
+
+**Resolution steps:**
+1. Derive the content path from the playbook section title
+2. Check for a `.md` file at each layer (highest wins):
+   - `[Group]/.records/content/[entity-id]/executive-summary/objective.md` → Layer 4
+   - `[Group]/.records/content/executive-summary/objective.md` → Layer 3
+   - `.library/executive-summary/objective.md` → Layer 2
+   - `skills/blueprint-local-file/references/executive-summary/objective.md` → Layer 1 (fallback)
+3. Read the `.md` file at the highest-layer match
+4. Use the **literal file contents** as the element's `text` field in the view JSON. Do NOT rewrite, summarize, or generate your own text — copy the file contents exactly as they are. Only substitute these placeholders: `[Entity Name]`, `[Group Name]`, `[Fiscal Year]`, `[Country]`.
+5. If no content file exists at any layer, use the playbook's `Instruction:` to generate content.
 6. Set `meta.layer`, `meta.label`, `meta.color` based on which layer the content came from
 
-**Note:** Content paths in the playbook may differ from section IDs. Override files must use the same relative path as the content source (e.g., `preamble/objective`), not the section ID hierarchy (e.g., `executive-summary/objective`).
+If a section's instruction says to generate a table from data (e.g., transactions), build an `auto_table` from structured data in `data.json` instead. For auto tables that display entity names, resolve `from_entity` and `to_entity` IDs to names using the `entities[]` array in `data.json`.
 
-If the content source is `(auto)`, build an `auto_table` from structured data in `data.json` instead. For auto tables that display entity names (e.g., transactions overview), resolve `from_entity` and `to_entity` IDs to names using the `entities[]` array in `data.json`.
-
-**Saving user content:** When a user provides custom content for a section, save it at the appropriate layer:
-- Firm-wide (reusable across all clients) → `.library/preamble/objective.md`
-- Group-wide (shared across entities in this group) → `[Group]/.records/content/preamble/objective.md`
-- Entity-specific → `[Group]/.records/content/[entity-id]/preamble/objective.md`
+**Saving user content:** When a user provides custom content for a section, save it at the appropriate layer using the content path:
+- Firm-wide (reusable across all clients) → `.library/executive-summary/objective.md`
+- Group-wide (shared across entities in this group) → `[Group]/.records/content/executive-summary/objective.md`
+- Entity-specific → `[Group]/.records/content/[entity-id]/executive-summary/objective.md`
 
 The content auto-resolves on next generation — no playbook change needed.
 
@@ -115,7 +124,6 @@ Content and schemas in `references/`:
 - `view-json-schema.md` -- view JSON schema for the Preview
 - `playbooks/` -- standard playbook definitions
 - `style-guide.md` -- conversation tone and report writing style
-- `preamble/` -- Executive Summary section content
 
 ## Style Guide
 

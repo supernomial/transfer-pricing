@@ -85,11 +85,11 @@ Read `skills/blueprint-local-file/SKILL.md` for reference context. Then:
    - If the user wants something custom, guide them to create one with a `name` in the frontmatter (e.g., `name: Deloitte NL`) and save at the correct level.
    - Save the selected playbook path on the entity's local file record in `data.json` as `playbook` so it's reused next time.
 3. **Populate view JSON** based on playbook instructions. Read the playbook's frontmatter `name` and set `document.playbook_name` in the view JSON (standard playbook = "Standard"). For each section in the playbook:
-   - Extract the relative path from the content source (e.g., `preamble/objective`)
-   - Check for overrides at higher layers (entity → group → firm → universal)
-   - **CRITICAL: Use `cat` to read each `.md` file** at the highest-layer match. Paste the exact file output as the element's `text` field. Do NOT paraphrase, summarize, or generate your own version — the file contents ARE the content.
+   - Derive the content path from the section title (kebab-case, e.g., "Executive Summary / Objective" → `executive-summary/objective`)
+   - Check for `.md` content files at each layer (entity → group → firm). If found, **use `cat` to read the file** and paste the exact contents as the element's `text` field. Do NOT paraphrase, summarize, or generate your own version.
+   - If no content file exists at any layer, generate content from the playbook's instruction for that section.
    - Only substitute these placeholders: `[Entity Name]`, `[Group Name]`, `[Fiscal Year]`, `[Country]`
-   - For `(auto)` sections, build `auto_table` from data.json instead
+   - For sections that require a data table (e.g., Transactions Under Analysis), build `auto_table` from data.json instead
    - Follow `skills/blueprint-local-file/references/view-json-schema.md`
    - **Verify content fidelity.** After populating the view JSON, spot-check at least 3 text elements against their source `.md` files. If any element text doesn't match the file contents verbatim (after placeholder substitution), fix it before proceeding.
 4. **Verify the output path before running scripts.** The deliverable folder structure is **mandatory** — every file must land in the correct subfolder:

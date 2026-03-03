@@ -102,7 +102,7 @@ Flat object keyed by underscore-format section keys. Each element:
     "meta": {
       "layer": 1,
       "label": "Standard",
-      "source_path": "@references/preamble/objective",
+      "source_path": "executive-summary/objective",
       "scope": "universal",
       "color": "#64748b",
       "impact": "Applies to all local files"
@@ -127,7 +127,7 @@ Flat object keyed by underscore-format section keys. Each element:
 | `text` | string | Rendered content. Empty string for auto sections. |
 | `meta.layer` | int (1-4) | Content layer number. |
 | `meta.label` | string | Layer label: `"Standard"` (1), `"Firm"` (2), `"Group"` (3), `"Entity"` (4). |
-| `meta.source_path` | string | Content reference path (e.g. `@references/preamble/objective`). |
+| `meta.source_path` | string | Content path derived from section title (e.g. `executive-summary/objective`). |
 | `meta.scope` | string | `"universal"`, `"firm"`, `"group"`, or `"entity"`. |
 | `meta.color` | string | Hex color for X-ray display. |
 | `meta.impact` | string | Human-readable description of content scope. |
