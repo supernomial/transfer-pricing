@@ -856,16 +856,8 @@ function buildNav() {
       sub.innerHTML = '<span class="nav-label">' + topIndex + '.' + subIndex + ' ' + label + '</span>';
       currentSubs.appendChild(sub);
 
-    } else if (h.classList.contains('section-subsec-heading') && currentSubs) {
-      subsubIndex++;
-      var subsub = document.createElement('div');
-      subsub.className = 'nav-item nav-subsub-item';
-      subsub.setAttribute('data-target', '#' + id);
-      subsub.setAttribute('role', 'button');
-      subsub.setAttribute('tabindex', '0');
-      subsub.onclick = function(e) { scrollToSection(e); };
-      subsub.innerHTML = '<span class="nav-label">' + topIndex + '.' + subIndex + '.' + subsubIndex + ' ' + label + '</span>';
-      currentSubs.appendChild(subsub);
+    } else if (h.classList.contains('section-subsec-heading')) {
+      // Skip subsubsections in nav — content still renders in the document body
 
     } else if (h.classList.contains('section-subheading') && currentSubs) {
       subIndex++;

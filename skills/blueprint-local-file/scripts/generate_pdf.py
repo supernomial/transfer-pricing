@@ -297,8 +297,11 @@ def cleanup_temp_files(tex_path):
     base = os.path.splitext(tex_path)[0]
     for ext in ['.aux', '.log', '.out', '.toc']:
         temp = base + ext
-        if os.path.isfile(temp):
-            os.remove(temp)
+        try:
+            if os.path.isfile(temp):
+                os.remove(temp)
+        except OSError:
+            pass
 
 
 # ---------------------------------------------------------------------------

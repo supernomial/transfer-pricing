@@ -50,28 +50,74 @@ Reference for producing view JSON consumed by the Preview (`combined_view.html`)
 
 ## chapters
 
-Array describing the document outline. Three levels: chapter, section, subsection.
+Array describing the document outline. Three levels: chapter, section, subsection. The array must contain one chapter per `### Section` in the playbook.
 
 ```json
 [
   {
     "id": "executive-summary",
     "title": "Executive Summary",
-    "keys": ["executive_summary_objective"],
+    "keys": ["executive_summary"],
     "sections": [
       {
+        "id": "objective",
+        "title": "Objective",
+        "keys": ["executive_summary_objective"]
+      },
+      {
         "id": "scope",
-        "title": "Scope of the Local File",
-        "keys": ["executive_summary_scope"],
+        "title": "Scope",
+        "keys": ["executive_summary_scope"]
+      }
+    ]
+  },
+  {
+    "id": "business-description",
+    "title": "Business Description",
+    "keys": ["business_description"],
+    "sections": [
+      {
+        "id": "group-overview",
+        "title": "Group Overview",
+        "keys": ["business_description_group_overview"],
         "subsections": [
           {
-            "id": "covered-entities",
-            "title": "Covered Entities",
-            "keys": ["executive_summary_scope_covered_entities"]
+            "id": "organisational-structure",
+            "title": "Organisational Structure",
+            "keys": ["business_description_group_overview_organisational_structure"]
           }
         ]
       }
     ]
+  },
+  {
+    "id": "industry-analysis",
+    "title": "Industry Analysis",
+    "keys": ["industry_analysis"],
+    "sections": [
+      {
+        "id": "industry-overview",
+        "title": "Industry Overview",
+        "keys": ["industry_analysis_industry_overview"]
+      }
+    ]
+  },
+  {
+    "id": "economic-analysis",
+    "title": "Economic Analysis",
+    "keys": ["economic_analysis"],
+    "sections": [
+      {
+        "id": "functional-analysis",
+        "title": "Functional Analysis",
+        "keys": ["economic_analysis_functional_analysis"]
+      }
+    ]
+  },
+  {
+    "id": "appendices",
+    "title": "Appendices",
+    "keys": ["appendices"]
   }
 ]
 ```
@@ -87,25 +133,29 @@ Element keys replace both `-` and `/` with `_`: `executive_summary_objective`.
 
 ## elements
 
-Flat object keyed by underscore-format section keys. Each element:
+Flat object keyed by underscore-format section keys. Every section, subsection, and subsubsection in the playbook must have a corresponding element entry.
 
 ```json
 {
+  "executive_summary": {
+    "text": "Content for the Executive Summary...",
+    "meta": { "layer": 1, "label": "Standard", "source_path": "executive-summary", "scope": "universal", "color": "#64748b", "impact": "Applies to all local files" },
+    "is_auto": false, "editable": false, "composite": false
+  },
   "executive_summary_objective": {
-    "text": "Rendered markdown/text content...",
-    "meta": {
-      "layer": 1,
-      "label": "Standard",
-      "source_path": "executive-summary/objective",
-      "scope": "universal",
-      "color": "#64748b",
-      "impact": "Applies to all local files"
-    },
-    "notes": ["Editorial note string"],
-    "footnotes": ["Citation or footnote string"],
-    "is_auto": false,
-    "editable": false,
-    "composite": false
+    "text": "The objective of this local file is to demonstrate...",
+    "meta": { "layer": 1, "label": "Standard", "source_path": "executive-summary/objective", "scope": "universal", "color": "#64748b", "impact": "Applies to all local files" },
+    "is_auto": false, "editable": false, "composite": false
+  },
+  "business_description": {
+    "text": "Content for Business Description...",
+    "meta": { "layer": 1, "label": "Standard", "source_path": "business-description", "scope": "universal", "color": "#64748b", "impact": "Applies to all local files" },
+    "is_auto": false, "editable": false, "composite": false
+  },
+  "industry_analysis": {
+    "text": "Content for Industry Analysis...",
+    "meta": { "layer": 1, "label": "Standard", "source_path": "industry-analysis", "scope": "universal", "color": "#64748b", "impact": "Applies to all local files" },
+    "is_auto": false, "editable": false, "composite": false
   }
 }
 ```
@@ -164,9 +214,9 @@ When `composite: true`, the element includes a `parts` array. Each part has its 
 
 ### Auto table sections
 
-When `is_auto: true`, the element includes an `auto_table` object instead of `text`. Six auto section types:
+When `is_auto: true`, the element includes an `auto_table` object instead of `text`.
 
-#### 1. Transactions overview (`executive_summary_transactions_under_analysis`)
+#### Transactions overview (`executive_summary_transactions_under_analysis`)
 
 ```json
 {

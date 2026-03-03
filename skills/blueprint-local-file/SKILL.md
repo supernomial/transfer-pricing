@@ -24,7 +24,8 @@ A playbook is an `.md` file defining the recipe for a deliverable — which sect
 **Playbook format:** Uses markdown headings for structure:
 - `### Section: Title` — top-level chapter
 - `#### Subsection: Title` — child section
-- `Instruction:` — guidance for Claude on how to produce that section
+- `##### Subsubsection: Title` — grandchild section
+- `Instruction:` — guidance for Claude on how to produce that section (required at every level)
 
 Claude derives section IDs from titles by converting to kebab-case (e.g., "Executive Summary" → `executive-summary`, "Executive Summary / Objective" → `executive-summary/objective`).
 
