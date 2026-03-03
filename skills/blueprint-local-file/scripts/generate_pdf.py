@@ -269,13 +269,42 @@ def ensure_pdflatex(output_path):
 # PDF compilation
 # ---------------------------------------------------------------------------
 
-def compile_pdf(pdflatex_path, tex_path, output_dir):
+def _find_build_dir(output_path):
+    """Find or create a shared LaTeX build directory in .records/.latex-build/.
+
+    Walks up from the output path to find the working directory (contains
+    .supernomial/), then uses .records/.latex-build/ under the group folder.
+    Falls back to a .latex-build/ dir next to the output.
+    """
+    d = os.path.dirname(os.path.abspath(output_path))
+    # Walk up to find the working dir root (has .supernomial/)
+    working_dir = None
+    check = d
+    while check != os.path.dirname(check):
+        if os.path.isdir(os.path.join(check, '.supernomial')):
+            working_dir = check
+            break
+        check = os.path.dirname(check)
+
+    if working_dir:
+        # The group folder is the first directory under working_dir in the output path
+        rel = os.path.relpath(d, working_dir)
+        group = rel.split(os.sep)[0]
+        build_dir = os.path.join(working_dir, group, '.records', '.latex-build')
+    else:
+        build_dir = os.path.join(d, '.latex-build')
+
+    os.makedirs(build_dir, exist_ok=True)
+    return build_dir
+
+
+def compile_pdf(pdflatex_path, tex_path, build_dir):
     """Compile a .tex file to PDF using pdflatex (two passes for TOC)."""
     for pass_num in range(1, 3):
         print(f"  pdflatex pass {pass_num}/2...")
         result = subprocess.run(
             [pdflatex_path, '-interaction=nonstopmode',
-             '-output-directory', output_dir, tex_path],
+             '-output-directory', build_dir, tex_path],
             capture_output=True
         )
         if result.returncode != 0:
@@ -290,18 +319,6 @@ def compile_pdf(pdflatex_path, tex_path, output_dir):
                 print(f"PDF compilation failed. See .log file for details.", file=sys.stderr)
             sys.exit(1)
     print("PDF compiled successfully")
-
-
-def cleanup_temp_files(tex_path):
-    """Remove temporary LaTeX build files including .tex source."""
-    base = os.path.splitext(tex_path)[0]
-    for ext in ['.aux', '.log', '.out', '.toc', '.tex']:
-        temp = base + ext
-        try:
-            if os.path.isfile(temp):
-                os.remove(temp)
-        except OSError:
-            pass
 
 
 # ---------------------------------------------------------------------------
@@ -334,13 +351,9 @@ def main():
     latex = latex.replace('<<FISCAL_YEAR>>', str(fiscal_year))
     latex = latex.replace('<<REPORT_BODY>>', build_report_body(view_json))
 
-    # Derive paths from output file path
-    output_dir = os.path.dirname(args.output) or '.'
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Use os.path.splitext for robust extension handling
-    base, _ = os.path.splitext(args.output)
-    tex_path = base + '.tex'
+    # Build in a shared temp directory, copy only PDF to deliverables
+    build_dir = _find_build_dir(args.output)
+    tex_path = os.path.join(build_dir, 'build.tex')
 
     with open(tex_path, 'w') as f:
         f.write(latex)
@@ -349,11 +362,14 @@ def main():
     # Find or install pdflatex
     pdflatex_path = ensure_pdflatex(args.output)
 
-    # Compile to PDF
-    compile_pdf(pdflatex_path, tex_path, output_dir)
+    # Compile to PDF in build directory
+    compile_pdf(pdflatex_path, tex_path, build_dir)
 
-    # Clean up temp files
-    cleanup_temp_files(tex_path)
+    # Copy PDF to final output location
+    output_dir = os.path.dirname(args.output) or '.'
+    os.makedirs(output_dir, exist_ok=True)
+    built_pdf = os.path.join(build_dir, 'build.pdf')
+    shutil.copy2(built_pdf, args.output)
 
     print(f"PDF written to {args.output}")
 
