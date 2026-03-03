@@ -60,7 +60,7 @@ Accept any information provided by user:
 Gather or confirm context before assisting user.
 
 1. **Does group or entity folder and file already exist?**: Silently check and/or infer from previous steps.
-2. **Check project status and session log**
+2. **Check project status**
 3. **Confirm understanding with user**: Indicate your understanding of groups, entities, files to work on or create from scratch.
 3. **Focus areas**: If applicable, ask for any specific areas of the Local File to focus on.
 4. **Ask for further context user would like to provide**
@@ -92,30 +92,20 @@ Read `skills/blueprint-local-file/SKILL.md` for reference context. Then:
    - For sections that require a data table (e.g., Transactions Under Analysis), build `auto_table` from data.json instead
    - Follow `skills/blueprint-local-file/references/view-json-schema.md`
    - **Verify content fidelity.** After populating the view JSON, spot-check at least 3 text elements against their source `.md` files. If any element text doesn't match the file contents verbatim (after placeholder substitution), fix it before proceeding.
-4. **Verify the output path before running scripts.** The deliverable folder structure is **mandatory** — every file must land in the correct subfolder:
-   ```
-   [Group]/4. Deliverables/FY[Year]/Local File/[Country]/[Entity Name]/
-   ```
-   **Example:** For entity "Acme Netherlands B.V." in group "Acme Corp", country NL, FY 2024:
-   ```
-   Acme Corp/4. Deliverables/FY2024/Local File/NL/Acme Netherlands B.V./
-   ```
-   Confirm this folder path is correct before generating files. Create the folder if it doesn't exist.
-
-5. **Generate Preview.** This step is mandatory — always run this script.
+4. **Generate Preview.** This step is mandatory — always run this script. Output goes next to the view JSON in `.records/views/`.
    ```bash
    python3 skills/blueprint-local-file/scripts/generate_preview.py \
-     --view-json "[Group]/.records/views/[entity-id]_workspace_FY[year].json" \
+     --view-json "[Group]/.records/views/[entity-id]_FY[year].json" \
      --template skills/blueprint-local-file/assets/combined_view.html \
      --brand assets/brand.css \
-     --output "[Group]/4. Deliverables/FY[Year]/Local File/[Country]/[Entity]/[Entity]_Preview_FY[Year].html"
+     --output "[Group]/.records/views/[entity-id]_FY[year].html"
    ```
-6. **Generate PDF.** This step is mandatory — always run this script immediately after the Preview.
+5. **Generate PDF.** This step is mandatory — always run this script immediately after the Preview. Output goes in the deliverables folder (human-readable filename). Create the folder if it doesn't exist.
    ```bash
    python3 skills/blueprint-local-file/scripts/generate_pdf.py \
-     --view-json "[Group]/.records/views/[entity-id]_workspace_FY[year].json" \
+     --view-json "[Group]/.records/views/[entity-id]_FY[year].json" \
      --template skills/blueprint-local-file/assets/local_file.tex \
-     --output "[Group]/4. Deliverables/FY[Year]/Local File/[Country]/[Entity]/[Entity]_Local_File_FY[Year].pdf"
+     --output "[Group]/4. Deliverables/FY[Year]/Local File/[Country]/[Entity Name]/[Entity Name] Local File FY[Year].pdf"
    ```
 7. **Review.** Check that output aligns with user intent and playbook. Correct if needed.
 8. **Present to user.** Show the Preview and PDF. Do NOT read generated files back.
@@ -124,8 +114,7 @@ Read `skills/blueprint-local-file/SKILL.md` for reference context. Then:
 
 ## Step 7: Wrap Up
 
-1. **Session log.** Append to `[Group]/.records/session-log.json` (date, command, entity, summary, decisions, pending). Log continuously -- users close chats randomly.
-2. **Present next steps.** Show where the deliverable is saved, suggest what to do next. NEVER suggest "run /prep-local-file again" — the user can keep chatting in this conversation to edit any section, add content, or make changes. Cowork is a conversation, not a one-shot command.
+1. **Present next steps.** Show where the deliverable is saved, suggest what to do next. NEVER suggest "run /prep-local-file again" — the user can keep chatting in this conversation to edit any section, add content, or make changes. Cowork is a conversation, not a one-shot command.
 
 
 

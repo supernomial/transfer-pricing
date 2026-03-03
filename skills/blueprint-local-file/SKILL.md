@@ -108,12 +108,13 @@ If a section's instruction says to generate a table from data (e.g., transaction
 - `transactions[]`: intercompany transactions between entities
 - `local_files[]`: tracks report status and playbook selection per entity/year
 
-**Saving user content:** When a user provides custom content for a section, save it at the appropriate layer using the content path:
+**Saving user edits:** When a user edits a section for a specific entity, update the view JSON directly (it's the source of truth for that entity's report). Then regenerate outputs (preview + PDF).
+
+Content `.md` files are for **reusable** content only:
 - Firm-wide (reusable across all clients) → `.library/executive-summary/objective.md`
 - Group-wide (shared across entities in this group) → `[Group]/.records/content/executive-summary/objective.md`
-- Entity-specific → `[Group]/.records/content/[entity-id]/executive-summary/objective.md`
 
-The content auto-resolves on next generation — no playbook change needed.
+Entity-specific content files (`[Group]/.records/content/[entity-id]/...`) are used during initial generation. After the view JSON exists, entity edits go directly into the view JSON.
 
 ## View JSON
 
@@ -132,11 +133,10 @@ When a new group is created, ensure this structure exists:
 ├── 1. Admin/
 ├── 2. Source Files/
 ├── 3. Working Papers/
-├── 4. Deliverables/
+├── 4. Deliverables/          ← PDF only (always regenerable)
 └── .records/
     ├── data.json
-    ├── session-log.json
-    ├── views/
+    ├── views/                ← view JSON (source of truth) + preview HTML
     ├── content/
     │   └── [entity-id]/
     └── playbooks/

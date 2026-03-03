@@ -293,9 +293,9 @@ def compile_pdf(pdflatex_path, tex_path, output_dir):
 
 
 def cleanup_temp_files(tex_path):
-    """Remove temporary LaTeX build files, keeping .tex for debugging."""
+    """Remove temporary LaTeX build files including .tex source."""
     base = os.path.splitext(tex_path)[0]
-    for ext in ['.aux', '.log', '.out', '.toc']:
+    for ext in ['.aux', '.log', '.out', '.toc', '.tex']:
         temp = base + ext
         try:
             if os.path.isfile(temp):
