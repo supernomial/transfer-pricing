@@ -96,7 +96,7 @@ Read `skills/blueprint-local-file/SKILL.md` for reference context. Then:
    ```bash
    python3 skills/blueprint-local-file/scripts/generate_preview.py \
      --view-json "[Group]/.records/views/[entity-id]_FY[year].json" \
-     --template skills/blueprint-local-file/assets/combined_view.html \
+     --template skills/blueprint-local-file/assets/preview.html \
      --brand assets/brand.css \
      --output "[Group]/.records/views/[entity-id]_FY[year].html"
    ```

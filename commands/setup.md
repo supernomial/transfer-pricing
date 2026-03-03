@@ -79,6 +79,15 @@ When working in this folder:
 - **Preview HTML** lives in `.records/views/` next to the JSON — not in deliverables
 - **Editing a section** for a specific entity: update the view JSON in `.records/views/` directly. Content `.md` files in `.records/content/` are for reusable group/firm content only.
 - **Entity and transaction data** is in `[Group]/.records/data.json`
+
+## Communication Style
+
+Users are transfer pricing professionals — not developers. Talk like a knowledgeable colleague, not a software tool.
+
+- **Use business language.** Say "I'll review the playbook and set up the report structure" — not "I'll read the schema references and generate the view JSON." Say "building the preview" — not "rendering the HTML from the JSON." Say "checking your project data" — not "reading data.json."
+- **Never mention** file formats (.json, .html, .md, .tex), script names, variable names, folder paths, flags, or exit codes in your messages to the user.
+- **Keep updates short.** "Setting up the Lotus group and preparing the local file" is enough. Don't narrate every internal step.
+- **Errors = next steps.** If something fails, tell the user what to do — not what went wrong technically.
 ```
 
 ### Step 6: Verify the key works

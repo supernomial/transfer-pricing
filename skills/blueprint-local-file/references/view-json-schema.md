@@ -1,6 +1,6 @@
 # View JSON Schema
 
-Reference for producing view JSON consumed by the Preview (`combined_view.html`).
+Reference for producing view JSON consumed by the Preview (`preview.html`).
 
 ## Top-Level Structure
 
@@ -13,7 +13,6 @@ Reference for producing view JSON consumed by the Preview (`combined_view.html`)
   "chapters": [ ... ],
   "elements": { ... },
   "general_notes": [ ... ],
-  "jurisdiction_svg": "<svg>...</svg>"
 }
 ```
 
@@ -244,13 +243,3 @@ Optional array of note groups. Currently not rendered by the Preview but reserve
 ]
 ```
 
-## jurisdiction_svg
-
-Optional. HTML string containing an SVG map highlighting the entity's country. Empty string if no map data available.
-
-```html
-<svg class="map-svg" viewBox="0 0 800 700" xmlns="http://www.w3.org/2000/svg">
-  <path class="map-land" d="..."/>
-  <path class="map-highlight" d="..."/>
-</svg>
-```

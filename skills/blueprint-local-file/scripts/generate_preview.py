@@ -72,7 +72,7 @@ def inject_brand_css(template_content, brand_path):
 def main():
     parser = argparse.ArgumentParser(description='Generate Preview HTML')
     parser.add_argument('--view-json', required=True, help='Path to view JSON file')
-    parser.add_argument('--template', required=True, help='Path to combined_view.html template')
+    parser.add_argument('--template', required=True, help='Path to preview.html template')
     parser.add_argument('--brand', required=True, help='Path to brand.css')
     parser.add_argument('--output', required=True, help='Output HTML file path')
     args = parser.parse_args()
