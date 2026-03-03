@@ -48,7 +48,40 @@ Verify the user has a folder selected by listing the working directory contents.
 
 Replace `sk_live_...` with the actual key from the user's message.
 
-### Step 5: Verify the key works
+### Step 5: Create folder instructions
+
+If the file `CLAUDE.md` does **not** already exist in the working folder root, create it with the following content. If it already exists, skip this step — never overwrite user customizations.
+
+```markdown
+# Transfer Pricing Workspace
+
+This folder is managed by the Supernomial transfer pricing plugin.
+
+## How This Folder Works
+
+Each client group has this layout:
+
+- **1. Admin/** — administrative documents
+- **2. Source Files/** — uploaded source documents
+- **3. Working Papers/** — analysis and working documents
+- **4. Deliverables/** — final PDF reports only
+
+Working documents (interactive previews, project data) are stored in each group's `.records/` folder and don't clutter the deliverables.
+
+Firm-wide resources (style guides, playbooks, reusable content) live in `.library/` at the root.
+
+## For Claude
+
+When working in this folder:
+- **Find an entity's working document:** look in `[Group]/.records/views/` for `[entity-id]_FY[year].json` (source of truth) and `.html` (preview)
+- **Find the final deliverable:** look in `[Group]/4. Deliverables/FY[Year]/Local File/[Country]/[Entity Name]/` for the PDF
+- **Deliverables = PDF only.** Never put HTML, LaTeX temp files, or working files in the deliverables folder.
+- **Preview HTML** lives in `.records/views/` next to the JSON — not in deliverables
+- **Editing a section** for a specific entity: update the view JSON in `.records/views/` directly. Content `.md` files in `.records/content/` are for reusable group/firm content only.
+- **Entity and transaction data** is in `[Group]/.records/data.json`
+```
+
+### Step 6: Verify the key works
 
 Run:
 

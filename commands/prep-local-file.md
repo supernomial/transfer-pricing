@@ -100,7 +100,7 @@ Read `skills/blueprint-local-file/SKILL.md` for reference context. Then:
      --brand assets/brand.css \
      --output "[Group]/.records/views/[entity-id]_FY[year].html"
    ```
-5. **Generate PDF.** This step is mandatory — always run this script immediately after the Preview. Output goes in the deliverables folder (human-readable filename). Create the folder if it doesn't exist.
+5. **Generate PDF.** This step is mandatory — always run this script immediately after the Preview. Output goes in the deliverables folder (human-readable filename). Create the folder if it doesn't exist. Only the PDF should remain in the deliverables folder. The script automatically cleans up all temporary files (.tex, .aux, .log, .out, .toc).
    ```bash
    python3 skills/blueprint-local-file/scripts/generate_pdf.py \
      --view-json "[Group]/.records/views/[entity-id]_FY[year].json" \
