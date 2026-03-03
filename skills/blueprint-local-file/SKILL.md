@@ -81,7 +81,31 @@ For each section in the playbook, Claude resolves content using the section's co
 5. If no content file exists at any layer, use the playbook's `Instruction:` to generate content.
 6. Set `meta.layer`, `meta.label`, `meta.color` based on which layer the content came from
 
-If a section's instruction says to generate a table from data (e.g., transactions), build an `auto_table` from structured data in `data.json` instead. For auto tables that display entity names, resolve `from_entity` and `to_entity` IDs to names using the `entities[]` array in `data.json`.
+If a section's instruction says to generate a table from data (e.g., transactions), build an `auto_table` from `transactions[]` in `data.json`. Resolve `from_entity` and `to_entity` IDs to entity names using the `entities[]` array.
+
+## Data Model
+
+`data.json` per group uses a minimal structure:
+
+```json
+{
+  "group": { "id": "", "name": "", "country": "" },
+  "entities": [
+    { "id": "", "name": "", "country": "" }
+  ],
+  "transactions": [
+    { "id": "", "description": "", "from_entity": "", "to_entity": "", "currency": "", "amount": "" }
+  ],
+  "local_files": [
+    { "id": "", "entity_id": "", "fiscal_year": "", "status": "draft", "playbook": "" }
+  ]
+}
+```
+
+- `group`: the multinational group
+- `entities[]`: legal entities within the group
+- `transactions[]`: intercompany transactions between entities
+- `local_files[]`: tracks report status and playbook selection per entity/year
 
 **Saving user content:** When a user provides custom content for a section, save it at the appropriate layer using the content path:
 - Firm-wide (reusable across all clients) → `.library/executive-summary/objective.md`

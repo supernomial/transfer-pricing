@@ -181,56 +181,6 @@
   }
   .nav-group-subs.open { display: block; }
 
-  /* --- Nav status icons (review + sign-off) --- */
-  .nav-status {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-left: auto;
-    flex-shrink: 0;
-    opacity: 0;
-    transition: opacity 0.15s;
-  }
-
-  .sidebar:hover .nav-status {
-    opacity: 1;
-  }
-
-  .nav-status-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    color: var(--sn-text-dim);
-    opacity: 0.25;
-    transition: all 0.15s;
-    border-radius: 3px;
-  }
-
-  .nav-status-btn:hover {
-    opacity: 0.8;
-  }
-
-  .nav-status-btn.done {
-    opacity: 1;
-  }
-  .nav-status-btn.done[title="Reviewed"] {
-    color: var(--sn-primary);
-  }
-  .nav-status-btn.done[title="Signed off"] {
-    color: var(--sn-success);
-  }
-
-  .nav-status-btn svg {
-    width: 13px;
-    height: 13px;
-  }
-
   /* --- Content area (takes remaining space) --- */
   .content-area {
     flex: 1;
@@ -485,8 +435,6 @@
   <!-- SVG icon definitions (hidden) -->
   <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
     <symbol id="icon-chat" viewBox="0 0 15 15"><path d="M12.5 3L2.5 3.00002C1.67157 3.00002 1 3.6716 1 4.50002V9.50003C1 10.3285 1.67157 11 2.5 11H7.50003C7.63264 11 7.75982 11.0527 7.85358 11.1465L10 13.2929V11.5C10 11.2239 10.2239 11 10.5 11H12.5C13.3284 11 14 10.3285 14 9.50003V4.5C14 3.67157 13.3284 3 12.5 3ZM2.49999 2.00002L12.5 2C13.8807 2 15 3.11929 15 4.5V9.50003C15 10.8807 13.8807 12 12.5 12H11V14.5C11 14.7022 10.8782 14.8845 10.6913 14.9619C10.5045 15.0393 10.2894 14.9965 10.1464 14.8536L7.29292 12H2.5C1.11929 12 0 10.8807 0 9.50003V4.50002C0 3.11931 1.11928 2.00003 2.49999 2.00002Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"/></symbol>
-    <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol>
-    <symbol id="icon-signature" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 17-2.156-1.868A.5.5 0 0 0 18 15.5v.5a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1c0-2.545-3.991-3.97-8.5-4a1 1 0 0 0 0 5c4.153 0 4.745-11.295 5.708-13.5a2.5 2.5 0 1 1 3.31 3.284"/><path d="M3 21h18"/></symbol>
     <symbol id="icon-enter-fs" viewBox="0 0 15 15"><path d="M2 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1H3v2.5a.5.5 0 0 1-1 0v-3ZM12.5 2a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0V3H9.5a.5.5 0 0 1 0-1h3ZM2 12.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 0-1H3V9.5a.5.5 0 0 0-1 0v3ZM12.5 13a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-1 0V12H9.5a.5.5 0 0 0 0 1h3Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"/></symbol>
     <symbol id="icon-pencil" viewBox="0 0 15 15"><path d="M11.8536 1.14645C11.6583 0.951184 11.3417 0.951184 11.1465 1.14645L3.71455 8.57836C3.62459 8.66832 3.55263 8.77461 3.50251 8.89155L2.04044 12.303C1.9599 12.491 2.00189 12.709 2.14646 12.8536C2.29103 12.9981 2.50905 13.0401 2.69697 12.9596L6.10847 11.4975C6.2254 11.4474 6.3317 11.3754 6.42166 11.2855L13.8536 3.85355C14.0488 3.65829 14.0488 3.34171 13.8536 3.14645L11.8536 1.14645ZM4.42166 9.28547L11.5 2.20711L12.7929 3.5L5.71455 10.5784L4.21924 11.2192L3.78081 10.7808L4.42166 9.28547Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"/></symbol>
     <symbol id="icon-exit-fs" viewBox="0 0 15 15"><path d="M5.5 2C5.77614 2 6 2.22386 6 2.5V5.5C6 5.77614 5.77614 6 5.5 6H2.5C2.22386 6 2 5.77614 2 5.5C2 5.22386 2.22386 5 2.5 5H5V2.5C5 2.22386 5.22386 2 5.5 2ZM9.5 2C9.77614 2 10 2.22386 10 2.5V5H12.5C12.7761 5 13 5.22386 13 5.5C13 5.77614 12.7761 6 12.5 6H9.5C9.22386 6 9 5.77614 9 5.5V2.5C9 2.22386 9.22386 2 9.5 2ZM2 9.5C2 9.22386 2.22386 9 2.5 9H5.5C5.77614 9 6 9.22386 6 9.5V12.5C6 12.7761 5.77614 13 5.5 13C5.22386 13 5 12.7761 5 12.5V10H2.5C2.22386 10 2 9.77614 2 9.5ZM9 9.5C9 9.22386 9.22386 9 9.5 9H12.5C12.7761 9 13 9.22386 13 9.5C13 9.77614 12.7761 10 12.5 10H10V12.5C10 12.7761 9.77614 13 9.5 13C9.22386 13 9 12.7761 9 12.5V9.5Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"/></symbol>
@@ -592,10 +540,6 @@ function renderElementBody(key, element, container) {
     subh.className = 'section-subheading';
     subh.id = key;
     subh.setAttribute('data-section-key', key);
-    if (element.status) {
-      subh.setAttribute('data-reviewed', element.status.reviewed ? 'true' : 'false');
-      subh.setAttribute('data-signed-off', element.status.signed_off ? 'true' : 'false');
-    }
     subh.innerHTML = escapeHtml(element.show_subheading) + editPenHtml;
     container.appendChild(subh);
   }
@@ -690,10 +634,6 @@ function renderSections(vd) {
     heading.className = 'section-heading';
     heading.id = chapter.id;
     heading.setAttribute('data-section-key', chapter.keys && chapter.keys[0] ? chapter.keys[0] : chapter.id);
-    var firstKey = chapter.keys && chapter.keys[0] ? chapter.keys[0] : null;
-    var firstEl = firstKey && vd.elements[firstKey] ? vd.elements[firstKey] : null;
-    heading.setAttribute('data-reviewed', firstEl && firstEl.status && firstEl.status.reviewed ? 'true' : 'false');
-    heading.setAttribute('data-signed-off', firstEl && firstEl.status && firstEl.status.signed_off ? 'true' : 'false');
     heading.innerHTML = chapterNum + ' ' + escapeHtml(chapter.title) + editPenHtml;
     sectionDiv.appendChild(heading);
 
@@ -874,19 +814,13 @@ function buildNav() {
       subIndex = 0;
       subsubIndex = 0;
       var hasSubs = section.querySelector('.section-subheading, .section-sec-heading') !== null;
-      var headReviewed = h.getAttribute('data-reviewed') === 'true';
-      var headSignedOff = h.getAttribute('data-signed-off') === 'true';
       var item = document.createElement('div');
       item.className = 'nav-item';
       item.setAttribute('data-target', '#' + id);
       item.setAttribute('role', 'button');
       item.setAttribute('tabindex', '0');
       item.onclick = function(e) { scrollToSection(e); };
-      item.innerHTML = '<span class="nav-icon">&#9656;</span><span class="nav-label">' + topIndex + ' ' + label + '</span>' +
-        '<span class="nav-status">' +
-        '<button class="nav-status-btn' + (headReviewed ? ' done' : '') + '" title="Reviewed" onclick="toggleNavStatus(event,this)"><svg><use href="#icon-eye"/></svg></button>' +
-        '<button class="nav-status-btn' + (headSignedOff ? ' done' : '') + '" title="Signed off" onclick="toggleNavStatus(event,this)"><svg><use href="#icon-signature"/></svg></button>' +
-        '</span>';
+      item.innerHTML = '<span class="nav-icon">&#9656;</span><span class="nav-label">' + topIndex + ' ' + label + '</span>';
 
       if (hasSubs) {
         item.classList.add('has-subs');
@@ -935,19 +869,13 @@ function buildNav() {
 
     } else if (h.classList.contains('section-subheading') && currentSubs) {
       subIndex++;
-      var isReviewed = h.getAttribute('data-reviewed') === 'true';
-      var isSignedOff = h.getAttribute('data-signed-off') === 'true';
       var sub2 = document.createElement('div');
       sub2.className = 'nav-item nav-sub-item';
       sub2.setAttribute('data-target', '#' + id);
       sub2.setAttribute('role', 'button');
       sub2.setAttribute('tabindex', '0');
       sub2.onclick = function(e) { scrollToSection(e); };
-      sub2.innerHTML = '<span class="nav-label">' + topIndex + '.' + subIndex + ' ' + label + '</span>' +
-        '<span class="nav-status">' +
-        '<button class="nav-status-btn' + (isReviewed ? ' done' : '') + '" title="Reviewed" onclick="toggleNavStatus(event,this)"><svg><use href="#icon-eye"/></svg></button>' +
-        '<button class="nav-status-btn' + (isSignedOff ? ' done' : '') + '" title="Signed off" onclick="toggleNavStatus(event,this)"><svg><use href="#icon-signature"/></svg></button>' +
-        '</span>';
+      sub2.innerHTML = '<span class="nav-label">' + topIndex + '.' + subIndex + ' ' + label + '</span>';
       currentSubs.appendChild(sub2);
     }
   });
@@ -1011,32 +939,6 @@ window.addEventListener('scroll', function() {
     }
   }
 });
-
-// --- Nav status toggle ---
-function toggleNavStatus(e, btn) {
-  e.preventDefault();
-  e.stopPropagation();
-  btn.classList.toggle('done');
-
-  var navItem = btn.closest('.nav-item');
-  if (navItem) {
-    var href = navItem.getAttribute('data-target');
-    if (href) {
-      var targetEl = document.querySelector(href);
-      var heading = targetEl;
-      if (targetEl && targetEl.classList.contains('section')) {
-        heading = targetEl.querySelector('.section-heading[data-section-key]');
-      }
-      if (heading && (heading.classList.contains('section-subheading') || heading.classList.contains('section-heading'))) {
-        var statusBtns = navItem.querySelectorAll('.nav-status-btn');
-        if (statusBtns.length >= 2) {
-          heading.setAttribute('data-reviewed', statusBtns[0].classList.contains('done') ? 'true' : 'false');
-          heading.setAttribute('data-signed-off', statusBtns[1].classList.contains('done') ? 'true' : 'false');
-        }
-      }
-    }
-  }
-}
 
 // --- Chat edit ---
 function chatEdit(btn) {

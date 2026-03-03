@@ -125,7 +125,7 @@ Read `skills/blueprint-local-file/SKILL.md` for reference context. Then:
 ## Step 7: Wrap Up
 
 1. **Session log.** Append to `[Group]/.records/session-log.json` (date, command, entity, summary, decisions, pending). Log continuously -- users close chats randomly.
-2. **Present next steps.** Show where the deliverable is saved, suggest what to do next.
+2. **Present next steps.** Show where the deliverable is saved, suggest what to do next. NEVER suggest "run /prep-local-file again" — the user can keep chatting in this conversation to edit any section, add content, or make changes. Cowork is a conversation, not a one-shot command.
 
 
 

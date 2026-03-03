@@ -56,8 +56,8 @@ def render_auto_table(auto_table):
         return ''
 
     ncols = len(columns)
-    # First column is X (flexible), rest are l (left-aligned)
-    col_spec = 'X' + 'l' * (ncols - 1) if ncols > 1 else 'X'
+    # All columns use X (flexible width) for even distribution
+    col_spec = 'X' * ncols
 
     parts = [f'\\begin{{tabularx}}{{\\textwidth}}{{{col_spec}}}']
     parts.append('\\toprule')

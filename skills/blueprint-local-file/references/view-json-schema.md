@@ -34,7 +34,7 @@ Reference for producing view JSON consumed by the Preview (`combined_view.html`)
 }
 ```
 
-- `title` / `subtitle` / `meta` can be overridden in the `local_files[]` object in data.json. Defaults: title = "Local File", subtitle = entity name, meta = "Transfer Pricing Documentation · FY {year}".
+- Defaults: title = "Local File", subtitle = entity name, meta = "Transfer Pricing Documentation · FY {year}".
 - `playbook_name`: read from the playbook's frontmatter `name` field. "Standard" for the built-in OECD playbook, custom name for user playbooks. Displayed in the Preview top bar.
 
 ## progress
@@ -42,17 +42,11 @@ Reference for producing view JSON consumed by the Preview (`combined_view.html`)
 ```json
 {
   "stage": "draft",
-  "total_sections": 25,
-  "reviewed_count": 10,
-  "signoff_count": 5,
-  "review_pct": 40,
-  "signoff_pct": 20
+  "total_sections": 25
 }
 ```
 
 - `stage`: one of `"draft"`, `"review"`, `"final"`. From `local_files[].status`.
-- Counts derive from `local_files[].section_status`. Each key maps to `{ "reviewed": bool, "signed_off": bool }`.
-- Percentages: `round(count / total_sections * 100)`.
 
 ## chapters
 
@@ -109,10 +103,6 @@ Flat object keyed by underscore-format section keys. Each element:
     },
     "notes": ["Editorial note string"],
     "footnotes": ["Citation or footnote string"],
-    "status": {
-      "reviewed": false,
-      "signed_off": false
-    },
     "is_auto": false,
     "editable": false,
     "composite": false
@@ -133,8 +123,6 @@ Flat object keyed by underscore-format section keys. Each element:
 | `meta.impact` | string | Human-readable description of content scope. |
 | `notes` | string[] | Editorial notes for this section. |
 | `footnotes` | string[] | Citations or footnotes for this section. |
-| `status.reviewed` | bool | Whether the section has been reviewed. |
-| `status.signed_off` | bool | Whether the section has been signed off. |
 | `is_auto` | bool | True for auto-generated table sections. |
 | `editable` | bool | True when `layer >= 4` and not auto. User can edit. |
 | `composite` | bool | True when section is assembled from multiple layer parts. |
@@ -190,75 +178,7 @@ When `is_auto: true`, the element includes an `auto_table` object instead of `te
 }
 ```
 
-Source: `local_files[].covered_transactions` mapped to `transactions[]` in data.json. Resolve `from_entity` and `to_entity` IDs to entity names using the `entities[]` array.
-
-#### 2. Transactions not covered (`transactions_not_covered`)
-
-```json
-{
-  "auto_table": {
-    "type": "transactions_not_covered",
-    "columns": ["Transaction", "Counterparty", "Type", "Amount"],
-    "rows": [["Admin Services", "Shared Services Ltd", "Service Fee", "500,000"]]
-  }
-}
-```
-
-Source: all transactions involving the entity minus those in `covered_transactions`.
-
-#### 3. Transaction contractual terms (`tx_{N}_contractual_terms`)
-
-Key pattern: `tx_1_contractual_terms`, `tx_2_contractual_terms`, etc.
-
-Standard transactions: `columns: ["Term", "Detail"]`, rows are key-value pairs.
-Financial transactions: transposed layout where columns are term names, single row of values.
-
-Source: `transactions[].contractual_terms` object.
-
-#### 4. Transaction characteristics (`tx_{N}_characteristics`)
-
-```json
-{
-  "auto_table": {
-    "type": "characteristics",
-    "columns": ["Characteristic", "Description"],
-    "rows": [["Product Type", "Licensed IP"]]
-  }
-}
-```
-
-Omitted for financial transaction types. Source: `transactions[].characteristics`.
-
-#### 5. Transaction economic circumstances (`tx_{N}_economic_circumstances`)
-
-```json
-{
-  "auto_table": {
-    "type": "economic_circumstances",
-    "columns": ["Factor", "Analysis"],
-    "rows": [["Market Conditions", "Competitive market..."]]
-  }
-}
-```
-
-Source: `transactions[].economic_circumstances`.
-
-#### 6. Benchmark tables (`bm_{slug}_{table_id}`)
-
-Key pattern: `bm_study_1_allocation`, `bm_study_1_search_results`, etc.
-Table IDs: `allocation`, `search_strategy`, `search_results`, `adjustments`.
-
-```json
-{
-  "auto_table": {
-    "type": "search_results",
-    "columns": ["Company", "Country", "TNMM", "Berry Ratio"],
-    "rows": [["Comp A", "NL", "5.2%", "1.15"]]
-  }
-}
-```
-
-Source: `benchmarks[].tables[]` in data.json. Each table has `id`, `columns`, `rows`.
+Source: `transactions[]` in data.json. Resolve `from_entity` and `to_entity` IDs to entity names using the `entities[]` array.
 
 ## general_notes
 
