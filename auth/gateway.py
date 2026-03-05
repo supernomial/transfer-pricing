@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Cache-first content gateway for the Supernomial Cowork plugin.
+Content gateway for the Supernomial Cowork plugin.
 
 Resolution order:
   1. Local cache (~/.supernomial/cache/)
-  2. Content API (cowork.supernomial.co/api/content/)
-  3. Plugin zip fallback (read-only plugin folder)
+  2. Plugin folder fallback (read-only plugin files)
 
 Usage:
   python gateway.py fetch <path> [--plugin-root <dir>]
+  python gateway.py validate [--working-dir <dir>]
   python gateway.py clear-cache
   python gateway.py cache-status
 
@@ -39,7 +39,6 @@ def _ssl_context():
         return ssl.create_default_context(cafile=bundle)
     return ssl.create_default_context()
 
-CONTENT_API_BASE = "https://cowork.supernomial.co/api/content"
 VALIDATE_URL = "https://cowork.supernomial.co/api/validate"
 CACHE_DIR = os.path.expanduser("~/.supernomial/cache")
 CACHE_TTL_SECONDS = 3600  # 1 hour
@@ -97,28 +96,6 @@ def write_to_cache(content_path, content):
         json.dump({"fetched_at": time.time(), "path": content_path}, f)
 
 
-def fetch_from_api(content_path, api_key):
-    if not api_key:
-        return None
-
-    url = f"{CONTENT_API_BASE}/{content_path}"
-    req = urllib.request.Request(url, headers={"x-api-key": api_key})
-
-    try:
-        with urllib.request.urlopen(req, timeout=10, context=_ssl_context()) as resp:
-            content = resp.read().decode("utf-8")
-            write_to_cache(content_path, content)
-            return content
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            return None
-        print(f"API error {e.code}: {e.reason}", file=sys.stderr)
-        return None
-    except urllib.error.URLError as e:
-        print(f"Network error: {e.reason}", file=sys.stderr)
-        return None
-
-
 def read_from_plugin(content_path, plugin_root):
     if not plugin_root:
         return None
@@ -130,16 +107,21 @@ def read_from_plugin(content_path, plugin_root):
     return None
 
 
+def _sanitize_path(content_path):
+    """Reject paths that attempt directory traversal."""
+    import posixpath
+    normalized = posixpath.normpath(content_path)
+    if normalized.startswith("..") or normalized.startswith("/"):
+        raise ValueError(f"Unsafe content path: {content_path!r}")
+    return normalized
+
+
 def fetch(content_path, plugin_root=None, working_dir=None):
-    """Resolve content via cache → API → plugin fallback."""
+    """Resolve content via cache → plugin fallback."""
+    content_path = _sanitize_path(content_path)
     cached = read_from_cache(content_path)
     if cached is not None:
         return {"content": cached, "source": "cache"}
-
-    api_key = get_api_key(working_dir)
-    from_api = fetch_from_api(content_path, api_key)
-    if from_api is not None:
-        return {"content": from_api, "source": "api"}
 
     from_plugin = read_from_plugin(content_path, plugin_root)
     if from_plugin is not None:

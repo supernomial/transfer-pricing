@@ -29,6 +29,7 @@ def escape_latex(text):
     if not isinstance(text, str):
         return str(text)
     replacements = {
+        '\\': r'\textbackslash{}',
         '&': r'\&',
         '%': r'\%',
         '$': r'\$',
@@ -348,7 +349,7 @@ def main():
     # Populate template
     latex = template
     latex = latex.replace('<<ENTITY_NAME>>', escape_latex(entity_name))
-    latex = latex.replace('<<FISCAL_YEAR>>', str(fiscal_year))
+    latex = latex.replace('<<FISCAL_YEAR>>', escape_latex(str(fiscal_year)))
     latex = latex.replace('<<REPORT_BODY>>', build_report_body(view_json))
 
     # Build in a shared temp directory, copy only PDF to deliverables
