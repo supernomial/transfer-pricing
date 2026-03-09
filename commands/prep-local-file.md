@@ -65,6 +65,13 @@ Gather or confirm context before assisting user.
 3. **Focus areas**: If applicable, ask for any specific areas of the Local File to focus on.
 4. **Ask for further context user would like to provide**
 
+**Create memory folders** when initializing a new group or entity:
+
+- New group → create `[Group]/.records/group-memory/` alongside the other `.records/` subfolders
+- New entity deliverable (first view JSON for an entity) → create:
+  - `[Group]/.records/entity-memory/[entity-id]/`
+  - `[Group]/.records/file-memory/[entity-id]_FY[year]/`
+
 
 
 ### Step 5: Load Style Guide

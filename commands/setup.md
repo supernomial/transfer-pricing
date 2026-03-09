@@ -48,6 +48,15 @@ Verify the user has a folder selected by listing the working directory contents.
 
 Replace `sk_live_...` with the actual key from the user's message.
 
+### Step 4b: Create memory folders
+
+Create these directories in the working folder if they don't already exist:
+
+1. `.supernomial/my-memory/`
+2. `.library/firm-memory/`
+
+No starter files needed — Claude creates topic files on demand.
+
 ### Step 5: Create folder instructions
 
 If the file `CLAUDE.md` does **not** already exist in the working folder root, create it with the following content. If it already exists, skip this step — never overwrite user customizations.
@@ -69,6 +78,22 @@ Each client group has this layout:
 Working documents (interactive previews, project data) are stored in each group's `.records/` folder and don't clutter the deliverables.
 
 Firm-wide resources (style guides, playbooks, reusable content) live in `.library/` at the root.
+
+## Memory
+
+This workspace remembers context across sessions using 5 memory scopes. Each scope is a folder of topic files (e.g. `contacts.md`, `methods.md`, `deadlines.md`) with date-stamped entries.
+
+| Scope | Location | What goes here |
+|---|---|---|
+| Personal | `.supernomial/my-memory/` | Your name, role, preferences, conventions |
+| Firm | `.library/firm-memory/` | Firm policies, standard methods, naming conventions |
+| Group | `[Group]/.records/group-memory/` | Client decisions, deadlines, contacts |
+| Entity | `[Group]/.records/entity-memory/[entity-id]/` | Entity-specific facts (CFO, fiscal year, conventions) |
+| Deliverable | `[Group]/.records/file-memory/[entity-id]_FY[year]/` | Report-specific notes (sign-off, review status) |
+
+**Before every response:** List the topic files in relevant memory folders. If any topic seems relevant to the user's message, read it. Start with personal + firm, add group/entity/deliverable when the context is clear.
+
+**After learning something worth keeping:** Update the right memory file with a date-stamped entry (`### YYYY-MM-DD`). Create new topic files as needed. Keep entries factual — decisions, facts, preferences. Not session logs.
 
 ## For Claude
 

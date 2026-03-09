@@ -124,6 +124,21 @@ Claude produces a structured JSON file following `references/view-json-schema.md
 - Top-level sections become chapters, children become sections/subsections
 - Auto sections (`is_auto: true`) use `auto_table` instead of `text`
 
+## Memory
+
+When working on a local file, check for relevant memory before generating or editing content:
+
+1. **Read memory.** Before starting work, scan topic files in these folders (if they exist):
+   - `.supernomial/my-memory/` — personal preferences
+   - `.library/firm-memory/` — firm conventions
+   - `[Group]/.records/group-memory/` — client-level context
+   - `[Group]/.records/entity-memory/[entity-id]/` — entity facts
+   - `[Group]/.records/file-memory/[entity-id]_FY[year]/` — report-specific notes
+
+2. **Update memory.** After method choices, policy interpretations, client conventions, or any decision worth preserving — update the appropriate memory file with a date-stamped entry (`### YYYY-MM-DD`). Create new topic files as needed.
+
+3. **Keep entries factual.** Decisions, facts, preferences. Not session logs or summaries.
+
 ## Folder Structure
 
 When a new group is created, ensure this structure exists:
@@ -139,8 +154,13 @@ When a new group is created, ensure this structure exists:
     ├── views/                ← view JSON (source of truth) + preview HTML
     ├── content/
     │   └── [entity-id]/
-    └── playbooks/
-        └── [entity-id]/
+    ├── playbooks/
+    │   └── [entity-id]/
+    ├── group-memory/         ← client-level memory (topic files)
+    ├── entity-memory/
+    │   └── [entity-id]/      ← entity-specific memory (topic files)
+    └── file-memory/
+        └── [entity-id]_FY[year]/  ← deliverable-specific memory (topic files)
 ```
 
 ## References
