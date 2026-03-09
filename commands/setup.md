@@ -57,9 +57,13 @@ Create these directories in the working folder if they don't already exist:
 
 No starter files needed — Claude creates topic files on demand.
 
-### Step 5: Create folder instructions
+### Step 5: Create or update folder instructions
 
-If the file `CLAUDE.md` does **not** already exist in the working folder root, create it with the following content. If it already exists, skip this step — never overwrite user customizations.
+**If `CLAUDE.md` does not exist:** Create it with the full content below.
+
+**If `CLAUDE.md` already exists but does NOT contain `## Memory`:** Insert the Memory section (the block starting with `## Memory` and ending before `## For Claude`) into the existing file, right before the `## For Claude` heading. Do not touch any other content.
+
+**If `CLAUDE.md` already exists and already contains `## Memory`:** Skip this step — nothing to do.
 
 ```markdown
 # Transfer Pricing Workspace
