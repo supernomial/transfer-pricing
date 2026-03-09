@@ -29,12 +29,14 @@ Reference for producing view JSON consumed by the Preview (`preview.html`).
   "fiscal_year": "2024",
   "country": "NL",
   "blueprint_name": "OECD Blueprint",
-  "playbook_name": "Standard"
+  "playbook_name": "Standard",
+  "playbook_version": "1.0"
 }
 ```
 
 - Defaults: title = "Local File", subtitle = entity name, meta = "Transfer Pricing Documentation · FY {year}".
 - `playbook_name`: read from the playbook's frontmatter `name` field. "Standard" for the built-in OECD playbook, custom name for user playbooks. Displayed in the Preview top bar.
+- `playbook_version`: read from the playbook's frontmatter `version` field. Used to detect when a playbook has been updated since last generation.
 
 ## progress
 

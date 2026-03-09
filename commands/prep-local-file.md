@@ -85,16 +85,17 @@ Gather or confirm context before assisting user.
 Read `skills/blueprint-local-file/SKILL.md` for reference context. Then:
 
 1. **Consider context** gathered in Steps 1–5.
-2. **Select playbook.** Check if the entity's local file record in `data.json` has a saved `playbook` preference (path to the `.md` file). If yes and the file exists, reuse it silently. If the saved path doesn't exist, fall back to scanning and inform the user. If no preference saved:
-   - Scan for `.md` files at each level: entity (`[Group]/.records/playbooks/[entity-id]/`) → group (`[Group]/.records/playbooks/`) → firm (`.library/playbooks/`) → universal (`skills/blueprint-local-file/references/playbooks/`)
+2. **Select playbook.** Check if the entity's local file record in `data.json` has a saved `playbook` preference. If yes and the file exists, reuse it silently. If the saved path doesn't exist, fall back to scanning and inform the user. If no preference saved:
+   - Scan for playbooks at each level (folders containing `playbook.md`, or legacy single `.md` files): entity (`[Group]/.records/playbooks/[entity-id]/`) → group (`[Group]/.records/playbooks/`) → firm (`.library/playbooks/`) → universal (`skills/blueprint-local-file/references/playbooks/`)
    - If only the standard OECD playbook exists, use it and confirm briefly.
    - If multiple playbooks exist at any level, list them and let the user choose.
-   - If the user wants something custom, guide them to create one with a `name` in the frontmatter (e.g., `name: Deloitte NL`) and save at the correct level.
+   - If the user wants a custom report structure, suggest: "You can set up a custom report structure with `/playbook`."
    - Save the selected playbook path on the entity's local file record in `data.json` as `playbook` so it's reused next time.
-3. **Populate view JSON** based on playbook instructions. Read the playbook's frontmatter `name` and set `document.playbook_name` in the view JSON (standard playbook = "Standard"). For each section in the playbook:
+   - For extending playbooks (`extends:` in frontmatter), resolve the full structure by merging parent + child before proceeding.
+3. **Populate view JSON** based on playbook instructions. Read the playbook's frontmatter `name` and set `document.playbook_name` in the view JSON (standard playbook = "Standard"). Read `version` from frontmatter and set `document.playbook_version` in the view JSON. If the entity already has a view JSON with a different `playbook_version`, warn the user that the report structure has been updated since the last generation before proceeding. For each section in the playbook:
    - Derive the content path from the section title (kebab-case, e.g., "Executive Summary / Objective" → `executive-summary/objective`)
-   - Check for `.md` content files at each layer (entity → group → firm). If found, **use `cat` to read the file** and paste the exact contents as the element's `text` field. Do NOT paraphrase, summarize, or generate your own version.
-   - If no content file exists at any layer, generate content from the playbook's instruction for that section.
+   - Check for `.md` content files at each level (entity → group → firm → playbook verbatim). If found, **use `cat` to read the file** and paste the exact contents as the element's `text` field. Do NOT paraphrase, summarize, or generate your own version.
+   - If no content file exists at any level (including playbook verbatim), generate content from the playbook's instruction for that section.
    - Only substitute these placeholders: `[Entity Name]`, `[Group Name]`, `[Fiscal Year]`, `[Country]`
    - For sections that require a data table (e.g., Transactions Under Analysis), build `auto_table` from data.json instead
    - Follow `skills/blueprint-local-file/references/view-json-schema.md`

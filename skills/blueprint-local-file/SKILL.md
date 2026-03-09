@@ -19,7 +19,9 @@ The plugin folder is **read-only**. All work goes in the user's selected folder.
 
 ## Playbooks
 
-A playbook is an `.md` file defining the recipe for a deliverable — which sections exist, their order, and instructions for Claude.
+A playbook defines the recipe for a deliverable — which sections exist, their order, and instructions for Claude.
+
+**Folder format:** A playbook is a folder containing `playbook.md` and an optional `verbatim/` subfolder with default content files. Single `.md` files are still supported as legacy format.
 
 **Playbook format:** Uses markdown headings for structure:
 - `### Section: Title` — top-level chapter
@@ -28,6 +30,10 @@ A playbook is an `.md` file defining the recipe for a deliverable — which sect
 - `Instruction:` — guidance for Claude on how to produce that section (required at every level)
 
 Claude derives section IDs from titles by converting to kebab-case (e.g., "Executive Summary" → `executive-summary`, "Executive Summary / Objective" → `executive-summary/objective`).
+
+**Inheritance:** A playbook can extend another via `extends:` in frontmatter (e.g., `extends: standard-oecd-local-file`). The child defines only differences: new sections (add normally), changed instructions (redefine the heading), removed sections (`### Remove: Section Title`). Claude merges parent + child at runtime.
+
+**Versioning:** Frontmatter `version:` (e.g., `version: "1.0"`) is stored in the view JSON as `playbook_version`. Claude warns the user if the playbook version has changed since the last generation.
 
 **Override hierarchy** (highest wins):
 
@@ -40,28 +46,25 @@ Claude derives section IDs from titles by converting to kebab-case (e.g., "Execu
 
 **Selection logic:**
 1. Check the entity's local file record in `data.json` for a saved `playbook` path. If present, reuse it.
-2. If no saved preference, scan for `.md` files at each level: entity → group → firm → universal.
+2. If no saved preference, scan for playbooks at each level (folders containing `playbook.md`, or legacy `.md` files): entity → group → firm → universal.
 3. Multiple playbooks can exist at the same level. If only the standard OECD playbook is found, use it. If multiple exist, ask the user to choose.
 4. Save the selected playbook path on the entity's local file record in `data.json` so subsequent runs reuse it without re-asking. User can change at any time.
 5. If a saved playbook path no longer exists, fall back to scanning and inform the user.
 
 Every playbook has a `name` in its frontmatter (e.g., `name: Standard`). Claude reads this and sets `document.playbook_name` in the view JSON. The Preview displays it in the top bar.
 
-When a user wants a custom playbook, guide them to create one with a `name` in the frontmatter (e.g., `name: Deloitte NL`) and save it at the right level:
-- Custom for this entity only → entity level
-- Custom for all entities in this group → group level
-- Custom for all clients at the firm → firm level
+To create or customize playbooks, use the `/playbook` command.
 
 ## Content Layers
 
-Claude reads from 4 layers when building the view JSON. Each layer overrides the one above.
+Claude reads from multiple layers when building the view JSON. Each layer overrides the one above.
 
-| Layer | Prefix | Resolves to |
+| Layer | Source | Resolves to |
 |---|---|---|
-| 1. Universal | `@references/` | `skills/blueprint-local-file/references/` |
-| 2. Firm | `@library/` | `.library/` in working dir |
-| 3. Group | `@group/` | `[Group]/.records/content/` |
-| 4. Entity | `@entity/` | `[Group]/.records/content/[entity-id]/` |
+| 1. Playbook default | Active playbook's `verbatim/` folder | Built-in defaults bundled with the playbook |
+| 2. Firm | `.library/` in working dir | Firm-wide reusable content |
+| 3. Group | `[Group]/.records/content/` | Group-specific content |
+| 4. Entity | `[Group]/.records/content/[entity-id]/` | Entity-specific content |
 
 ## Content Resolution
 
@@ -70,16 +73,22 @@ For each section in the playbook, Claude resolves content using the section's co
 - Section "Executive Summary" → content path `executive-summary/`
 - Subsection "Objective" under "Executive Summary" → content path `executive-summary/objective`
 
-**Resolution steps:**
+**Resolution steps (highest priority wins):**
+
+| Priority | Source | Path |
+|---|---|---|
+| 1 (highest) | Entity content | `[Group]/.records/content/[entity-id]/[content-path].md` |
+| 2 | Group content | `[Group]/.records/content/[content-path].md` |
+| 3 | Firm content | `.library/[content-path].md` |
+| 4 | Playbook verbatim | Active playbook's `verbatim/[content-path].md` |
+| 5 (lowest) | Generate | From playbook `Instruction:` |
+
+**Steps:**
 1. Derive the content path from the playbook section title
-2. Check for a `.md` file at each layer (highest wins):
-   - `[Group]/.records/content/[entity-id]/executive-summary/objective.md` → Layer 4
-   - `[Group]/.records/content/executive-summary/objective.md` → Layer 3
-   - `.library/executive-summary/objective.md` → Layer 2
-   - `skills/blueprint-local-file/references/executive-summary/objective.md` → Layer 1 (fallback)
-3. Read the `.md` file at the highest-layer match
+2. Check for a `.md` file at each priority level (highest wins)
+3. Read the `.md` file at the highest-priority match
 4. Use the **literal file contents** as the element's `text` field in the view JSON. Do NOT rewrite, summarize, or generate your own text — copy the file contents exactly as they are. Only substitute these placeholders: `[Entity Name]`, `[Group Name]`, `[Fiscal Year]`, `[Country]`.
-5. If no content file exists at any layer, use the playbook's `Instruction:` to generate content.
+5. If no content file exists at any level, use the playbook's `Instruction:` to generate content.
 6. Set `meta.layer`, `meta.label`, `meta.color` based on which layer the content came from
 
 If a section's instruction says to generate a table from data (e.g., transactions), build an `auto_table` from `transactions[]` in `data.json`. Resolve `from_entity` and `to_entity` IDs to entity names using the `entities[]` array.

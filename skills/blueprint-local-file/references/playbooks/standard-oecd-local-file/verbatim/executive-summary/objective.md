@@ -1,0 +1,1 @@
+The objective of this local file is to demonstrate that the intercompany transactions of [Entity Name] are consistent with the arm's length principle as set out in the OECD Transfer Pricing Guidelines.

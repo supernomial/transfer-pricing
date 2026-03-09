@@ -1,5 +1,6 @@
 ---
 name: Standard
+version: "1.0"
 ---
 
 # OECD Local File
@@ -14,7 +15,7 @@ Instruction: Prepare concise paragraph.
 
 #### Subsection: Objective
 
-Instruction: Write exactly "The objective of this local file is to demonstrate that the intercompany transactions of [Entity Name] are consistent with the arm's length principle as set out in the OECD Transfer Pricing Guidelines."
+Instruction: Use verbatim content from this playbook's defaults. Substitute entity-specific placeholders only.
 
 #### Subsection: Scope
 
