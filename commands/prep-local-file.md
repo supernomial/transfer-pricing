@@ -99,6 +99,8 @@ Read `skills/blueprint-local-file/SKILL.md` for reference context. Then:
    - Only substitute these placeholders: `[Entity Name]`, `[Group Name]`, `[Fiscal Year]`, `[Country]`
    - For sections that require a data table (e.g., Transactions Under Analysis), build `auto_table` from data.json instead
    - Follow `skills/blueprint-local-file/references/view-json-schema.md`
+   - **Set `meta.generated`** on every element: `true` when Claude generates content from a playbook instruction, `false` when content is read from a saved `.md` file (verbatim, firm, group, or entity content file). This controls the X-ray "how" indicator (✶ generated vs ▦ fixed).
+   - **Set `meta.label`** correctly: use `"Default"` for layer 1 sections when the active playbook is the standard OECD playbook, or `"Custom"` when any custom playbook is active. Use `"Firm"`, `"Group"`, `"Entity"` for layers 2–4.
    - **Verify content fidelity.** After populating the view JSON, spot-check at least 3 text elements against their source `.md` files. If any element text doesn't match the file contents verbatim (after placeholder substitution), fix it before proceeding.
 4. **Generate Preview.** This step is mandatory — always run this script. Output goes next to the view JSON in `.records/views/`.
    ```bash

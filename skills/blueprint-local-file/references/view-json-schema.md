@@ -140,22 +140,22 @@ Flat object keyed by underscore-format section keys. Every section, subsection, 
 {
   "executive_summary": {
     "text": "Content for the Executive Summary...",
-    "meta": { "layer": 1, "label": "Standard", "source_path": "executive-summary", "scope": "universal", "color": "#64748b", "impact": "Applies to all local files" },
+    "meta": { "layer": 1, "label": "Default", "generated": true, "source_path": "executive-summary", "scope": "universal", "color": "#64748b", "impact": "Applies to all local files" },
     "is_auto": false, "editable": false, "composite": false
   },
   "executive_summary_objective": {
     "text": "The objective of this local file is to demonstrate...",
-    "meta": { "layer": 1, "label": "Standard", "source_path": "executive-summary/objective", "scope": "universal", "color": "#64748b", "impact": "Applies to all local files" },
+    "meta": { "layer": 1, "label": "Default", "generated": false, "source_path": "executive-summary/objective", "scope": "universal", "color": "#64748b", "impact": "Applies to all local files" },
     "is_auto": false, "editable": false, "composite": false
   },
   "business_description": {
     "text": "Content for Business Description...",
-    "meta": { "layer": 1, "label": "Standard", "source_path": "business-description", "scope": "universal", "color": "#64748b", "impact": "Applies to all local files" },
+    "meta": { "layer": 1, "label": "Default", "generated": true, "source_path": "business-description", "scope": "universal", "color": "#64748b", "impact": "Applies to all local files" },
     "is_auto": false, "editable": false, "composite": false
   },
   "industry_analysis": {
     "text": "Content for Industry Analysis...",
-    "meta": { "layer": 1, "label": "Standard", "source_path": "industry-analysis", "scope": "universal", "color": "#64748b", "impact": "Applies to all local files" },
+    "meta": { "layer": 1, "label": "Default", "generated": true, "source_path": "industry-analysis", "scope": "universal", "color": "#64748b", "impact": "Applies to all local files" },
     "is_auto": false, "editable": false, "composite": false
   }
 }
@@ -167,10 +167,11 @@ Flat object keyed by underscore-format section keys. Every section, subsection, 
 |---|---|---|
 | `text` | string | Rendered content. Empty string for auto sections. |
 | `meta.layer` | int (1-4) | Content layer number. |
-| `meta.label` | string | Layer label: `"Standard"` (1), `"Firm"` (2), `"Group"` (3), `"Entity"` (4). |
+| `meta.label` | string | Origin label for X-ray display. Layer 1: `"Default"` (standard OECD playbook) or `"Custom"` (any custom playbook). Layers 2–4: `"Firm"`, `"Group"`, `"Entity"`. |
+| `meta.generated` | bool | `true` if Claude generated this content from a playbook instruction. `false` if content was read from a saved `.md` file (verbatim, firm, group, or entity content file). |
 | `meta.source_path` | string | Content path derived from section title (e.g. `executive-summary/objective`). |
 | `meta.scope` | string | `"universal"`, `"firm"`, `"group"`, or `"entity"`. |
-| `meta.color` | string | Hex color for X-ray display. |
+| `meta.color` | string | **Deprecated — ignored by preview.** Colors are now derived from `meta.label`. Can be omitted. |
 | `meta.impact` | string | Human-readable description of content scope. |
 | `notes` | string[] | Editorial notes for this section. |
 | `footnotes` | string[] | Citations or footnotes for this section. |
@@ -182,10 +183,13 @@ Flat object keyed by underscore-format section keys. Every section, subsection, 
 
 | Layer | Label | Color | Scope |
 |---|---|---|---|
-| 1 | Standard | `#64748b` | `universal` |
-| 2 | Firm | `#94a3b8` | `firm` |
-| 3 | Group | `#a855f7` | `group` |
-| 4 | Entity | `#3b82f6` | `entity` |
+| 1 | Default | `#64748b` | `universal` |
+| 1 | Custom | `#0a6afc` | `universal` |
+| 2 | Firm | `#d97706` | `firm` |
+| 3 | Group | `#9333ea` | `group` |
+| 4 | Entity | `#059669` | `entity` |
+
+**Label rules:** Layer 1 sections use `"Default"` when the active playbook is the standard OECD playbook (`playbook_name` = "Standard OECD Local File"), or `"Custom"` when any other playbook is active. Layers 2–4 always use their fixed labels regardless of playbook.
 
 ### Composite sections
 
@@ -198,7 +202,8 @@ When `composite: true`, the element includes a `parts` array. Each part has its 
     {
       "text": "Standard guidance text...",
       "layer": 1,
-      "label": "Standard",
+      "label": "Default",
+      "generated": false,
       "color": "#64748b",
       "editable": false
     },
@@ -206,7 +211,8 @@ When `composite: true`, the element includes a `parts` array. Each part has its 
       "text": "Entity-specific addition...",
       "layer": 4,
       "label": "Entity",
-      "color": "#3b82f6",
+      "generated": true,
+      "color": "#059669",
       "editable": true
     }
   ]
