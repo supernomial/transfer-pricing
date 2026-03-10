@@ -275,6 +275,10 @@
     flex-shrink: 0; opacity: 0.6;
   }
 
+  /* --- X-ray placeholder highlights --- */
+  .ph { transition: color 0.15s; }
+  body.xray-on .ph { color: var(--sn-primary); }
+
   /* --- X-ray source tags on section boxes --- */
   .xray-tag {
     display: none; position: absolute; top: -10px; right: 12px;
@@ -795,11 +799,55 @@ function renderSections(vd) {
 // ============================================================
 // Boot: parse JSON and render
 // ============================================================
+function highlightPlaceholders(viewData) {
+  var doc = viewData.document || {};
+  var terms = [];
+  if (doc.entity_name) terms.push(doc.entity_name);
+  if (doc.group_name) terms.push(doc.group_name);
+  if (doc.fiscal_year) terms.push('FY ' + doc.fiscal_year, doc.fiscal_year);
+  // Dedupe and sort longest first so longer matches take priority
+  terms = terms.filter(function(t, i, a) { return a.indexOf(t) === i && t.length > 1; });
+  terms.sort(function(a, b) { return b.length - a.length; });
+  if (terms.length === 0) return;
+  // Build regex matching any term
+  var escaped = terms.map(function(t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+  var re = new RegExp('(' + escaped.join('|') + ')', 'g');
+  // Walk all section-body text nodes and wrap matches
+  document.querySelectorAll('.section-body').forEach(function(body) {
+    var walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, null, false);
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function(node) {
+      if (!re.test(node.textContent)) return;
+      re.lastIndex = 0;
+      var frag = document.createDocumentFragment();
+      var text = node.textContent;
+      var lastIndex = 0;
+      var match;
+      while ((match = re.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+        }
+        var span = document.createElement('span');
+        span.className = 'ph';
+        span.textContent = match[1];
+        frag.appendChild(span);
+        lastIndex = re.lastIndex;
+      }
+      if (lastIndex < text.length) {
+        frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+      }
+      node.parentNode.replaceChild(frag, node);
+    });
+  });
+}
+
 function boot(viewData) {
   renderDocument(viewData);
   renderSections(viewData);
   buildNav();
   initExpandCollapse();
+  highlightPlaceholders(viewData);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
