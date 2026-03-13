@@ -39,7 +39,7 @@ def _ssl_context():
         return ssl.create_default_context(cafile=bundle)
     return ssl.create_default_context()
 
-VALIDATE_URL = "https://cowork.supernomial.co/api/validate"
+VALIDATE_URL = "https://www.supernomial.co/api/validate"
 CACHE_DIR = os.path.expanduser("~/.supernomial/cache")
 CACHE_TTL_SECONDS = 3600  # 1 hour
 
@@ -138,7 +138,7 @@ def validate(working_dir=None):
         print(
             "No Supernomial subscription found.\n"
             "Run /setup with your API key to get started.\n"
-            "Get your key at cowork.supernomial.co/settings.",
+            "Get your key at www.supernomial.co/settings.",
             file=sys.stderr,
         )
         return False
@@ -155,7 +155,7 @@ def validate(working_dir=None):
         if e.code == 401:
             print(
                 "Your subscription key isn't valid or has expired.\n"
-                "Check your account at cowork.supernomial.co/settings.",
+                "Check your account at www.supernomial.co/settings.",
                 file=sys.stderr,
             )
             return False

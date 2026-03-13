@@ -2,12 +2,12 @@
 
 Speed up transfer pricing workflows for consulting and in-house teams. Draft master and local files, review compliance requirements, and manage institutional knowledge — directly inside Claude.
 
-> Built by [Supernomial](https://cowork.supernomial.co)
+> Built by [Supernomial](https://supernomial.co)
 
 ## Requirements
 
 - [Claude Desktop](https://claude.ai/download) with Cowork enabled
-- A Supernomial account and API key — [sign up at cowork.supernomial.co](https://cowork.supernomial.co)
+- A Supernomial account and API key — [sign up at supernomial.co](https://supernomial.co)
 
 ## Install
 
@@ -16,7 +16,7 @@ Speed up transfer pricing workflows for consulting and in-house teams. Draft mas
    ```
    https://raw.githubusercontent.com/supernomial/transfer-pricing/main/.claude-plugin/marketplace.json
    ```
-3. Select your working folder, then run `/setup` with your API key from [cowork.supernomial.co/settings](https://cowork.supernomial.co/settings)
+3. Select your working folder, then run `/setup` with your API key from [supernomial.co/settings](https://supernomial.co/settings)
 
 ## Commands
 

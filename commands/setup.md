@@ -17,14 +17,14 @@ The user's message contains their API key as the argument after `/transfer-prici
 
 If no key was provided, tell the user:
 > "Please paste your API key after the command, like this: `/transfer-pricing:setup sk_live_abc123...`
-> You can get your key at [cowork.supernomial.co/settings](https://cowork.supernomial.co/settings)."
+> You can get your key at [supernomial.co/settings](https://supernomial.co/settings)."
 
 Then stop.
 
 ### Step 2: Validate the format
 
 The key must start with `sk_live_`. If it doesn't, tell the user:
-> "That doesn't look like a valid API key. Keys start with `sk_live_`. Check your key at [cowork.supernomial.co/settings](https://cowork.supernomial.co/settings)."
+> "That doesn't look like a valid API key. Keys start with `sk_live_`. Check your key at [supernomial.co/settings](https://supernomial.co/settings)."
 
 Then stop.
 
